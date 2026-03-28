@@ -1,0 +1,86 @@
+name: Update UNESCO Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_url:
+        description: "UNESCO source URL"
+        required: false
+        default: "https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json"
+      retry_interval_days:
+        description: "Retry interval days for extract status"
+        required: false
+        default: "30"
+  schedule:
+    - cron: "17 3 1 * *"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: windows-latest
+    env:
+      SOURCE_URL: ${{ github.event.inputs.source_url || vars.UNESCO_SOURCE_URL || 'https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json' }}
+      RETRY_DAYS: ${{ github.event.inputs.retry_interval_days || '30' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch UNESCO official dataset
+        id: fetch
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          ./scripts/fetch_unesco_official.ps1 `
+            -SourceUrl "${{ env.SOURCE_URL }}" `
+            -RawOutputFile "data/staging/unesco_source_raw.txt"
+
+      - name: Convert staged UNESCO source
+        if: steps.fetch.outcome == 'success'
+        shell: pwsh
+        run: |
+          ./scripts/convert_unesco_source.ps1 `
+            -InputFile "data/staging/unesco_source_raw.txt" `
+            -SourceUrl "${{ env.SOURCE_URL }}" `
+            -OutputFile "data/current/unesco_official_sites.geojson" `
+            -OutputJsonFile "data/current/unesco_official_sites.json" `
+            -RetryIntervalDays "${{ env.RETRY_DAYS }}" `
+            -ArchiveDir "data/history" `
+            -KeepVersions 24 `
+            -OverwriteExisting
+
+      - name: Update extract status on fetch failure
+        if: steps.fetch.outcome == 'failure'
+        shell: pwsh
+        run: |
+          ./scripts/update_extract_status.ps1 `
+            -InputJsonFile "data/current/unesco_official_sites.json" `
+            -RetryIntervalDays "${{ env.RETRY_DAYS }}" `
+            -SourceUrl "${{ env.SOURCE_URL }}" `
+            -ErrorMessage "CI fetch failed"
+
+      - name: Validate UNESCO canonical JSON
+        shell: pwsh
+        run: |
+          ./scripts/validate_whs_dataset.ps1 `
+            -InputFile "data/current/unesco_official_sites.json"
+
+      - name: Validate derived UNESCO GeoJSON
+        shell: pwsh
+        run: |
+          ./scripts/validate_whs_dataset.ps1 `
+            -InputFile "data/current/unesco_official_sites.geojson"
+
+      - name: Commit changes
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/current/unesco_official_sites.json data/current/unesco_official_sites.geojson data/history data/staging/unesco_source_raw.txt
+          if (git diff --cached --quiet) {
+            Write-Host "No changes to commit."
+          } else {
+            git commit -m "chore: refresh UNESCO official dataset"
+            git push
+          }

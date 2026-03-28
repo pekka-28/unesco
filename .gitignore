@@ -1,0 +1,10 @@
+# Personal/private mapping exports and working copies
+umap_backup_*.umap
+*.private.umap
+*.local.umap
+
+# Personal visit and travel data (keep templates/public examples elsewhere)
+data/private/
+data/visits/private/
+data/travel/private/
+data/staging/cache/

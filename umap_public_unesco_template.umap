@@ -1,0 +1,113 @@
+{
+  "type": "umap",
+  "geometry": {
+    "type": "Point",
+    "coordinates": [0.0, 20.0]
+  },
+  "properties": {
+    "name": "My World Heritage",
+    "zoom": 2,
+    "center": {
+      "lat": 20.0,
+      "lng": 0.0
+    },
+    "fields": [],
+    "overlay": {},
+    "slideshow": {},
+    "tilelayer": {},
+    "limitBounds": {},
+    "zoomControl": true,
+    "fullscreenControl": true
+  },
+  "uri": "",
+  "layers": [
+    {
+      "type": "FeatureCollection",
+      "features": [],
+      "_umap_options": {
+        "name": "UNESCO Sites (Public Canonical)",
+        "rank": 0,
+        "color": "#005a9c",
+        "fields": [
+          {"key": "site_id", "type": "String"},
+          {"key": "name", "type": "String"},
+          {"key": "name_en", "type": "String"},
+          {"key": "status", "type": "String"},
+          {"key": "unesco_url", "type": "String"},
+          {"key": "country", "type": "String"},
+          {"key": "inscription_date", "type": "String"},
+          {"key": "category", "type": "String"},
+          {"key": "native_display", "type": "String"}
+        ],
+        "editMode": "advanced",
+        "iconSize": 10,
+        "browsable": true,
+        "iconClass": "Circle",
+        "inCaption": true,
+        "showLabel": null,
+        "remoteData": {
+          "ttl": "86400",
+          "url": "https://raw.githubusercontent.com/OWNER/unesco/main/data/current/unesco_official_sites.geojson",
+          "proxy": true,
+          "format": "geojson",
+          "dynamic": true
+        },
+        "displayOnLoad": true,
+        "outlinkTarget": "parent",
+        "labelInteractive": false,
+        "popupContentTemplate": "# {name}\n{name_en}\n{native_display}\nCountry: {country}\nInscribed: {inscription_date}\nCategory: {category}\nStatus: {status}\nUNESCO: {unesco_url}"
+      }
+    },
+    {
+      "type": "FeatureCollection",
+      "features": [],
+      "_umap_options": {
+        "name": "Travel Lines (Template)",
+        "rank": 1,
+        "color": "#2b8a3e",
+        "fields": [
+          {"key": "from_site_id", "type": "String"},
+          {"key": "to_site_id", "type": "String"},
+          {"key": "date", "type": "Date"},
+          {"key": "mode", "type": "String"},
+          {"key": "note", "type": "String"}
+        ],
+        "editMode": "advanced",
+        "iconSize": 6,
+        "browsable": true,
+        "iconClass": "Default",
+        "inCaption": true,
+        "showLabel": null,
+        "remoteData": {},
+        "displayOnLoad": false,
+        "labelInteractive": true,
+        "popupContentTemplate": "# Travel Segment\n{from_site_id} -> {to_site_id}\n{date}\n{mode}\n{note}"
+      }
+    },
+    {
+      "type": "FeatureCollection",
+      "features": [],
+      "_umap_options": {
+        "name": "Visits (Private Template)",
+        "rank": 2,
+        "color": "#c92a2a",
+        "fields": [
+          {"key": "site_id", "type": "String"},
+          {"key": "date", "type": "Date"},
+          {"key": "status", "type": "String"},
+          {"key": "note", "type": "String"}
+        ],
+        "editMode": "advanced",
+        "iconSize": 16,
+        "browsable": true,
+        "iconClass": "Default",
+        "inCaption": true,
+        "showLabel": null,
+        "remoteData": {},
+        "displayOnLoad": false,
+        "labelInteractive": true,
+        "popupContentTemplate": "# Visit\nSite: {site_id}\n{date}\n{status}\n{note}"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My World Heritage</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100%; }
+    #search-controls { position: absolute; top: 10px; left: 56px; right: 10px; z-index: 1200; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    #search-wrap { position: relative; display: flex; align-items: center; background: #fff; border: 1px solid #b8c1cc; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; }
+    #search-input { width: 220px; border: 0; outline: none; padding: 8px 10px; font: 13px sans-serif; }
+    .icon-btn { width: 36px; height: 36px; border: 0; background: #fff; cursor: pointer; font: 14px sans-serif; }
+    .pill { background: #fff; border: 1px solid #b8c1cc; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 6px 10px; font: 13px sans-serif; }
+    #search-results { position: absolute; top: 44px; left: 0; width: 420px; max-height: 280px; overflow: auto; background: #fff; border: 1px solid #b8c1cc; border-radius: 8px; box-shadow: 0 8px 18px rgba(0,0,0,0.2); display: none; font: 13px/1.4 sans-serif; }
+    .result-row { padding: 8px 10px; border-bottom: 1px solid #eef2f6; cursor: pointer; }
+    .result-row:hover { background: #f6f9fc; }
+    .result-meta { color: #556; font-size: 12px; }
+    #title-bar { position: absolute; top: 10px; right: 10px; z-index: 1200; display: flex; align-items: center; gap: 8px; }
+    #user-menu-wrap { position: relative; }
+    #user-menu-toggle { cursor: pointer; }
+    #user-menu { position: absolute; top: 42px; right: 0; width: 190px; background: #fff; border: 1px solid #b8c1cc; border-radius: 8px; box-shadow: 0 8px 18px rgba(0,0,0,0.2); display: none; overflow: hidden; font: 13px sans-serif; }
+    .menu-item { width: 100%; text-align: left; border: 0; border-bottom: 1px solid #edf2f7; background: #fff; padding: 9px 10px; cursor: pointer; font: 13px sans-serif; }
+    .menu-item:hover { background: #f5f9fc; }
+    .menu-item:last-child { border-bottom: 0; }
+    #detail-pane { position: absolute; top: 58px; right: 10px; z-index: 1100; width: 380px; max-height: calc(100% - 68px); overflow: auto; background: #fff; border: 1px solid #b8c1cc; border-radius: 8px; box-shadow: 0 8px 18px rgba(0,0,0,0.2); padding: 12px; font: 13px/1.4 sans-serif; display: none; }
+    .meta { color: #445; font-size: 12px; }
+    .muted { color: #667; font-size: 12px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(18, 28, 38, 0.45); z-index: 2000; display: none; align-items: center; justify-content: center; }
+    .modal { width: min(820px, calc(100% - 24px)); max-height: calc(100% - 24px); overflow: auto; background: #fff; border-radius: 10px; border: 1px solid #b8c1cc; box-shadow: 0 12px 24px rgba(0,0,0,0.28); padding: 14px; font: 14px/1.45 sans-serif; }
+    .row { margin-bottom: 10px; }
+    .field { width: 100%; box-sizing: border-box; padding: 7px; }
+    .btn { border: 1px solid #8ea1b5; background: #fff; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+    .btn.primary { background: #0a4f8a; color: #fff; border-color: #0a4f8a; }
+    .visited-row { margin-bottom: 6px; }
+    .site-row { margin-bottom: 6px; }
+    .site-table-head { display: grid; grid-template-columns: 1fr 110px; gap: 8px; font-weight: 700; font-size: 13px; margin-bottom: 8px; position: sticky; top: 0; background: #fff; z-index: 2; padding-top: 2px; }
+    .site-table-head a { color: inherit; text-decoration: none; cursor: pointer; }
+    .site-row-grid { display: grid; grid-template-columns: 1fr 110px; gap: 8px; align-items: start; margin-bottom: 6px; }
+    .site-name-clip { display: inline-block; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+    .site-list-wrap { max-height: calc(100vh - 170px); overflow: auto; }
+    .visit-note-clip { display: inline-block; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+    .plain-link { color: #0a4f8a; text-decoration: none; cursor: pointer; }
+    .plain-link:hover { text-decoration: underline; }
+    .hint-link { margin-left: 6px; font-size: 12px; }
+    .inline-bubble { display: none; margin-top: 6px; background: #f7fafc; border: 1px solid #d7dde5; border-radius: 6px; padding: 8px; font-size: 12px; color: #334; }
+    .info-btn { width: 24px; height: 24px; border: 1px solid #8ea1b5; border-radius: 999px; background: #fff; cursor: pointer; font: 12px sans-serif; line-height: 1; }
+    .status-scroll { max-height: 110px; overflow: auto; background: #f7fafc; border: 1px solid #d7dde5; border-radius: 6px; padding: 8px; white-space: pre-wrap; word-break: break-word; font: 12px/1.35 sans-serif; }
+    .status-grid { display: grid; grid-template-columns: 140px 1fr; gap: 6px 10px; font-size: 12px; margin-bottom: 8px; }
+    .setting-line { display: flex; align-items: center; gap: 10px; }
+    .setting-line .setting-label { min-width: 220px; flex: 0 0 220px; font-weight: 700; }
+    .setting-line .field { flex: 1 1 auto; }
+    @media (max-width: 800px) {
+      #search-controls { left: 50px; right: 8px; gap: 4px; }
+      #search-input { width: min(46vw, 200px); }
+      #detail-pane { width: min(92vw, 380px); right: 8px; top: 92px; max-height: calc(100% - 100px); }
+      #title-bar { top: 56px; right: 8px; }
+      .site-name-clip { max-width: 52vw; }
+      .visit-note-clip { max-width: 52vw; }
+      .setting-line { flex-wrap: wrap; }
+      .setting-line .setting-label { min-width: 0; flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="search-controls">
+    <button id="app-title-btn" class="pill" type="button"><strong>My World Heritage</strong></button>
+    <div id="search-wrap">
+      <input id="search-input" type="text" placeholder="Search">
+      <button id="search-btn" class="icon-btn" type="button" title="Search">&#128269;</button>
+      <div id="search-results"></div>
+    </div>
+    <button id="copy-list-btn" class="icon-btn pill" type="button" title="Copy current list">&#128203;</button>
+    <button id="copy-snapshot-btn" class="icon-btn pill" type="button" title="Snapshot image">&#128247;</button>
+    <select id="site-list-mode" class="pill" style="height:36px;">
+      <option value=""></option>
+      <option value="all" selected>All sites</option>
+      <option value="multiple">Multiple sites</option>
+      <option value="visited">Visited sites</option>
+      <option value="searched">Searched sites</option>
+    </select>
+  </div>
+
+  <div id="title-bar">
+    <div id="user-menu-wrap">
+      <button id="user-menu-toggle" class="pill" type="button">Guest</button>
+      <div id="user-menu">
+        <button id="menu-connect" class="menu-item" type="button">Connect</button>
+        <button id="menu-settings" class="menu-item" type="button">Settings</button>
+        <button id="menu-export" class="menu-item" type="button">Export</button>
+        <button id="menu-import" class="menu-item" type="button">Import</button>
+        <button id="menu-reset" class="menu-item" type="button">Reset</button>
+        <button id="menu-logout" class="menu-item" type="button">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="detail-pane"></div>
+
+  <div id="enrol-overlay" class="modal-overlay">
+    <div class="modal">
+      <h2 style="margin-top:0;">My World Heritage enrolment</h2>
+      <p class="meta">Set up user name and home location, then optionally mark nearby visited sites.</p>
+      <div class="row">
+        <label for="enrol-user-name"><strong>User name</strong></label>
+        <input id="enrol-user-name" class="field" type="text" placeholder="Your name or alias">
+      </div>
+      <div class="row">
+        <strong>Home location</strong>
+        <div style="display:flex; gap:8px; margin-top:6px;">
+          <input id="enrol-home-query" class="field" type="text" placeholder="Search for your home place">
+          <button id="enrol-home-search" class="btn" type="button">Search</button>
+        </div>
+        <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+          <button id="enrol-use-my-location" class="btn" type="button">Use my location</button>
+          <span id="enrol-loc-status" class="meta"></span>
+        </div>
+        <select id="enrol-home-match-select" class="field" size="6" style="display:none; margin-top:6px;"></select>
+        <div id="enrol-home-selected" class="meta" style="margin-top:4px;"></div>
+      </div>
+      <div class="row">
+        <strong>Nearby sites</strong>
+        <div id="enrol-nearby-list"></div>
+      </div>
+      <div class="row" style="display:flex; justify-content:flex-end;">
+        <button id="enrol-save" class="btn primary" type="button">Create profile</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-overlay" class="modal-overlay">
+    <div class="modal">
+      <h2 style="margin-top:0;">My World Heritage settings</h2>
+      <p class="meta">Profile data is stored locally in your browser only.</p>
+      <div class="row setting-line">
+        <label for="user-name" class="setting-label">User name</label>
+        <input id="user-name" class="field" type="text" placeholder="Your name or alias">
+      </div>
+      <div class="row">
+        <strong>Home location</strong>
+        <div style="display:flex; gap:8px; margin-top:6px;">
+          <input id="home-query" class="field" type="text" placeholder="Search for your home place">
+          <button id="home-search" class="btn" type="button">Search</button>
+        </div>
+        <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+          <button id="use-my-location" class="btn" type="button">Use my location</button>
+          <span id="loc-status" class="meta"></span>
+        </div>
+        <select id="home-match-select" class="field" size="6" style="display:none; margin-top:6px;"></select>
+        <div id="home-selected" class="meta" style="margin-top:4px;"></div>
+      </div>
+      <div class="row setting-line">
+        <span class="setting-label">Visited only</span>
+        <label><input id="visited-only-setting" type="checkbox"> Show only visited markers</label>
+      </div>
+      <div class="row setting-line">
+        <span class="setting-label">Usage summary</span>
+        <div style="flex:1;">
+          <label><input id="share-enabled" type="checkbox"> Opt in to periodic usage summary</label>
+          <button id="share-info-link" class="info-btn hint-link" type="button" aria-label="Usage summary info">i</button>
+        </div>
+      </div>
+      <div class="row setting-line">
+        <span class="setting-label">Reminder interval (days)</span>
+        <div style="display:flex; align-items:center; gap:8px; flex:1;">
+          <input id="share-interval" class="field" type="number" min="1" style="width:110px; flex:0 0 110px;">
+          <label><input id="share-none" type="checkbox"> None</label>
+        </div>
+      </div>
+      <div class="row">
+        <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonymised usage summary (duration, visited count, inspected count, magic cookie, date) so project maintainers can understand usage trends.</div>
+      </div>
+      <div class="row setting-line">
+        <label for="date-format" class="setting-label">Date display format</label>
+        <select id="date-format" class="field">
+          <option value="y-m-d">y-m-d</option>
+          <option value="d-m-y">d-m-y</option>
+          <option value="m-d-y">m-d-y</option>
+        </select>
+      </div>
+      <div class="row setting-line">
+        <label for="length-units" class="setting-label">Length units</label>
+        <select id="length-units" class="field">
+          <option value="km">Kilometres</option>
+          <option value="mi">Miles</option>
+        </select>
+      </div>
+      <div class="row setting-line">
+        <label for="multiple-threshold" class="setting-label">Multiple sites threshold</label>
+        <input id="multiple-threshold" class="field" type="number" min="1" step="1" value="5">
+      </div>
+      <div class="row" style="display:flex; justify-content:flex-end; gap:8px;">
+        <button id="settings-save" class="btn primary" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="help-overlay" class="modal-overlay">
+    <div class="modal" style="max-width:560px;">
+      <h3 style="margin-top:0;">My World Heritage</h3>
+      <p>Track World heritage visits and travel with a maintained UNESCO site catalogue, while keeping personal data under your control.</p>
+      <h4 style="margin-bottom:6px;">Dataset extract status</h4>
+      <div class="status-grid">
+        <div><strong>Status</strong></div><div id="extract-status-result">Unavailable</div>
+        <div><strong>Source</strong></div><div id="extract-status-source">-</div>
+        <div><strong>Count</strong></div><div id="extract-status-count">-</div>
+        <div><strong>Input size</strong></div><div id="extract-status-input">-</div>
+        <div><strong>Dataset size</strong></div><div id="extract-status-size">-</div>
+        <div><strong>Most recent data</strong></div><div id="extract-status-data-at">-</div>
+        <div><strong>Most recent attempt</strong></div><div id="extract-status-attempt-at">-</div>
+        <div><strong>Retry interval</strong></div><div id="extract-status-retry">-</div>
+      </div>
+      <h4 style="margin-bottom:6px;">Where data is stored</h4>
+      <ul>
+        <li>Site catalogue in use: <code>data/current/unesco_official_sites.geojson</code>.</li>
+        <li>Profile, visits and usage counters: browser <code>localStorage</code> (persists across browser restarts).</li>
+        <li>Logout state: in-memory on the current page only (no browser storage key).</li>
+      </ul>
+      <p><strong>Export</strong> downloads your local profile JSON. <strong>Import</strong> loads a compatible profile JSON, so you can migrate data between systems without backend support.</p>
+      <p>Sites with very large UNESCO component counts are grouped as <strong>Multiple sites</strong> and hidden by default to reduce map and list noise; visited, searched, or explicitly selected items are still shown.</p>
+      <h4 style="margin-bottom:6px;">Tooling used</h4>
+      <ul>
+        <li>Leaflet for map rendering and interaction.</li>
+        <li>OpenStreetMap for basemap tiles.</li>
+        <li>Nominatim for geographic text search.</li>
+      </ul>
+      <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+        <button id="help-close" class="btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <input id="import-file" type="file" accept="application/json,.json" style="display:none;">
+  <div id="loading-indicator" class="pill" style="position:absolute; left:50%; top:56px; transform:translateX(-50%); z-index:1200; display:none;">Loading ...</div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+    const PROFILE_KEY = "mwh_profile";
+    const CENSUS_KEY = "mwh_census";
+    const MAP_VIEW_KEY = "mwh_map_view";
+    const PROFILE_SCHEMA_VERSION = 1;
+    const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
+    const FEATURE_FLAG_PREFIX = "mwh_flag_";
+    const CRITERIA_URL = "https://whc.unesco.org/en/criteria/";
+    const criteriaTitles = { i: "Masterpiece of human creative genius", ii: "Interchange of human values", iii: "Exceptional testimony to a tradition or civilisation", iv: "Outstanding example illustrating stages in history", v: "Outstanding settlement, land-use, or sea-use example", vi: "Association with events, traditions, ideas, or beliefs", vii: "Exceptional natural beauty", viii: "Earth history and geomorphic processes", ix: "Ecological and biological processes", x: "In-situ biodiversity conservation" };
+    const map = L.map("map").setView([20, 0], 2);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors", crossOrigin: "anonymous" }).addTo(map);
+    let scaleControl = null;
+    const ui = {
+      detailPane: document.getElementById("detail-pane"), searchInput: document.getElementById("search-input"), searchResults: document.getElementById("search-results"), loadingIndicator: document.getElementById("loading-indicator"),
+      helpOverlay: document.getElementById("help-overlay"), settingsOverlay: document.getElementById("settings-overlay"), enrolOverlay: document.getElementById("enrol-overlay"), userMenuToggle: document.getElementById("user-menu-toggle"),
+      userMenu: document.getElementById("user-menu"), menuReset: document.getElementById("menu-reset"), importFile: document.getElementById("import-file"), userName: document.getElementById("user-name"),
+      homeQuery: document.getElementById("home-query"), homeMatchSelect: document.getElementById("home-match-select"), homeSelected: document.getElementById("home-selected"),
+      locStatus: document.getElementById("loc-status"), visitedOnlySetting: document.getElementById("visited-only-setting"),
+      shareEnabled: document.getElementById("share-enabled"), shareInterval: document.getElementById("share-interval"), shareNone: document.getElementById("share-none"),
+      shareInfoLink: document.getElementById("share-info-link"), shareInfoBubble: document.getElementById("share-info-bubble"),
+      enrolUserName: document.getElementById("enrol-user-name"), enrolHomeQuery: document.getElementById("enrol-home-query"), enrolHomeMatchSelect: document.getElementById("enrol-home-match-select"),
+      enrolLocStatus: document.getElementById("enrol-loc-status"), enrolHomeSelected: document.getElementById("enrol-home-selected"), enrolNearbyList: document.getElementById("enrol-nearby-list"),
+      siteListMode: document.getElementById("site-list-mode"), appTitleBtn: document.getElementById("app-title-btn"),
+      extractStatusResult: document.getElementById("extract-status-result"), extractStatusSource: document.getElementById("extract-status-source"),
+      extractStatusCount: document.getElementById("extract-status-count"), extractStatusInput: document.getElementById("extract-status-input"),
+      extractStatusSize: document.getElementById("extract-status-size"), extractStatusDataAt: document.getElementById("extract-status-data-at"),
+      extractStatusAttemptAt: document.getElementById("extract-status-attempt-at"), extractStatusRetry: document.getElementById("extract-status-retry"),
+      dateFormat: document.getElementById("date-format"), lengthUnits: document.getElementById("length-units"), multipleThreshold: document.getElementById("multiple-threshold")
+    };
+    let whsData = null, layer = null, markersBySiteId = new Map(), profile = null, connected = false, manuallyDisconnected = false, selectedHome = null, homeMatches = [], enrolSelectedHome = null, enrolMatches = [], lastSearchedSiteIds = [], searchFocusBySiteId = new Map(), ignoreMapClickUntil = 0, selectedSiteId = null, listSortBy = "name", listSortDir = "asc", selectionContext = "", currentListItems = [];
+    let componentCountByRootId = new Map(), highVolumeComponentSiteIds = new Set(), explicitVisibleSiteIds = new Set();
+    const asText = (v) => v == null ? "" : String(v);
+    const nowIso = () => new Date().toISOString();
+    function getBooleanFlag(name, fallback = false) {
+      const qp = new URLSearchParams(window.location.search);
+      const qv = qp.get(name);
+      if (qv != null) return /^(1|true|yes|on)$/i.test(asText(qv));
+      const sv = localStorage.getItem(`${FEATURE_FLAG_PREFIX}${name}`);
+      if (sv != null) return /^(1|true|yes|on)$/i.test(asText(sv));
+      return fallback;
+    }
+    const flags = { resetEnabled: getBooleanFlag("reset", false) };
+    function applyFeatureFlags() {
+      if (ui.menuReset) ui.menuReset.style.display = flags.resetEnabled ? "block" : "none";
+    }
+    function rawDisplayName(p) {
+      const en = asText(p && p.name_en);
+      const nm = asText(p && p.name);
+      if (en) return en;
+      if (nm) return nm;
+      return "Unnamed site";
+    }
+    function splitComponentName(raw) {
+      const text = asText(raw);
+      const ix = text.indexOf(" - ");
+      if (ix <= 0) return null;
+      return { root: text.slice(0, ix).trim(), child: text.slice(ix + 3).trim() };
+    }
+    function displayName(p) {
+      const raw = rawDisplayName(p);
+      if (asText(p && p.site_scope) === "component") {
+        const parts = splitComponentName(raw);
+        if (parts && parts.child) return parts.child;
+      }
+      return raw;
+    }
+    function detectNativeScriptName(p, primaryName = "") {
+      const mapped = asText(p && p.native_display).trim();
+      if (mapped) return mapped;
+      const strongScript = /[\u0370-\u03FF\u0400-\u052F\u0590-\u08FF\u0900-\u0DFF\u0E00-\u0E7F\u1100-\u11FF\u2D30-\u2D7F\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/;
+      const nativeObj = p && typeof p.native_names === "object" ? p.native_names : null;
+      const mappedFields = nativeObj ? [asText(nativeObj.name_ar), asText(nativeObj.name_ru), asText(nativeObj.name_zh)] : [];
+      const candidates = [...mappedFields, asText(p && p.name), asText(p && p.name_en), ...(Array.isArray(p && p.aliases) ? p.aliases.map(asText) : [])];
+      for (const c of candidates) {
+        const t = asText(c).trim();
+        if (!t) continue;
+        if (!strongScript.test(t)) continue;
+        if (t === asText(primaryName).trim()) continue;
+        return t;
+      }
+      return "";
+    }
+    function escapeHtml(text) {
+      return asText(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+    function tooltipContent(feature) {
+      const p = feature && feature.properties ? feature.properties : {};
+      const primary = displayName(p);
+      const native = detectNativeScriptName(p, primary);
+      const lines = [
+        `<span dir="auto" style="display:block; font-size:13px; line-height:1.2;">${escapeHtml(primary)}</span>`
+      ];
+      if (native) lines.push(`<span dir="auto" style="display:block; font-size:13px; line-height:1.2;">${escapeHtml(native)}</span>`);
+      return lines.join("");
+    }
+    function randomCookie() { const arr = new Uint8Array(16); crypto.getRandomValues(arr); return Array.from(arr).map(x => x.toString(16).padStart(2, "0")).join(""); }
+    let loadingCounter = 0;
+    function showLoading(text = "Loading ...") {
+      loadingCounter += 1;
+      ui.loadingIndicator.textContent = text;
+      ui.loadingIndicator.style.display = "block";
+    }
+    function hideLoading() {
+      loadingCounter = Math.max(0, loadingCounter - 1);
+      if (loadingCounter === 0) {
+        ui.loadingIndicator.textContent = "Loading ...";
+        ui.loadingIndicator.style.display = "none";
+      }
+    }
+    function defaultProfile() { return { schemaVersion: PROFILE_SCHEMA_VERSION, name: "", homeLat: null, homeLon: null, homeLabel: "", visitedSiteIds: [], siteStatuses: {}, siteVisits: {}, inspectedSiteIds: [], settings: { visitedOnly: false, dateFormat: "y-m-d", lengthUnits: "km", multipleThreshold: 5 }, usage: { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 }, publishPreference: { enabled: false, intervalDays: 30, lastPromptAt: null, consentAskedAtStartup: false }, magicCookie: randomCookie(), updatedAt: nowIso() }; }
+    function incrementCensusUse() { let c = { schemaVersion: 1, useCount: 0, updatedAt: nowIso() }; try { c = JSON.parse(localStorage.getItem(CENSUS_KEY)) || c; } catch {} c.useCount = Number(c.useCount || 0) + 1; c.updatedAt = nowIso(); localStorage.setItem(CENSUS_KEY, JSON.stringify(c)); }
+    function verifyProfile(obj) { if (!obj || typeof obj !== "object") return { ok: false, reason: "Profile missing" }; if (obj.schemaVersion !== PROFILE_SCHEMA_VERSION) return { ok: false, reason: `Unsupported profile version ${obj.schemaVersion}` }; if (!Array.isArray(obj.visitedSiteIds) || !Array.isArray(obj.inspectedSiteIds)) return { ok: false, reason: "Invalid profile arrays" }; if (!obj.usage || typeof obj.usage !== "object") return { ok: false, reason: "Usage block missing" }; if (obj.siteStatuses != null && typeof obj.siteStatuses !== "object") return { ok: false, reason: "Invalid site status block" }; if (obj.siteVisits != null && typeof obj.siteVisits !== "object") return { ok: false, reason: "Invalid site visits block" }; return { ok: true }; }
+    function persistProfile() { if (!profile) return; profile.updatedAt = nowIso(); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
+    function applyLegacyVisitBackfill() {
+      if (!profile) return false;
+      profile.migrations = profile.migrations || {};
+      if (profile.migrations.status_to_visit_v1) return false;
+      profile.siteStatuses = profile.siteStatuses || {};
+      profile.siteVisits = profile.siteVisits || {};
+      let changed = false;
+      for (const [siteId, statusRaw] of Object.entries(profile.siteStatuses)) {
+        const status = asText(statusRaw) || "not_visited";
+        if (status === "not_visited") continue;
+        const visits = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
+        if (visits.length) continue;
+        profile.siteVisits[siteId] = [{
+          id: crypto.randomUUID(),
+          date: "",
+          status,
+          note: "",
+          createdAt: nowIso(),
+          updatedAt: nowIso()
+        }];
+        changed = true;
+      }
+      profile.migrations.status_to_visit_v1 = nowIso();
+      return changed;
+    }
+    function migrateLegacyDateParseBug() {
+      if (!profile) return false;
+      profile.migrations = profile.migrations || {};
+      if (profile.migrations.date_parse_v2_fixed) return false;
+      profile.siteVisits = profile.siteVisits || {};
+      let changed = false;
+      const cutoffMs = Date.parse(LEGACY_DATE_PARSE_BUG_CUTOFF);
+      for (const siteId of Object.keys(profile.siteVisits)) {
+        const visits = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
+        for (const v of visits) {
+          if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(asText(v.date))) continue;
+          const createdMs = Date.parse(asText(v.createdAt || ""));
+          if (!Number.isFinite(createdMs) || createdMs < cutoffMs) continue;
+          const parts = asText(v.date).split("-").map(Number);
+          const dt = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+          if (Number.isNaN(dt.getTime())) continue;
+          const next = new Date(dt.getTime() + 86400000);
+          if (next.getUTCDate() !== 1 || parts[2] < 28) continue;
+          v.date = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}`;
+          v.updatedAt = nowIso();
+          changed = true;
+        }
+      }
+      profile.migrations.date_parse_v2_fixed = nowIso();
+      return changed;
+    }
+    function siteIdCaption(feature) {
+      const p = feature && feature.properties ? feature.properties : {};
+      const id = asText(p.site_id) || "n/a";
+      const scope = asText(p.site_scope);
+      const parent = asText(p.parent_site_id);
+      if (scope === "component" && parent) return `Site id ${id} (component of WHS ${parent})`;
+      if (/^\d+$/.test(id)) return `WHS ${id}`;
+      return `Site id ${id}`;
+    }
+    function setVisitStatus(siteId, status) {
+      if (!(connected && profile) || !siteId) return;
+      profile.siteStatuses = profile.siteStatuses || {};
+      profile.siteStatuses[siteId] = status;
+      const visited = new Set(profile.visitedSiteIds || []);
+      if (status === "visited") visited.add(siteId);
+      else visited.delete(siteId);
+      profile.visitedSiteIds = Array.from(visited).sort();
+      persistProfile();
+    }
+    function ensureVisitStructures() {
+      if (!profile) return;
+      profile.siteStatuses = profile.siteStatuses || {};
+      profile.siteVisits = profile.siteVisits || {};
+    }
+    function normalizeDateOnly(value) {
+      const raw = asText(value).trim();
+      if (!raw) return "";
+      const y = raw.match(/^(\d{4})$/);
+      if (y) return y[1];
+      const ym = raw.match(/^(\d{4})-(\d{1,2})$/);
+      if (ym) {
+        const year = ym[1];
+        const month = Number(ym[2]);
+        if (Number.isNaN(month) || month < 0 || month > 12) return "";
+        return `${year}-${String(month).padStart(2, "0")}`;
+      }
+      const ymd = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (ymd) {
+        const year = Number(ymd[1]);
+        const month = Number(ymd[2]);
+        const day = Number(ymd[3]);
+        if (Number.isNaN(month) || Number.isNaN(day) || month < 0 || month > 12 || day < 0 || day > 31) return "";
+        if (month === 0 && day !== 0) return "";
+        if (month > 0 && day > 0) {
+          const maxDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+          if (day > maxDay) return "";
+        }
+        return `${ymd[1]}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      }
+      return "";
+    }
+    function formatStatusLabel(status) {
+      const s = asText(status);
+      if (s === "wont_visit") return "Won't visit";
+      const t = s.replace(/_/g, " ");
+      return t ? t.charAt(0).toUpperCase() + t.slice(1) : "Not visited";
+    }
+    function truncateText(value, maxLen) {
+      const t = asText(value);
+      return t.length <= maxLen ? t : `${t.slice(0, maxLen - 1)}...`;
+    }
+    function dateSortKey(raw) {
+      const d = normalizeDateOnly(raw);
+      if (!d) return "";
+      const parts = d.split("-");
+      if (parts.length === 1) return `${parts[0]}-00-00`;
+      if (parts.length === 2) return `${parts[0]}-${parts[1]}-00`;
+      return d;
+    }
+    function defaultVisitDateValue() {
+      return new Date().toISOString().slice(0, 10);
+    }
+    function formatVisitDateForDisplay(raw) {
+      const fmt = asText(profile && profile.settings && profile.settings.dateFormat) || "y-m-d";
+      const d = normalizeDateOnly(raw);
+      if (!d) return "";
+      const parts = d.split("-");
+      const y = parts[0] || "";
+      const m = parts[1] || "";
+      const day = parts[2] || "";
+      if (parts.length === 1) return y;
+      if (parts.length === 2) {
+        if (fmt === "m-d-y") return `${m}-${y}`;
+        if (fmt === "d-m-y") return `${m}-${y}`;
+        return `${y}-${m}`;
+      }
+      if (fmt === "d-m-y") return `${day}-${m}-${y}`;
+      if (fmt === "m-d-y") return `${m}-${day}-${y}`;
+      return `${y}-${m}-${day}`;
+    }
+    function applyScaleUnits() {
+      if (scaleControl) map.removeControl(scaleControl);
+      const units = asText(profile && profile.settings && profile.settings.lengthUnits) || "km";
+      if (units === "mi") scaleControl = L.control.scale({ metric: false, imperial: true });
+      else scaleControl = L.control.scale({ metric: true, imperial: false });
+      scaleControl.addTo(map);
+    }
+    function getSiteVisits(siteId) {
+      if (!(connected && profile) || !siteId) return [];
+      ensureVisitStructures();
+      const visits = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
+      return visits.slice().sort((a, b) => {
+        const da = normalizeDateOnly(a.date);
+        const db = normalizeDateOnly(b.date);
+        if (da !== db) return db.localeCompare(da);
+        return asText(b.updatedAt || b.createdAt).localeCompare(asText(a.updatedAt || a.createdAt));
+      });
+    }
+    function syncSiteStatusFromVisits(siteId) {
+      const visits = getSiteVisits(siteId);
+      if (!visits.length) return;
+      const latest = visits[0];
+      const status = asText(latest.status) || "not_visited";
+      setVisitStatus(siteId, status);
+    }
+    function saveSiteVisit(siteId, visit) {
+      if (!(connected && profile) || !siteId) return;
+      ensureVisitStructures();
+      const list = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
+      const clean = {
+        id: asText(visit.id) || crypto.randomUUID(),
+        date: normalizeDateOnly(visit.date),
+        status: asText(visit.status) || "not_visited",
+        note: asText(visit.note).trim(),
+        createdAt: asText(visit.createdAt) || nowIso(),
+        updatedAt: nowIso()
+      };
+      const idx = list.findIndex((x) => asText(x.id) === clean.id);
+      if (idx >= 0) list[idx] = clean;
+      else list.push(clean);
+      profile.siteVisits[siteId] = list;
+      syncSiteStatusFromVisits(siteId);
+      persistProfile();
+    }
+    function deleteSiteVisit(siteId, visitId) {
+      if (!(connected && profile) || !siteId || !visitId) return;
+      ensureVisitStructures();
+      const list = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
+      profile.siteVisits[siteId] = list.filter((x) => asText(x.id) !== asText(visitId));
+      const remaining = getSiteVisits(siteId);
+      if (remaining.length) syncSiteStatusFromVisits(siteId);
+      else setVisitStatus(siteId, "not_visited");
+      persistProfile();
+    }
+    function setTitle() { const suffix = connected && profile && profile.name ? ` - ${profile.name}` : ""; document.title = `My World Heritage${suffix}`; }
+    function updateUserUi() { if (connected && profile && profile.name) ui.userMenuToggle.textContent = profile.name; else if (manuallyDisconnected) ui.userMenuToggle.textContent = "Disconnected"; else ui.userMenuToggle.textContent = "Guest"; document.getElementById("menu-connect").style.display = connected ? "none" : "block"; document.getElementById("menu-settings").style.display = connected ? "block" : "none"; document.getElementById("menu-export").style.display = connected ? "block" : "none"; document.getElementById("menu-logout").style.display = connected ? "block" : "none"; setTitle(); }
+    function parseCriteriaTokens(raw) { const t = asText(raw).toLowerCase(); const m = t.match(/(x|ix|viii|vii|vi|iv|v|iii|ii|i)/g) || []; const out = []; const seen = new Set(); for (const k of m) if (!seen.has(k)) { seen.add(k); out.push(k); } return out; }
+    function criteriaHtml(raw) { const tokens = parseCriteriaTokens(raw); if (!tokens.length) return "n/a"; return tokens.map(t => `<a href="${CRITERIA_URL}" target="_blank" rel="noopener" title="${asText(criteriaTitles[t] || "UNESCO criterion")}">(${t})</a>`).join(" "); }
+    function getVisitStatus(siteId) {
+      if (!(connected && profile)) return "not_visited";
+      profile.siteStatuses = profile.siteStatuses || {};
+      if (profile.siteStatuses[siteId]) return profile.siteStatuses[siteId];
+      if ((profile.visitedSiteIds || []).includes(siteId)) return "visited";
+      return "not_visited";
+    }
+    const isVisited = (siteId) => getVisitStatus(siteId) === "visited";
+    function getMultipleThreshold() {
+      const n = Number(connected && profile && profile.settings && profile.settings.multipleThreshold);
+      if (!Number.isFinite(n) || n < 1) return 5;
+      return Math.floor(n);
+    }
+    function rebuildComponentIndexes() {
+      componentCountByRootId = new Map();
+      highVolumeComponentSiteIds = new Set();
+      if (!whsData || !Array.isArray(whsData.features)) return;
+      for (const f of whsData.features) {
+        const p = f.properties || {};
+        const scope = asText(p.site_scope);
+        const siteId = asText(p.site_id);
+        if (scope === "whs") {
+          const count = Number(p.component_count);
+          if (siteId && Number.isFinite(count) && count > 0) componentCountByRootId.set(siteId, count);
+        }
+      }
+      const threshold = getMultipleThreshold();
+      for (const f of whsData.features) {
+        const p = f.properties || {};
+        if (asText(p.site_scope) !== "component") continue;
+        const siteId = asText(p.site_id);
+        const parentId = asText(p.parent_site_id);
+        const parentCount = Number(componentCountByRootId.get(parentId) || 0);
+        if (siteId && parentCount > threshold) highVolumeComponentSiteIds.add(siteId);
+      }
+    }
+    function isHighVolumeComponent(siteId) {
+      return highVolumeComponentSiteIds.has(asText(siteId));
+    }
+    function shouldShowSite(siteId) {
+      const onlyVisited = !!(connected && profile && profile.settings && profile.settings.visitedOnly);
+      const visited = isVisited(siteId);
+      if (onlyVisited && !visited) return false;
+      if (!isHighVolumeComponent(siteId)) return true;
+      if (visited) return true;
+      if (explicitVisibleSiteIds.has(siteId)) return true;
+      if ((lastSearchedSiteIds || []).includes(siteId)) return true;
+      if (selectedSiteId === siteId) return true;
+      return false;
+    }
+    const markerStyle = (siteId) => {
+      const s = getVisitStatus(siteId);
+      if (s === "visited") return { radius: 5, color: "#0d6b43", weight: 1, fillColor: "#1f8a55", fillOpacity: 0.85 };
+      if (s === "pending") return { radius: 5, color: "#9a6a00", weight: 1, fillColor: "#d69c00", fillOpacity: 0.85 };
+      if (s === "wont_visit") return { radius: 5, color: "#666", weight: 1, fillColor: "#999", fillOpacity: 0.75 };
+      return { radius: 5, color: "#0a4f8a", weight: 1, fillColor: "#1f77b4", fillOpacity: 0.85 };
+    };
+    function clearSelection() {
+      selectedSiteId = null;
+      ui.detailPane.style.display = "none";
+      ui.detailPane.innerHTML = "";
+      const mode = asText(ui.siteListMode.value);
+      const shouldRestoreList = (selectionContext === "list") || (selectionContext === "search") || mode === "searched" || mode === "visited" || mode === "all" || mode === "multiple";
+      if (shouldRestoreList) renderSiteList(mode);
+      selectionContext = "";
+    }
+    function latestVisitDate(siteId) {
+      const v = getSiteVisits(siteId);
+      return v.length ? normalizeDateOnly(v[0].date) : "";
+    }
+    function renderSiteList(mode) {
+      if (!whsData || !Array.isArray(whsData.features)) return;
+      if (!mode) {
+        currentListItems = [];
+        selectedSiteId = null;
+        ui.detailPane.style.display = "none";
+        ui.detailPane.innerHTML = "";
+        return;
+      }
+      let features = [];
+      if (mode === "visited") {
+        const ids = new Set(connected && profile ? Object.keys(profile.siteStatuses || {}).filter((k) => profile.siteStatuses[k] === "visited") : []);
+        features = whsData.features.filter((f) => ids.has(asText(f.properties && f.properties.site_id)));
+      } else if (mode === "multiple") {
+        features = whsData.features.filter((f) => isHighVolumeComponent(asText(f.properties && f.properties.site_id)));
+      } else if (mode === "searched") {
+        const ids = new Set(lastSearchedSiteIds || []);
+        features = whsData.features.filter((f) => ids.has(asText(f.properties && f.properties.site_id)));
+      } else {
+        features = whsData.features.filter((f) => !isHighVolumeComponent(asText(f.properties && f.properties.site_id))).slice(0, 1000);
+      }
+      features.sort((a, b) => {
+        const pa = a.properties || {};
+        const pb = b.properties || {};
+        const na = displayName(pa).toLowerCase();
+        const nb = displayName(pb).toLowerCase();
+        const da = dateSortKey(latestVisitDate(asText(pa.site_id)));
+        const db = dateSortKey(latestVisitDate(asText(pb.site_id)));
+        if (listSortBy === "date") {
+          if (listSortDir === "desc") return (db || "0000-00-00").localeCompare(da || "0000-00-00") || na.localeCompare(nb);
+          return (da || "9999-99-99").localeCompare(db || "9999-99-99") || na.localeCompare(nb);
+        }
+        if (listSortDir === "desc") return nb.localeCompare(na);
+        return na.localeCompare(nb);
+      });
+      currentListItems = features.map((f) => ({
+        site_id: asText(f.properties && f.properties.site_id),
+        name: displayName(f.properties || {}),
+        visited: formatVisitDateForDisplay(latestVisitDate(asText(f.properties && f.properties.site_id)))
+      }));
+      ui.detailPane.style.display = "block";
+      if (!features.length) {
+        ui.detailPane.innerHTML = `<div class="site-table-head"><span>Site</span><span>Visited</span></div><p class="meta">No sites in this list.</p>`;
+        return;
+      }
+      const rows = features.map((f) => {
+        const p = f.properties || {};
+        const sid = asText(p.site_id);
+        const nm = displayName(p);
+        const d = formatVisitDateForDisplay(latestVisitDate(sid));
+        return `<div class="site-row-grid"><a href="#" class="plain-link site-pick" data-site-id="${sid}" dir="auto" title="${nm}"><span class="site-name-clip">${nm}</span></a><span class="meta" dir="ltr">${d || ""}</span></div>`;
+      }).join("");
+      const nameDir = listSortBy === "name" ? (listSortDir === "asc" ? "↑" : "↓") : "";
+      const dateDir = listSortBy === "date" ? (listSortDir === "asc" ? "↑" : "↓") : "";
+      ui.detailPane.innerHTML = `<div class="site-list-wrap"><div class="site-table-head"><a href="#" id="sort-name">Site (${features.length}) ${nameDir}</a><a href="#" id="sort-date">Visited ${dateDir}</a></div>${rows}</div>`;
+      const sortName = document.getElementById("sort-name");
+      const sortDate = document.getElementById("sort-date");
+      if (sortName) sortName.addEventListener("click", (e) => { e.preventDefault(); if (listSortBy === "name") listSortDir = listSortDir === "asc" ? "desc" : "asc"; else { listSortBy = "name"; listSortDir = "asc"; } renderSiteList(mode); });
+      if (sortDate) sortDate.addEventListener("click", (e) => { e.preventDefault(); if (listSortBy === "date") listSortDir = listSortDir === "asc" ? "desc" : "asc"; else { listSortBy = "date"; listSortDir = "desc"; } renderSiteList(mode); });
+      ui.detailPane.querySelectorAll(".site-pick").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const id = asText(btn.getAttribute("data-site-id"));
+          explicitVisibleSiteIds.add(id);
+          selectionContext = "list";
+          zoomToSite(id);
+        });
+      });
+    }
+    async function copyCurrentList() {
+      if (!currentListItems.length) return alert("No list available to copy.");
+      const lines = ["Site\tVisited"];
+      for (const row of currentListItems) lines.push(`${row.name}\t${row.visited || ""}`);
+      try {
+        await navigator.clipboard.writeText(lines.join("\n"));
+        alert("List copied.");
+      } catch {
+        alert("Clipboard copy failed.");
+      }
+    }
+    async function copySnapshot() {
+      if (typeof html2canvas !== "function") return alert("Snapshot image capture is unavailable in this browser.");
+      showLoading("Capturing snapshot...");
+      try {
+        const canvas = await html2canvas(document.getElementById("map"), { useCORS: true, backgroundColor: "#ffffff", logging: false });
+        const blob = await new Promise((resolve, reject) => {
+          canvas.toBlob((b) => b ? resolve(b) : reject(new Error("Snapshot image encoding failed.")), "image/png");
+        });
+        if (navigator.clipboard && window.ClipboardItem) {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+            alert("Snapshot image copied.");
+            return;
+          } catch {}
+        }
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `my-world-heritage-snapshot-${Date.now()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+        alert("Snapshot image downloaded.");
+      } catch {
+        alert("Snapshot image failed.");
+      } finally {
+        hideLoading();
+      }
+    }
+    function renderDetail(feature) {
+      const p = feature.properties || {}; const siteId = asText(p.site_id); const name = displayName(p); const status = getVisitStatus(siteId); selectedSiteId = siteId;
+      const nativeName = detectNativeScriptName(p, name);
+      if (connected && profile && !profile.inspectedSiteIds.includes(siteId)) { profile.inspectedSiteIds.push(siteId); profile.usage.inspectCount = Number(profile.usage.inspectCount || 0) + 1; persistProfile(); }
+      const inscription = asText(p.inscription_date);
+      const note = asText(p.note || p.description);
+      const wiki = asText(p.wikipedia);
+      const wikiUrl = wiki && wiki.includes(":") ? `https://${wiki.replace(":", ".wikipedia.org/wiki/")}` : "";
+      const infoLines = [];
+      if (inscription) infoLines.push(`<strong>Inscription date:</strong> ${inscription}`);
+      const scope = asText(p.site_scope);
+      if (scope === "whs") {
+        const componentCount = Number(p.component_count || 0);
+        if (componentCount > 1) infoLines.push(`<strong>Multiple individual sites:</strong> yes (${componentCount})`);
+      } else if (scope === "component") {
+        const parentId = asText(p.parent_site_id);
+        const parentCount = Number(componentCountByRootId.get(parentId) || 0);
+        if (parentId) {
+          if (parentCount > 0) infoLines.push(`<strong>Component of WHS ${parentId}:</strong> ${parentCount} individual sites`);
+          else infoLines.push(`<strong>Component of WHS:</strong> ${parentId}`);
+        }
+      }
+      if (wikiUrl) infoLines.push(`<strong>Wikipedia:</strong> <a href="${wikiUrl}" target="_blank" rel="noopener">${wiki}</a>`);
+      if (note) infoLines.push(`<strong>Notes:</strong> ${note}`);
+      const visits = getSiteVisits(siteId);
+      const visitRows = visits.length ? visits.map((v) => {
+        const d = formatVisitDateForDisplay(v.date) || "No date";
+        const s = formatStatusLabel(asText(v.status) || "not_visited");
+        const nFull = asText(v.note).trim();
+        const n = truncateText(nFull, 72);
+        return `<div class="visited-row" data-visit-id="${asText(v.id)}" style="display:flex; justify-content:space-between; gap:8px;"><div><span>${d}</span> <span class="meta">${s}</span>${n ? ` <span class="meta visit-note-clip" title="${nFull}">${n}</span>` : ""}</div><div><a href="#" class="plain-link visit-edit" title="Edit visit" data-visit-id="${asText(v.id)}">&#9998;</a> <a href="#" class="plain-link visit-delete" title="Delete visit" data-visit-id="${asText(v.id)}">&#128465;</a></div></div>`;
+      }).join("") : '<div class="meta">No recorded visits for this site.</div>';
+      ui.detailPane.style.display = "block";
+      ui.detailPane.innerHTML = `<h3 style="margin:0 0 6px 0;"><a href="${asText(p.unesco_url)}" target="_blank" rel="noopener">${name}</a></h3>${nativeName ? `<div dir="auto" style="margin:0 0 6px 0;">${nativeName}</div>` : ""}<div class="muted">${siteIdCaption(feature)}</div><p><strong>Criteria:</strong> ${criteriaHtml(p.whc_criteria)}</p>${infoLines.length ? `<p>${infoLines.join("<br>")}</p>` : ""}<hr><h4 style="margin:10px 0 6px 0;">Visit log</h4><div id="visit-log-list">${visitRows}</div><div class="row" style="margin-top:8px;"><input id="visit-date" class="field" type="text" placeholder="YYYY-MM-DD, YYYY-MM, or YYYY"></div><div class="row"><select id="visit-entry-status" class="field"><option value="visited">Visited</option><option value="pending">Pending</option><option value="wont_visit">Won't visit</option><option value="not_visited">Not visited</option></select></div><div class="row"><textarea id="visit-note" class="field" rows="3" placeholder="Note"></textarea></div><div class="row" style="display:flex; gap:8px;"><button id="visit-save" class="btn primary" type="button">Save</button><button id="visit-cancel-edit" class="btn" type="button" style="display:none;">Cancel</button></div>`;
+      const visitDate = document.getElementById("visit-date");
+      const visitEntryStatus = document.getElementById("visit-entry-status");
+      const visitNote = document.getElementById("visit-note");
+      const visitSave = document.getElementById("visit-save");
+      const visitCancel = document.getElementById("visit-cancel-edit");
+      let editingVisitId = "";
+      visitEntryStatus.value = status === "not_visited" ? "visited" : status;
+      visitDate.value = defaultVisitDateValue();
+      function resetVisitEditor() {
+        editingVisitId = "";
+        visitDate.value = defaultVisitDateValue();
+        visitEntryStatus.value = status === "not_visited" ? "visited" : status;
+        visitNote.value = "";
+        visitCancel.style.display = "none";
+      }
+      visitSave.addEventListener("click", () => {
+        if (!(connected && profile)) return alert("Connect first.");
+        const d = normalizeDateOnly(visitDate.value);
+        if (!d) return alert("Please provide a visit date.");
+        saveSiteVisit(siteId, { id: editingVisitId, date: d, status: visitEntryStatus.value, note: visitNote.value });
+        refreshMarkers();
+        renderDetail(feature);
+      });
+      visitCancel.addEventListener("click", () => { resetVisitEditor(); });
+      visitDate.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); visitSave.click(); } });
+      visitNote.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") return;
+        if (e.shiftKey) return;
+        e.preventDefault();
+        visitSave.click();
+      });
+      ui.detailPane.querySelectorAll(".visit-edit").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          const vid = asText(a.getAttribute("data-visit-id"));
+          const item = visits.find((v) => asText(v.id) === vid);
+          if (!item) return;
+          editingVisitId = vid;
+          visitDate.value = normalizeDateOnly(item.date);
+          visitEntryStatus.value = asText(item.status) || "visited";
+          visitNote.value = asText(item.note);
+          visitCancel.style.display = "inline-block";
+        });
+      });
+      ui.detailPane.querySelectorAll(".visit-delete").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          const vid = asText(a.getAttribute("data-visit-id"));
+          deleteSiteVisit(siteId, vid);
+          refreshMarkers();
+          renderDetail(feature);
+        });
+      });
+    }
+    function refreshMarkers() { for (const [siteId, marker] of markersBySiteId.entries()) marker.setStyle(markerStyle(siteId)); applyVisitedOnlyFilter(); }
+    function applyVisitedOnlyFilter() {
+      if (!layer) return;
+      layer.eachLayer(marker => {
+        const siteId = asText(marker.feature && marker.feature.properties && marker.feature.properties.site_id);
+        const show = shouldShowSite(siteId);
+        if (show) {
+          if (!map.hasLayer(marker)) marker.addTo(map);
+        } else {
+          if (map.hasLayer(marker)) map.removeLayer(marker);
+        }
+      });
+    }
+    function zoomToSite(siteId) {
+      const marker = markersBySiteId.get(siteId);
+      if (!marker) return;
+      explicitVisibleSiteIds.add(asText(siteId));
+      refreshMarkers();
+      const focus = searchFocusBySiteId.get(asText(siteId));
+      if (focus && Number.isFinite(focus.lat) && Number.isFinite(focus.lon)) map.setView([focus.lat, focus.lon], 12);
+      else {
+        const ll = marker.getLatLng();
+        map.setView([ll.lat, ll.lng], 12);
+      }
+      renderDetail(marker.feature);
+    }
+    function canonicalPlaceName(display) {
+      return asText(display).split(",")[0].trim();
+    }
+    function compactPlaceLabel(display) {
+      const raw = asText(display);
+      const canonical = canonicalPlaceName(raw);
+      const bits = raw.split(",").map((s) => s.trim()).filter(Boolean);
+      const tail = bits.length ? bits[bits.length - 1] : "";
+      if (!tail || tail.toLowerCase() === canonical.toLowerCase()) return canonical;
+      return `${canonical} (${tail})`;
+    }
+    function renderLocationMatches(selectEl, matches) {
+      if (!matches.length) {
+        selectEl.style.display = "none";
+        selectEl.innerHTML = "";
+        return;
+      }
+      selectEl.style.display = "block";
+      selectEl.innerHTML = matches.map((r, i) => {
+        return `<option value="${i}">${compactPlaceLabel(r.display_name)}</option>`;
+      }).join("");
+      selectEl.selectedIndex = 0;
+    }
+    function setSelectedHome(lat, lon, label) {
+      selectedHome = { lat, lon, label };
+      ui.homeQuery.value = label;
+      ui.homeSelected.textContent = `Selected home location: ${label}`;
+      map.setView([lat, lon], 6);
+    }
+    function haversineKm(lat1, lon1, lat2, lon2) {
+      const toRad = (d) => (d * Math.PI) / 180;
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+      return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+    function getNearbySites(lat, lon, maxKm = 500) {
+      if (!whsData || !Array.isArray(whsData.features)) return [];
+      const rows = [];
+      for (const f of whsData.features) {
+        if (!f.geometry || f.geometry.type !== "Point") continue;
+        const flon = Number(f.geometry.coordinates[0]);
+        const flat = Number(f.geometry.coordinates[1]);
+        if (!Number.isFinite(flat) || !Number.isFinite(flon)) continue;
+        const d = haversineKm(lat, lon, flat, flon);
+        if (d <= maxKm) rows.push({ feature: f, distanceKm: d });
+      }
+      rows.sort((a, b) => a.distanceKm - b.distanceKm);
+      return rows;
+    }
+    function renderEnrolNearby(lat, lon) {
+      const near = getNearbySites(lat, lon, 500);
+      if (!near.length) {
+        ui.enrolNearbyList.innerHTML = '<div class="meta">No nearby sites found.</div>';
+        return;
+      }
+      ui.enrolNearbyList.innerHTML = "";
+      for (const row of near) {
+        const p = row.feature.properties || {};
+        const id = asText(p.site_id);
+        const name = displayName(p);
+        const el = document.createElement("label");
+        el.className = "visited-row";
+        el.innerHTML = `<input type="checkbox" data-site-id="${id}"> ${name}`;
+        ui.enrolNearbyList.appendChild(el);
+      }
+    }
+    function setEnrolHome(lat, lon, label) {
+      enrolSelectedHome = { lat, lon, label };
+      ui.enrolHomeQuery.value = label;
+      ui.enrolHomeSelected.textContent = `Selected home location: ${label}`;
+    }
+    async function searchHomeLocation() {
+      const q = asText(ui.homeQuery.value).trim();
+      if (!q) { ui.locStatus.textContent = "Enter a location to search."; return; }
+
+      if (homeMatches.length === 1 && canonicalPlaceName(homeMatches[0].display_name).toLowerCase() === q.toLowerCase()) {
+        setSelectedHome(Number(homeMatches[0].lat), Number(homeMatches[0].lon), canonicalPlaceName(homeMatches[0].display_name));
+        ui.locStatus.textContent = "Location selected.";
+        return;
+      }
+
+      ui.locStatus.textContent = "Searching...";
+      ui.homeMatchSelect.style.display = "none";
+      ui.homeMatchSelect.innerHTML = "";
+      homeMatches = [];
+
+      try {
+        showLoading("Loading ...");
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&q=${encodeURIComponent(q)}`);
+        if (!res.ok) return ui.locStatus.textContent = "Search failed.";
+        const results = await res.json();
+        if (!Array.isArray(results) || !results.length) return ui.locStatus.textContent = "No location matches found.";
+
+        homeMatches = results;
+        renderLocationMatches(ui.homeMatchSelect, results);
+        if (results.length === 1) {
+          setSelectedHome(Number(results[0].lat), Number(results[0].lon), canonicalPlaceName(results[0].display_name));
+          ui.locStatus.textContent = "Unique match found.";
+          return;
+        }
+        setSelectedHome(Number(results[0].lat), Number(results[0].lon), canonicalPlaceName(results[0].display_name));
+        ui.locStatus.textContent = "Select one match from the list.";
+      } catch (e) {
+        ui.locStatus.textContent = "Search failed: " + e.message;
+      } finally {
+        hideLoading();
+      }
+    }
+    async function searchEnrolHomeLocation() {
+      const q = asText(ui.enrolHomeQuery.value).trim();
+      if (!q) { ui.enrolLocStatus.textContent = "Enter a location to search."; return; }
+
+      if (enrolMatches.length === 1 && canonicalPlaceName(enrolMatches[0].display_name).toLowerCase() === q.toLowerCase()) {
+        const m = enrolMatches[0];
+        setEnrolHome(Number(m.lat), Number(m.lon), canonicalPlaceName(m.display_name));
+        ui.enrolLocStatus.textContent = "Location selected. Nearby sites listed.";
+        renderEnrolNearby(Number(m.lat), Number(m.lon));
+        return;
+      }
+
+      ui.enrolLocStatus.textContent = "Searching...";
+      ui.enrolHomeMatchSelect.style.display = "none";
+      ui.enrolHomeMatchSelect.innerHTML = "";
+      enrolMatches = [];
+
+      try {
+        showLoading("Loading ...");
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&q=${encodeURIComponent(q)}`);
+        if (!res.ok) return ui.enrolLocStatus.textContent = "Search failed.";
+        const results = await res.json();
+        if (!Array.isArray(results) || !results.length) return ui.enrolLocStatus.textContent = "No location matches found.";
+        enrolMatches = results;
+
+        renderLocationMatches(ui.enrolHomeMatchSelect, results);
+        if (results.length === 1) {
+          const m = results[0];
+          const label = canonicalPlaceName(m.display_name);
+          setEnrolHome(Number(m.lat), Number(m.lon), label);
+          ui.enrolLocStatus.textContent = "Unique match found. Nearby sites listed.";
+          renderEnrolNearby(Number(m.lat), Number(m.lon));
+          return;
+        }
+        setEnrolHome(Number(results[0].lat), Number(results[0].lon), canonicalPlaceName(results[0].display_name));
+        renderEnrolNearby(Number(results[0].lat), Number(results[0].lon));
+        ui.enrolLocStatus.textContent = "Select one match from the list.";
+      } catch (e) {
+        ui.enrolLocStatus.textContent = "Search failed: " + e.message;
+      } finally {
+        hideLoading();
+      }
+    }
+    function saveEnrolment() {
+      const name = asText(ui.enrolUserName.value).trim();
+      if (!name) return alert("Please provide a user name.");
+      if (!enrolSelectedHome) return alert("Please select a home location.");
+      profile = defaultProfile();
+      profile.name = name;
+      profile.homeLat = enrolSelectedHome.lat;
+      profile.homeLon = enrolSelectedHome.lon;
+      profile.homeLabel = enrolSelectedHome.label;
+      const seeded = [];
+      ui.enrolNearbyList.querySelectorAll("input[type='checkbox']:checked").forEach((c) => {
+        const id = asText(c.getAttribute("data-site-id"));
+        if (id) seeded.push(id);
+      });
+      profile.visitedSiteIds = Array.from(new Set(seeded)).sort();
+      profile.siteStatuses = profile.siteStatuses || {};
+      profile.siteVisits = profile.siteVisits || {};
+      for (const sid of profile.visitedSiteIds) profile.siteStatuses[sid] = "visited";
+      connected = true;
+      manuallyDisconnected = false;
+      persistProfile();
+      ui.enrolOverlay.style.display = "none";
+      updateUserUi();
+      refreshMarkers();
+      map.setView([profile.homeLat, profile.homeLon], 6);
+    }
+    function openEnrolment() {
+      ui.enrolOverlay.style.display = "flex";
+      ui.enrolUserName.value = "";
+      ui.enrolHomeQuery.value = "";
+      ui.enrolHomeMatchSelect.style.display = "none";
+      ui.enrolHomeMatchSelect.innerHTML = "";
+      ui.enrolNearbyList.innerHTML = '<div class="meta">Select a home location, then press Search to list nearby sites.</div>';
+      ui.enrolLocStatus.textContent = "";
+      ui.enrolHomeSelected.textContent = "";
+      enrolSelectedHome = null;
+      enrolMatches = [];
+    }
+    function openSettings(prefill = true) { ui.settingsOverlay.style.display = "flex"; if (prefill && profile) { ui.userName.value = asText(profile.name); if (Number.isFinite(profile.homeLat) && Number.isFinite(profile.homeLon)) setSelectedHome(profile.homeLat, profile.homeLon, asText(profile.homeLabel || "Saved home")); ui.visitedOnlySetting.checked = !!(profile.settings && profile.settings.visitedOnly); ui.dateFormat.value = asText(profile.settings && profile.settings.dateFormat) || "y-m-d"; ui.lengthUnits.value = asText(profile.settings && profile.settings.lengthUnits) || "km"; ui.multipleThreshold.value = String(Number(profile.settings && profile.settings.multipleThreshold) > 0 ? Number(profile.settings.multipleThreshold) : 5); ui.shareEnabled.checked = !!(profile.publishPreference && profile.publishPreference.enabled); ui.shareInterval.value = Number((profile.publishPreference && profile.publishPreference.intervalDays) || 30); ui.shareNone.checked = profile.publishPreference && profile.publishPreference.intervalDays == null; } }
+    function saveSettings() {
+      const name = asText(ui.userName.value).trim(); if (!name) return alert("Please provide a user name."); if (!selectedHome) return alert("Please select a home location."); if (!profile) profile = defaultProfile();
+      profile.schemaVersion = PROFILE_SCHEMA_VERSION; profile.name = name; profile.homeLat = selectedHome.lat; profile.homeLon = selectedHome.lon; profile.homeLabel = selectedHome.label; profile.visitedSiteIds = Array.from(new Set(profile.visitedSiteIds || [])).sort(); profile.siteStatuses = profile.siteStatuses || {}; profile.siteVisits = profile.siteVisits || {}; for (const sid of profile.visitedSiteIds) if (!profile.siteStatuses[sid]) profile.siteStatuses[sid] = "visited"; profile.inspectedSiteIds = Array.from(new Set(profile.inspectedSiteIds || [])).sort(); profile.settings = profile.settings || {}; profile.settings.visitedOnly = !!ui.visitedOnlySetting.checked; profile.settings.dateFormat = asText(ui.dateFormat.value) || "y-m-d"; profile.settings.lengthUnits = asText(ui.lengthUnits.value) || "km"; profile.settings.multipleThreshold = Math.max(1, Number(ui.multipleThreshold.value || 5)); profile.publishPreference = profile.publishPreference || {}; profile.publishPreference.enabled = !!ui.shareEnabled.checked; profile.publishPreference.intervalDays = ui.shareNone.checked ? null : Math.max(1, Number(ui.shareInterval.value || 30)); if (profile.publishPreference.consentAskedAtStartup == null) profile.publishPreference.consentAskedAtStartup = true; profile.magicCookie = profile.magicCookie || randomCookie(); profile.usage = profile.usage || { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 };
+      connected = true; manuallyDisconnected = false; persistProfile(); ui.settingsOverlay.style.display = "none"; updateUserUi(); rebuildComponentIndexes(); refreshMarkers(); renderSiteList(asText(ui.siteListMode.value)); applyScaleUnits();
+    }
+    function connectSilently() {
+      const raw = localStorage.getItem(PROFILE_KEY); if (!raw) { connected = false; profile = null; updateUserUi(); openEnrolment(); return; }
+      try { const parsed = JSON.parse(raw); const v = verifyProfile(parsed); if (!v.ok) throw new Error(v.reason); profile = parsed; profile.siteStatuses = profile.siteStatuses || {}; profile.siteVisits = profile.siteVisits || {}; profile.settings = profile.settings || {}; if (!profile.settings.dateFormat) profile.settings.dateFormat = "y-m-d"; if (!profile.settings.lengthUnits) profile.settings.lengthUnits = "km"; if (!(Number(profile.settings.multipleThreshold) > 0)) profile.settings.multipleThreshold = 5; for (const sid of (profile.visitedSiteIds || [])) if (!profile.siteStatuses[sid]) profile.siteStatuses[sid] = "visited"; connected = true; manuallyDisconnected = false; profile.usage.useCount = Number(profile.usage.useCount || 0) + 1; profile.usage.publishedUseCount = Number(profile.usage.publishedUseCount || 0); profile.usage.lastUseAt = nowIso(); const changedA = applyLegacyVisitBackfill(); const changedB = migrateLegacyDateParseBug(); if (changedA || changedB) profile.usage.lastUseAt = nowIso(); persistProfile(); } catch (e) { connected = false; profile = null; alert("Stored profile is incompatible: " + e.message + ". Please import a compatible file or reset."); }
+      updateUserUi(); rebuildComponentIndexes(); refreshMarkers(); applyScaleUnits(); ensureStartupConsentPrompt(); maybePromptPublishSummary();
+    }
+    function disconnect() { connected = false; profile = null; manuallyDisconnected = true; updateUserUi(); refreshMarkers(); clearSelection(); }
+    function exportProfile() {
+      if (!connected || !profile) return alert("No connected profile to export.");
+      const payload = { app: "My World Heritage", schemaVersion: PROFILE_SCHEMA_VERSION, exportedAt: nowIso(), profile };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `my-world-heritage-profile-${(profile.name || "user").replace(/\s+/g, "-").toLowerCase()}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    }
+    function importProfileFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const obj = JSON.parse(asText(reader.result));
+          if (obj && obj.schemaVersion === PROFILE_SCHEMA_VERSION && obj.profile) {
+            const v = verifyProfile(obj.profile); if (!v.ok) throw new Error(v.reason);
+            localStorage.setItem(PROFILE_KEY, JSON.stringify(obj.profile));
+            connectSilently();
+            return;
+          }
+          const legacy = buildProfileFromLegacyVisits(obj);
+          if (!legacy) throw new Error("Unsupported or invalid import format");
+          localStorage.setItem(PROFILE_KEY, JSON.stringify(legacy));
+          connectSilently();
+        } catch (e) { alert("Import failed: " + e.message); }
+      };
+      reader.readAsText(file);
+    }
+    function buildProfileFromLegacyVisits(obj) {
+      if (!obj || typeof obj !== "object") return null;
+      const features = [];
+      if (Array.isArray(obj.features)) {
+        for (const f of obj.features) features.push(f);
+      }
+      if (Array.isArray(obj.layers)) {
+        for (const layerObj of obj.layers) {
+          const layerFeatures = layerObj && layerObj.geojson && Array.isArray(layerObj.geojson.features) ? layerObj.geojson.features : [];
+          for (const f of layerFeatures) features.push(f);
+        }
+      }
+      if (!features.length) return null;
+      const p = defaultProfile();
+      p.name = "Imported";
+      for (const f of features) {
+        const pr = f && f.properties ? f.properties : {};
+        const siteId = asText(pr.ref_whc || pr.site_id).replace(/[^\d]/g, "");
+        if (!siteId) continue;
+        const status = asText(pr.status || "visited").trim().toLowerCase().replace(/\s+/g, "_");
+        const mappedStatus = ["visited", "pending", "wont_visit", "not_visited"].includes(status) ? status : "visited";
+        saveImportedVisit(p, siteId, {
+          id: crypto.randomUUID(),
+          date: normalizeDateOnly(pr.date) || nowIso().slice(0, 10),
+          status: mappedStatus,
+          note: asText(pr.note),
+          createdAt: nowIso(),
+          updatedAt: nowIso()
+        });
+      }
+      p.visitedSiteIds = Array.from(new Set(p.visitedSiteIds || [])).sort();
+      return p;
+    }
+    function saveImportedVisit(targetProfile, siteId, visit) {
+      targetProfile.siteVisits = targetProfile.siteVisits || {};
+      targetProfile.siteStatuses = targetProfile.siteStatuses || {};
+      targetProfile.visitedSiteIds = targetProfile.visitedSiteIds || [];
+      const list = Array.isArray(targetProfile.siteVisits[siteId]) ? targetProfile.siteVisits[siteId] : [];
+      list.push(visit);
+      targetProfile.siteVisits[siteId] = list;
+      targetProfile.siteStatuses[siteId] = visit.status;
+      if (visit.status === "visited" && !targetProfile.visitedSiteIds.includes(siteId)) targetProfile.visitedSiteIds.push(siteId);
+    }
+    function buildWhsSearchResults(query) {
+      const q = query.toLowerCase().trim();
+      const rows = [];
+      const legacyAliasesBySiteId = { "915": "sterkfontein cradle of humankind" };
+      for (const f of whsData.features || []) {
+        const p = f.properties || {};
+        const name = displayName(p);
+        const id = asText(p.site_id);
+        const country = asText(p.country).toLowerCase();
+        const nameNative = asText(p.name).toLowerCase();
+        const nameEnglish = asText(p.name_en).toLowerCase();
+        const aliasList = Array.isArray(p.aliases) ? p.aliases : [];
+        const aliases = aliasList.join(" ").toLowerCase();
+        const legacyAliases = asText(legacyAliasesBySiteId[id] || "");
+        const haystack = `${name.toLowerCase()} ${nameNative} ${nameEnglish} ${id.toLowerCase()} ${country} ${aliases} ${legacyAliases}`;
+        if (!haystack.includes(q)) continue;
+
+        let score = 0;
+        if (nameEnglish === q || nameNative === q) score += 100;
+        else if (nameEnglish.includes(q) || nameNative.includes(q)) score += 60;
+        if (country === q) score += 30;
+        else if (country.includes(q)) score += 15;
+        if (id === q) score += 90;
+        for (const a of aliasList) if (asText(a).toLowerCase().includes(q)) score += 50;
+        if (asText(legacyAliases).includes(q)) score += 40;
+
+        let matchedPoint = null;
+        const aliasPoints = Array.isArray(p.alias_points) ? p.alias_points : [];
+        for (const ap of aliasPoints) {
+          const aliasName = asText(ap && ap.name).toLowerCase();
+          if (!aliasName || !aliasName.includes(q)) continue;
+          const lat = Number(ap.lat); const lon = Number(ap.lon);
+          if (Number.isFinite(lat) && Number.isFinite(lon)) { matchedPoint = { lat, lon }; break; }
+        }
+
+        rows.push({ type: "whs", feature: f, title: name || "Unnamed site", subtitle: "World heritage site", score, matchedPoint });
+      }
+      rows.sort((a, b) => b.score - a.score || asText(a.title).localeCompare(asText(b.title)));
+      return rows;
+    }
+    async function buildGeoSearchResults(query) {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&q=${encodeURIComponent(query)}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.map(x => ({ type: "geo", lat: Number(x.lat), lon: Number(x.lon), bbox: Array.isArray(x.boundingbox) ? x.boundingbox.map(Number) : null, title: asText(x.display_name).split(",")[0], subtitle: asText(x.display_name) }));
+      } catch {
+        return [];
+      }
+    }
+    function findSitesInBBox(bbox) {
+      if (!bbox || bbox.length < 4 || !whsData || !Array.isArray(whsData.features)) return [];
+      const south = Number(bbox[0]); const north = Number(bbox[1]); const west = Number(bbox[2]); const east = Number(bbox[3]);
+      if (![south, north, west, east].every(Number.isFinite)) return [];
+      return whsData.features.filter((f) => {
+        if (!f.geometry || f.geometry.type !== "Point") return false;
+        const lon = Number(f.geometry.coordinates[0]);
+        const lat = Number(f.geometry.coordinates[1]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+        return lat >= south && lat <= north && lon >= west && lon <= east;
+      });
+    }
+    async function runSearch() {
+      const q = asText(ui.searchInput.value).trim(); if (!q) { lastSearchedSiteIds = []; searchFocusBySiteId.clear(); explicitVisibleSiteIds = new Set(); ui.searchResults.style.display = "none"; ui.searchResults.innerHTML = ""; refreshMarkers(); renderSiteList(asText(ui.siteListMode.value)); return; }
+      explicitVisibleSiteIds = new Set();
+      showLoading("Loading ...");
+      try {
+        const whsRows = buildWhsSearchResults(q);
+        const geoRows = await buildGeoSearchResults(q);
+        searchFocusBySiteId.clear();
+        for (const r of whsRows) {
+          const sid = asText(r.feature && r.feature.properties && r.feature.properties.site_id);
+          if (!sid || !r.matchedPoint) continue;
+          searchFocusBySiteId.set(sid, r.matchedPoint);
+        }
+        lastSearchedSiteIds = whsRows.map((r) => asText(r.feature && r.feature.properties && r.feature.properties.site_id)).filter(Boolean);
+        for (const sid of lastSearchedSiteIds) explicitVisibleSiteIds.add(sid);
+        refreshMarkers();
+        if (!lastSearchedSiteIds.length && geoRows.length && geoRows[0].bbox) {
+          const bboxMatches = findSitesInBBox(geoRows[0].bbox);
+          lastSearchedSiteIds = bboxMatches.map((f) => asText(f.properties && f.properties.site_id)).filter(Boolean);
+          for (const sid of lastSearchedSiteIds) explicitVisibleSiteIds.add(sid);
+          refreshMarkers();
+        }
+        const rows = [...whsRows.slice(0, 20), ...geoRows].slice(0, 24); ui.searchResults.innerHTML = "";
+        ui.siteListMode.value = "searched";
+        renderSiteList("searched");
+        if (whsRows.length === 1) {
+          const one = whsRows[0];
+          if (one.matchedPoint) map.setView([one.matchedPoint.lat, one.matchedPoint.lon], 10);
+          else {
+            const f = one.feature;
+            map.setView([Number(f.geometry.coordinates[1]), Number(f.geometry.coordinates[0])], 10);
+          }
+        } else if (rows.length === 1) {
+          const only = rows[0];
+          if (only.type === "geo") map.setView([only.lat, only.lon], 10);
+        }
+        for (const row of rows) { const div = document.createElement("div"); div.className = "result-row"; div.innerHTML = `<strong>${row.title}</strong><br><span class="result-meta">${row.subtitle}</span>`; div.addEventListener("click", () => { if (row.type === "whs") { const f = row.feature; const sid = asText(f && f.properties && f.properties.site_id); explicitVisibleSiteIds.add(sid); refreshMarkers(); selectionContext = "search"; if (row.matchedPoint) map.setView([row.matchedPoint.lat, row.matchedPoint.lon], 10); else map.setView([Number(f.geometry.coordinates[1]), Number(f.geometry.coordinates[0])], 10); renderDetail(f); } else { map.setView([row.lat, row.lon], 10); clearSelection(); } ui.searchResults.style.display = "none"; }); ui.searchResults.appendChild(div); }
+        ui.searchResults.style.display = rows.length ? "block" : "none";
+      } finally {
+        hideLoading();
+      }
+    }
+    function maybePromptPublishSummary() {
+      if (!connected || !profile || !(profile.publishPreference && profile.publishPreference.enabled)) return;
+      const intervalDays = profile.publishPreference.intervalDays; if (intervalDays == null) return;
+      const last = profile.publishPreference.lastPromptAt ? new Date(profile.publishPreference.lastPromptAt).getTime() : 0;
+      if (last && (Date.now() - last) < intervalDays * 86400000) return;
+      const summary = { date: nowIso().slice(0, 10), magic_cookie: profile.magicCookie, use_count_since_last_push: Math.max(0, Number(profile.usage.useCount || 0) - Number(profile.usage.publishedUseCount || 0)), total_site_count: Array.isArray(whsData && whsData.features) ? whsData.features.length : 0 };
+      const ok = confirm("Would you like to publish a pseudonymised usage summary to the project repository?\n\n" + JSON.stringify(summary, null, 2));
+      profile.publishPreference.lastPromptAt = nowIso(); persistProfile();
+      if (ok && navigator.clipboard) navigator.clipboard.writeText(JSON.stringify(summary, null, 2)).then(() => {
+        profile.usage.publishedUseCount = Number(profile.usage.useCount || 0);
+        persistProfile();
+        alert("Summary copied. Paste it into GitHub manually.");
+      });
+    }
+    function ensureStartupConsentPrompt() {
+      if (!connected || !profile) return;
+      profile.publishPreference = profile.publishPreference || { enabled: false, intervalDays: 30, lastPromptAt: null, consentAskedAtStartup: false };
+      if (profile.publishPreference.consentAskedAtStartup) return;
+      const ok = confirm("Allow monthly prompts to publish a pseudonymised usage summary to the project repository?");
+      profile.publishPreference.enabled = ok;
+      if (profile.publishPreference.intervalDays == null) profile.publishPreference.intervalDays = 30;
+      profile.publishPreference.consentAskedAtStartup = true;
+      persistProfile();
+    }
+    function closeTransientUi() {
+      ui.helpOverlay.style.display = "none";
+      ui.settingsOverlay.style.display = "none";
+      ui.enrolOverlay.style.display = "none";
+      ui.userMenu.style.display = "none";
+      ui.searchResults.style.display = "none";
+      selectionContext = "";
+      if (ui.detailPane.style.display !== "none") clearSelection();
+    }
+    function wireUi() {
+      document.getElementById("search-btn").addEventListener("click", runSearch);
+      document.getElementById("copy-list-btn").addEventListener("click", copyCurrentList);
+      document.getElementById("copy-snapshot-btn").addEventListener("click", copySnapshot);
+      ui.searchInput.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTransientUi(); if (e.key === "Enter") { e.preventDefault(); runSearch(); } });
+      ui.siteListMode.addEventListener("change", () => { renderSiteList(asText(ui.siteListMode.value)); });
+      ui.appTitleBtn.addEventListener("click", () => { ui.helpOverlay.style.display = "flex"; });
+      document.getElementById("help-close").addEventListener("click", () => { ui.helpOverlay.style.display = "none"; });
+      ui.userMenuToggle.addEventListener("click", () => { ui.userMenu.style.display = ui.userMenu.style.display === "block" ? "none" : "block"; });
+      window.addEventListener("click", (e) => { if (!document.getElementById("user-menu-wrap").contains(e.target)) ui.userMenu.style.display = "none"; });
+      document.getElementById("menu-connect").addEventListener("click", () => { connectSilently(); ui.userMenu.style.display = "none"; });
+      document.getElementById("menu-settings").addEventListener("click", () => { openSettings(true); ui.userMenu.style.display = "none"; });
+      document.getElementById("menu-export").addEventListener("click", () => { exportProfile(); ui.userMenu.style.display = "none"; });
+      document.getElementById("menu-import").addEventListener("click", () => { ui.importFile.click(); ui.userMenu.style.display = "none"; });
+      if (ui.menuReset && flags.resetEnabled) ui.menuReset.addEventListener("click", () => { if (!confirm("Reset local test data and reload?")) return; localStorage.removeItem(PROFILE_KEY); localStorage.removeItem(CENSUS_KEY); location.reload(); });
+      document.getElementById("menu-logout").addEventListener("click", () => { disconnect(); ui.userMenu.style.display = "none"; });
+      ui.importFile.addEventListener("change", () => { const f = ui.importFile.files && ui.importFile.files[0]; if (f) importProfileFile(f); ui.importFile.value = ""; });
+      document.getElementById("home-search").addEventListener("click", searchHomeLocation);
+      ui.homeQuery.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); searchHomeLocation(); } });
+      document.getElementById("use-my-location").addEventListener("click", () => { if (!navigator.geolocation) { ui.locStatus.textContent = "Geolocation not supported."; return; } ui.locStatus.textContent = "Locating..."; navigator.geolocation.getCurrentPosition((pos) => { setSelectedHome(pos.coords.latitude, pos.coords.longitude, "Current device location"); ui.homeMatchSelect.style.display = "none"; ui.homeMatchSelect.innerHTML = ""; homeMatches = []; ui.locStatus.textContent = "Location set."; }, (err) => { ui.locStatus.textContent = "Location failed: " + err.message; }, { timeout: 10000, maximumAge: 300000 }); });
+      ui.homeMatchSelect.addEventListener("change", () => {
+        const idx = Number(ui.homeMatchSelect.value);
+        if (!Number.isFinite(idx) || !homeMatches[idx]) return;
+        const r = homeMatches[idx];
+        setSelectedHome(Number(r.lat), Number(r.lon), canonicalPlaceName(r.display_name));
+        ui.locStatus.textContent = "Location selected.";
+      });
+      ui.shareInfoLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        ui.shareInfoBubble.style.display = ui.shareInfoBubble.style.display === "block" ? "none" : "block";
+      });
+      document.getElementById("enrol-home-search").addEventListener("click", searchEnrolHomeLocation);
+      ui.enrolHomeQuery.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); searchEnrolHomeLocation(); } });
+      document.getElementById("enrol-use-my-location").addEventListener("click", () => {
+        if (!navigator.geolocation) { ui.enrolLocStatus.textContent = "Geolocation not supported."; return; }
+        ui.enrolLocStatus.textContent = "Locating...";
+        navigator.geolocation.getCurrentPosition((pos) => {
+          setEnrolHome(pos.coords.latitude, pos.coords.longitude, "Current device location");
+          ui.enrolHomeMatchSelect.style.display = "none";
+          ui.enrolHomeMatchSelect.innerHTML = "";
+          enrolMatches = [];
+          ui.enrolLocStatus.textContent = "Location selected. Nearby sites listed.";
+          renderEnrolNearby(pos.coords.latitude, pos.coords.longitude);
+        }, (err) => { ui.enrolLocStatus.textContent = "Location failed: " + err.message; }, { timeout: 10000, maximumAge: 300000 });
+      });
+      ui.enrolHomeMatchSelect.addEventListener("change", () => {
+        const idx = Number(ui.enrolHomeMatchSelect.value);
+        if (!Number.isFinite(idx) || !enrolMatches[idx]) return;
+        const r = enrolMatches[idx];
+        setEnrolHome(Number(r.lat), Number(r.lon), canonicalPlaceName(r.display_name));
+        ui.enrolLocStatus.textContent = "Location selected. Nearby sites listed.";
+        renderEnrolNearby(Number(r.lat), Number(r.lon));
+      });
+      document.getElementById("enrol-save").addEventListener("click", saveEnrolment);
+      document.getElementById("settings-save").addEventListener("click", saveSettings);
+      map.on("click", () => {
+        if (Date.now() < ignoreMapClickUntil) return;
+        clearSelection();
+      });
+      document.addEventListener("keydown", (ev) => { if (ev.key !== "Escape") return; closeTransientUi(); });
+      map.on("moveend", () => {
+        const c = map.getCenter();
+        localStorage.setItem(MAP_VIEW_KEY, JSON.stringify({ lat: c.lat, lon: c.lng, zoom: map.getZoom() }));
+      });
+    }
+    function updateExtractStatus(status) {
+      if (!status || typeof status !== "object") return;
+      ui.extractStatusResult.textContent = asText(status.result) || "Unknown";
+      ui.extractStatusSource.textContent = asText(status.source) || "-";
+      ui.extractStatusCount.textContent = asText(status.count) || "-";
+      ui.extractStatusInput.textContent = status.input_bytes == null ? "-" : `${status.input_bytes} bytes`;
+      ui.extractStatusSize.textContent = status.dataset_bytes == null ? "-" : `${status.dataset_bytes} bytes`;
+      ui.extractStatusDataAt.textContent = asText(status.most_recent_data) || "-";
+      ui.extractStatusAttemptAt.textContent = asText(status.most_recent_attempt) || "-";
+      ui.extractStatusRetry.textContent = status.retry_interval_days == null ? "-" : `every ${status.retry_interval_days} days`;
+    }
+
+    function bootData() {
+      showLoading("Loading ...");
+      fetch("../data/current/unesco_official_sites.json").then(r => r.json()).then(statusData => {
+        updateExtractStatus(statusData && statusData.metadata && statusData.metadata.extract_status);
+      }).catch(() => {});
+      fetch("../data/current/unesco_official_sites.geojson").then(r => r.json()).then(data => {
+        whsData = data;
+        updateExtractStatus(data && data.metadata && data.metadata.extract_status);
+        layer = L.geoJSON(data, {
+          pointToLayer: (feature, latlng) => L.circleMarker(latlng, markerStyle(asText(feature && feature.properties && feature.properties.site_id))),
+          onEachFeature: (feature, marker) => {
+            const siteId = asText(feature && feature.properties && feature.properties.site_id);
+            markersBySiteId.set(siteId, marker);
+            marker.bindTooltip(tooltipContent(feature), { direction: "top", opacity: 0.95 });
+            marker.on("click", (ev) => {
+              ignoreMapClickUntil = Date.now() + 250;
+              selectionContext = "map";
+              renderDetail(feature);
+              if (ev && ev.originalEvent) L.DomEvent.stop(ev.originalEvent);
+            });
+            marker.on("dblclick", (ev) => {
+              if (!(connected && profile)) return;
+              const current = getVisitStatus(siteId);
+              setVisitStatus(siteId, current === "visited" ? "not_visited" : "visited");
+              refreshMarkers();
+              if (selectedSiteId === siteId) renderDetail(feature);
+              if (ev && ev.originalEvent) L.DomEvent.stop(ev.originalEvent);
+            });
+          }
+        }).addTo(map);
+        rebuildComponentIndexes();
+        const savedViewRaw = localStorage.getItem(MAP_VIEW_KEY);
+        let restored = false;
+        if (savedViewRaw) {
+          try {
+            const saved = JSON.parse(savedViewRaw);
+            if (Number.isFinite(saved.lat) && Number.isFinite(saved.lon) && Number.isFinite(saved.zoom)) {
+              map.setView([saved.lat, saved.lon], saved.zoom);
+              restored = true;
+            }
+          } catch {}
+        }
+        if (!restored) {
+          if (layer.getLayers && layer.getLayers().length) map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+          else map.setView([20, 0], 2);
+        }
+        incrementCensusUse();
+        connectSilently();
+        refreshMarkers();
+        if (!connected && !localStorage.getItem(PROFILE_KEY)) openEnrolment();
+        hideLoading();
+      }).catch(err => { hideLoading(); ui.detailPane.style.display = "block"; ui.detailPane.innerHTML = `<p>Failed to load local data: ${asText(err)}</p>`; });
+    }
+    applyFeatureFlags();
+    wireUi();
+    updateUserUi();
+    applyScaleUnits();
+    bootData();
+  </script>
+</body>
+</html>

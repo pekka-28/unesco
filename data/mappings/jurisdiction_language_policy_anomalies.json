@@ -1,0 +1,228 @@
+﻿{
+    "schema":  "my-world-heritage-jurisdiction-language-policy-anomalies/v1",
+    "generated_at":  "2026-03-28T20:21:20Z",
+    "deterministic_for_fixed_inputs":  true,
+    "sources":  {
+                    "unesco_input":  {
+                                         "path":  "data/staging/unesco_source_raw.txt",
+                                         "size_bytes":  23578721,
+                                         "sha256":  "e1e99b08c87f355ea299bc4a4c35e7e5acea607ea5130b1ade85c1309b242e72"
+                                     },
+                    "cldr_territory_language":  {
+                                                    "path":  "data/staging/cldr_language_territory_information.txt",
+                                                    "size_bytes":  68499,
+                                                    "sha256":  "a6ac77dff3cbfe9b7cf08e8b096f208850b3c85cfb9c256164155c36896c541e"
+                                                },
+                    "cldr_likely_subtags":  {
+                                                "path":  "data/staging/cldr_likelySubtags.json",
+                                                "size_bytes":  220093,
+                                                "sha256":  "38345946ad457213fb39e9645ab50f36b61681bf674b2eef2979a3b58d04afc8"
+                                            }
+                },
+    "anomaly_count":  29,
+    "anomalies":  [
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "AF",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  4,
+                          "official_selected_count":  3
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "AT",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  4,
+                          "official_selected_count":  1
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "BA",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  5,
+                          "official_selected_count":  3
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "CA",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  9,
+                          "official_selected_count":  4
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "CD",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  5,
+                          "official_selected_count":  4
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "CH",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  5,
+                          "official_selected_count":  3
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "CN",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  6,
+                          "official_selected_count":  1
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "DE",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  2,
+                          "official_selected_count":  1
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "DK",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  3,
+                          "official_selected_count":  2
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "ES",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  6,
+                          "official_selected_count":  3
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "FI",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  3,
+                          "official_selected_count":  2
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "GB",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  4,
+                          "official_selected_count":  1
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "GE",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  3,
+                          "official_selected_count":  1
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "GH",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  4,
+                          "official_selected_count":  3
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "GT",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  8,
+                          "official_selected_count":  3
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "IN",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  22,
+                          "official_selected_count":  5
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "IQ",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  3,
+                          "official_selected_count":  2
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "IT",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  3,
+                          "official_selected_count":  2
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "MA",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  3,
+                          "official_selected_count":  2
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "NA",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  1,
+                          "official_selected_count":  0
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "NL",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  2,
+                          "official_selected_count":  1
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "PH",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  9,
+                          "official_selected_count":  3
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "PL",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  4,
+                          "official_selected_count":  2
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "RS",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  7,
+                          "official_selected_count":  3
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "RU",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  21,
+                          "official_selected_count":  4
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "SI",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  2,
+                          "official_selected_count":  1
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "SN",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  13,
+                          "official_selected_count":  4
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "UG",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  2,
+                          "official_selected_count":  1
+                      },
+                      {
+                          "type":  "official_languages_truncated",
+                          "jurisdiction_iso":  "ZA",
+                          "message":  "Selection cap omitted some CLDR official/de-facto/regional official languages.",
+                          "official_candidate_count":  11,
+                          "official_selected_count":  4
+                      }
+                  ]
+}

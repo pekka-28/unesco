@@ -1,0 +1,106 @@
+﻿name: Local Name Maintenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_url:
+        description: "UNESCO source URL"
+        required: false
+        default: "https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json"
+      min_confidence_apply:
+        description: "Minimum confidence to apply updates"
+        required: false
+        default: "0.97"
+      apply_updates:
+        description: "Apply eligible updates to local_name_table.json"
+        required: false
+        default: "false"
+      enable_wikipedia_fallback:
+        description: "Enable Wikipedia fallback proposals"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+jobs:
+  local_names:
+    runs-on: windows-latest
+    env:
+      SOURCE_URL: ${{ github.event.inputs.source_url || 'https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json' }}
+      MIN_CONFIDENCE: ${{ github.event.inputs.min_confidence_apply || '0.97' }}
+      APPLY_UPDATES: ${{ github.event.inputs.apply_updates || 'false' }}
+      WIKI_FALLBACK: ${{ github.event.inputs.enable_wikipedia_fallback || 'false' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch UNESCO official dataset
+        shell: pwsh
+        run: |
+          ./scripts/fetch_unesco_official.ps1 `
+            -SourceUrl "${{ env.SOURCE_URL }}" `
+            -RawOutputFile "data/staging/unesco_source_raw.txt"
+
+      - name: Update local-name table
+        shell: pwsh
+        run: |
+          $apply = "${{ env.APPLY_UPDATES }}" -eq "true"
+          $wiki = "${{ env.WIKI_FALLBACK }}" -eq "true"
+          $outTable = if ($apply) { "data/mappings/local_name_table.json" } else { "data/mappings/local_name_table.proposed.json" }
+          if ($apply) {
+            ./scripts/update_local_name_table.ps1 `
+              -InputFile "data/staging/unesco_source_raw.txt" `
+              -SourceUrl "${{ env.SOURCE_URL }}" `
+              -OverpassCacheDir "archive/overpass_legacy/data/cache" `
+              -LocalNameTableFile "data/mappings/local_name_table.json" `
+              -OutputTableFile $outTable `
+              -SuggestionsOutputFile "data/mappings/local_name_suggestions.json" `
+              -MinConfidenceApply "${{ env.MIN_CONFIDENCE }}" `
+              -Apply:$true `
+              -EnableWikipediaFallback:$wiki
+          } else {
+            ./scripts/update_local_name_table.ps1 `
+              -InputFile "data/staging/unesco_source_raw.txt" `
+              -SourceUrl "${{ env.SOURCE_URL }}" `
+              -OverpassCacheDir "archive/overpass_legacy/data/cache" `
+              -LocalNameTableFile "data/mappings/local_name_table.json" `
+              -OutputTableFile $outTable `
+              -SuggestionsOutputFile "data/mappings/local_name_suggestions.json" `
+              -MinConfidenceApply "${{ env.MIN_CONFIDENCE }}" `
+              -EnableWikipediaFallback:$wiki
+          }
+
+      - name: Check local-name coverage
+        shell: pwsh
+        run: |
+          $apply = "${{ env.APPLY_UPDATES }}" -eq "true"
+          $table = if ($apply) { "data/mappings/local_name_table.json" } else { "data/mappings/local_name_table.proposed.json" }
+          ./scripts/check_local_name_coverage.ps1 `
+            -InputFile "data/staging/unesco_source_raw.txt" `
+            -LocalNameTableFile $table `
+            -OutputFile "data/mappings/local_name_coverage.json"
+
+      - name: Upload local-name artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-name-maintenance
+          path: |
+            data/mappings/local_name_suggestions.json
+            data/mappings/local_name_coverage.json
+            data/mappings/local_name_table.proposed.json
+
+      - name: Commit applied updates
+        if: env.APPLY_UPDATES == 'true'
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/mappings/local_name_table.json data/mappings/local_name_coverage.json data/mappings/local_name_suggestions.json data/staging/unesco_source_raw.txt
+          if (git diff --cached --quiet) {
+            Write-Host "No changes to commit."
+          } else {
+            git commit -m "chore: update local-name mapping table"
+            git push
+          }
+
