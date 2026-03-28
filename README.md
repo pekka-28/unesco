@@ -19,7 +19,8 @@ It exists to make site tracking practical without paywalls, advertising pressure
 
 ## Entry points
 
-- Application entry file: [site/index.html](site/index.html)
+- Application: [My World Heritage](https://pekka-28.github.io/unesco/site/)
+- Source entry file: [site/index.html](site/index.html)
 - Requirements and design decisions: [Requirements.md](Requirements.md)
 
 ## Project detail
