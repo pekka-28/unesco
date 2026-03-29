@@ -1,4 +1,4 @@
-# convert_unesco_source.ps1 0.1.4
+# convert_unesco_source.ps1 0.1.5
 param(
   [string]$InputFile = "data/staging/unesco_source_raw.txt",
   [string]$SourceUrl = "https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json",
@@ -30,6 +30,26 @@ $trim = $raw.TrimStart()
 if ($trim -match "^(<html|<!doctype html)") { throw "Input source file contains HTML/challenge content, not dataset payload." }
 
 function IsFiniteDouble { param([double]$Value) return (-not [double]::IsNaN($Value)) -and (-not [double]::IsInfinity($Value)) }
+
+function To-WhsKey {
+  param([string]$Value)
+  $raw = [string]$Value
+  if ([string]::IsNullOrWhiteSpace($raw)) { return "" }
+  $m = [regex]::Match($raw.Trim(), '^(?:WHS\s+)?(\d+)$', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+  if (-not $m.Success) { return $raw.Trim() }
+  $n = [int]$m.Groups[1].Value
+  return "WHS $n"
+}
+
+function To-WhsNumber {
+  param([string]$Value)
+  $raw = [string]$Value
+  if ([string]::IsNullOrWhiteSpace($raw)) { return "" }
+  $m = [regex]::Match($raw.Trim(), '^(?:WHS\s+)?(\d+)$', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+  if (-not $m.Success) { return $raw.Trim() }
+  $n = [int]$m.Groups[1].Value
+  return [string]$n
+}
 
 function Clean-Text {
   param([string]$Value)
@@ -179,9 +199,10 @@ function Build-FeatureCollectionFromOdsArray {
   $features = New-Object System.Collections.Generic.List[object]
   foreach ($row in @($Rows)) {
     if (-not $row) { continue }
-    $siteId = [string]$row.id_no
-    if ([string]::IsNullOrWhiteSpace($siteId)) { $siteId = [string]$row.number }
-    if ([string]::IsNullOrWhiteSpace($siteId)) { continue }
+    $sourceSiteId = [string]$row.id_no
+    if ([string]::IsNullOrWhiteSpace($sourceSiteId)) { $sourceSiteId = [string]$row.number }
+    if ([string]::IsNullOrWhiteSpace($sourceSiteId)) { continue }
+    $siteId = To-WhsKey -Value $sourceSiteId
 
     $name = Clean-Text -Value ([string]$row.name_en)
     if ([string]::IsNullOrWhiteSpace($name)) { $name = Clean-Text -Value ([string]$row.name_fr) }
@@ -202,7 +223,9 @@ function Build-FeatureCollectionFromOdsArray {
 
     $componentPoints = @(Parse-ComponentPoints -ComponentsText ([string]$row.components_list))
     $nativeNames = $null
-    if ($NativeNameMap.ContainsKey($siteId)) {
+    if ($NativeNameMap.ContainsKey($sourceSiteId)) {
+      $nativeNames = Normalize-NativeNames -Value $NativeNameMap[$sourceSiteId]
+    } elseif ($NativeNameMap.ContainsKey($siteId)) {
       $nativeNames = Normalize-NativeNames -Value $NativeNameMap[$siteId]
     } else {
       # Quality guard: avoid injecting uncurated multilingual text from source rows.
@@ -219,7 +242,7 @@ function Build-FeatureCollectionFromOdsArray {
         name_en = $name
         site_scope = "whs"
         status = "active"
-        unesco_url = "https://whc.unesco.org/en/list/$siteId/"
+        unesco_url = "https://whc.unesco.org/en/list/$sourceSiteId/"
         country = if ($row.states_names) { Clean-Text -Value ((@($row.states_names) | ForEach-Object { Clean-Text -Value ([string]$_) }) -join ", ") } else { "" }
         inscription_date = Clean-Text -Value ([string]$row.date_inscribed)
         category = Clean-Text -Value ([string]$row.category)
@@ -237,7 +260,7 @@ function Build-FeatureCollectionFromOdsArray {
       $idx = 1
       foreach ($cp in $componentPoints) {
         if (-not $cp) { continue }
-        $componentId = ("MWH {0}-{1:000}" -f $siteId, $idx)
+        $componentId = ("MWH {0}-{1:000}" -f (To-WhsNumber -Value $sourceSiteId), $idx)
         $componentName = Clean-Text -Value ([string]$cp.name)
         if ([string]::IsNullOrWhiteSpace($componentName)) { $componentName = "$name component $idx" }
         $features.Add([ordered]@{
@@ -252,7 +275,7 @@ function Build-FeatureCollectionFromOdsArray {
             name = "$name - $componentName"
             name_en = "$name - $componentName"
             status = "active"
-            unesco_url = "https://whc.unesco.org/en/list/$siteId/"
+            unesco_url = "https://whc.unesco.org/en/list/$sourceSiteId/"
             country = if ($row.states_names) { Clean-Text -Value ((@($row.states_names) | ForEach-Object { Clean-Text -Value ([string]$_) }) -join ", ") } else { "" }
             inscription_date = Clean-Text -Value ([string]$row.date_inscribed)
             category = Clean-Text -Value ([string]$row.category)

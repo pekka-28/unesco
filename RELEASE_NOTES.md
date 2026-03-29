@@ -1,7 +1,24 @@
-<!-- RELEASE_NOTES.md 0.1.7 -->
+<!-- RELEASE_NOTES.md 0.1.8 -->
 # Release notes
 
 This file tracks published updates with version numbers.
+
+## Version 0.1.8 (2026-03-29)
+
+- Refined summary report presentation:
+- removed map mode helper sentence,
+- switched to a single-wrap deterministic world map render (no ellipse clipping or tile-wrap artefacts),
+- renamed section heading to `Visited sites`,
+- improved table wrapping/column sizing for long country values.
+- Added `Prepared with My World Heritage` link in exported summary report.
+- Updated report table fields:
+- removed separate `WHS id` column,
+- `Site id` renamed to `Site`,
+- numeric root keys rendered as `WHS <id>`,
+- `Latest visit` renamed to `Visited`,
+- MWH keys rendered with non-breaking hyphen in report output.
+- Added runtime canonical key normalisation so root keys are treated as `WHS <id>` across loaded dataset/profile usage (not only report formatting).
+- Updated conversion script to emit canonical `WHS <id>` root keys for newly generated datasets.
 
 ## Version 0.1.7 (2026-03-29)
 

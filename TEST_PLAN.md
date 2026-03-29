@@ -1,7 +1,7 @@
-<!-- TEST_PLAN.md 0.1.7 -->
+<!-- TEST_PLAN.md 0.1.8 -->
 # Integration test plan
 
-Version scope: `0.1.7`
+Version scope: `0.1.8`
 
 This plan validates backend ingest, frontend submit flow, and workbook outputs for all supported `event_type` values.
 

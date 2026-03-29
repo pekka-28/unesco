@@ -1,4 +1,4 @@
-<!-- Requirements.md 0.1.7 -->
+<!-- Requirements.md 0.1.8 -->
 # UNESCO World heritage GIS requirements
 
 ## Product intent
@@ -55,6 +55,7 @@ Figure 1. My World Heritage data and application architecture.
 - Maintain canonical UNESCO official site dataset with periodic automated refresh.
 - Split refresh into staged source load and local conversion steps so conversion always operates on a local file copy.
 - Maintain extracted one-record-per-root-WHS dataset for map consumption.
+- Use canonical root site identifiers in `WHS <id>` form in converted datasets.
 - Maintain generated component-level synthetic sites (`MWH <WHS id>-<nnn>`) for UNESCO multi-location properties while preserving original UNESCO WHS entries unchanged.
 - Do not generate synthetic component sites when only one component point exists; keep that case on the root WHS record only.
 - Preserve retired/delisted sites with explicit `status`.
