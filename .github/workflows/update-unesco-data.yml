@@ -128,15 +128,41 @@ jobs:
             git push
           }
 
+      - name: Evaluate alert configuration
+        id: alert_gate
+        if: steps.gate.outputs.failed == 'true'
+        shell: pwsh
+        env:
+          ALERT_SMTP_SERVER: ${{ secrets.MWH_ALERT_SMTP_SERVER }}
+          ALERT_SMTP_PORT: ${{ secrets.MWH_ALERT_SMTP_PORT }}
+          ALERT_SMTP_USERNAME: ${{ secrets.MWH_ALERT_SMTP_USERNAME }}
+          ALERT_SMTP_PASSWORD: ${{ secrets.MWH_ALERT_SMTP_PASSWORD }}
+          ALERT_MAIL_TO: ${{ secrets.MWH_ALERT_MAIL_TO }}
+          ALERT_MAIL_FROM: ${{ secrets.MWH_ALERT_MAIL_FROM }}
+        run: |
+          $required = @{
+            ALERT_SMTP_SERVER = $env:ALERT_SMTP_SERVER
+            ALERT_SMTP_PORT = $env:ALERT_SMTP_PORT
+            ALERT_SMTP_USERNAME = $env:ALERT_SMTP_USERNAME
+            ALERT_SMTP_PASSWORD = $env:ALERT_SMTP_PASSWORD
+            ALERT_MAIL_TO = $env:ALERT_MAIL_TO
+            ALERT_MAIL_FROM = $env:ALERT_MAIL_FROM
+          }
+          $missing = @($required.GetEnumerator() | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.Value) } | ForEach-Object { $_.Key })
+          $ready = ($missing.Count -eq 0)
+          "smtp_ready=$($ready.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "missing=$($missing -join ',')" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
       - name: Warn when alert email secrets are missing
-        if: steps.gate.outputs.failed == 'true' && (secrets.MWH_ALERT_SMTP_SERVER == '' || secrets.MWH_ALERT_SMTP_PORT == '' || secrets.MWH_ALERT_SMTP_USERNAME == '' || secrets.MWH_ALERT_SMTP_PASSWORD == '' || secrets.MWH_ALERT_MAIL_TO == '' || secrets.MWH_ALERT_MAIL_FROM == '')
+        if: steps.gate.outputs.failed == 'true' && steps.alert_gate.outputs.smtp_ready != 'true'
         shell: pwsh
         run: |
           Write-Warning "UNESCO refresh failed, but SMTP/mail secrets are not fully configured. No alert email sent."
+          Write-Warning "Missing: ${{ steps.alert_gate.outputs.missing }}"
           Write-Warning "Required secrets: MWH_ALERT_SMTP_SERVER, MWH_ALERT_SMTP_PORT, MWH_ALERT_SMTP_USERNAME, MWH_ALERT_SMTP_PASSWORD, MWH_ALERT_MAIL_TO, MWH_ALERT_MAIL_FROM."
 
       - name: Send failure alert email
-        if: steps.gate.outputs.failed == 'true' && secrets.MWH_ALERT_SMTP_SERVER != '' && secrets.MWH_ALERT_SMTP_PORT != '' && secrets.MWH_ALERT_SMTP_USERNAME != '' && secrets.MWH_ALERT_SMTP_PASSWORD != '' && secrets.MWH_ALERT_MAIL_TO != '' && secrets.MWH_ALERT_MAIL_FROM != ''
+        if: steps.gate.outputs.failed == 'true' && steps.alert_gate.outputs.smtp_ready == 'true'
         uses: dawidd6/action-send-mail@v3
         continue-on-error: true
         with:
