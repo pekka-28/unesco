@@ -3,7 +3,15 @@ const PROPS = PropertiesService.getScriptProperties();
 const FALLBACK_ALLOWED_SPREADSHEET_ID = '';
 const FALLBACK_ALLOWED_SPREADSHEET_NAME = '';
 
-function doGet() {
+function doGet(e) {
+  const isStats = e && e.parameter && /^(1|true|yes|on)$/i.test(String(e.parameter.stats || '').trim());
+  if (isStats) {
+    enforceWorkbookBinding_();
+    const days = getConfiguredStatsWindowDays_();
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: true, service: 'my-world-heritage-usage-summary', stats: buildRecentStats_(days) }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true, service: 'my-world-heritage-usage-summary' }))
     .setMimeType(ContentService.MimeType.JSON);
@@ -17,16 +25,18 @@ function doPost(e) {
     validateToken_(payload);
     validatePayload_(payload);
     enforceRateLimits_(payload);
+    const statsWindowDays = getConfiguredStatsWindowDays_();
     if (isDuplicate_(payload)) {
       return ContentService
-        .createTextOutput(JSON.stringify({ ok: true, duplicate: true }))
+        .createTextOutput(JSON.stringify({ ok: true, duplicate: true, stats: buildRecentStats_(statsWindowDays) }))
         .setMimeType(ContentService.MimeType.JSON);
     }
     appendSubmission_(payload);
     return ContentService
-      .createTextOutput(JSON.stringify({ ok: true }))
+      .createTextOutput(JSON.stringify({ ok: true, stats: buildRecentStats_(statsWindowDays) }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
+    console.error('doPost error: ' + String(err && err.message || err));
     return ContentService
       .createTextOutput(JSON.stringify({ ok: false, error: String(err && err.message || err) }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -215,6 +225,39 @@ function toMillis_(value) {
   if (value instanceof Date) return value.getTime();
   const t = Date.parse(String(value || ''));
   return Number.isFinite(t) ? t : NaN;
+}
+
+function getConfiguredStatsWindowDays_() {
+  const raw = Number(PROPS.getProperty('MWH_STATS_WINDOW_DAYS'));
+  if (!Number.isFinite(raw)) return 14;
+  return Math.max(1, Math.min(365, Math.floor(raw)));
+}
+
+function buildRecentStats_(days) {
+  const windowDays = Math.max(1, Math.min(365, Number(days) || 14));
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(SHEET_NAME);
+  if (!sh || sh.getLastRow() < 2) {
+    return { window_days: windowDays, submissions: 0, active_datasets: 0, unique_datasets: 0 };
+  }
+  const sinceMs = Date.now() - (windowDays * 24 * 60 * 60 * 1000);
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues();
+  let submissions = 0;
+  const cookies = new Set();
+  for (const r of rows) {
+    const t = toMillis_(r[0]);
+    if (!Number.isFinite(t) || t < sinceMs) continue;
+    submissions += 1;
+    const cookie = String(r[2] || '').trim();
+    if (cookie) cookies.add(cookie);
+  }
+  return {
+    window_days: windowDays,
+    submissions: submissions,
+    active_datasets: cookies.size,
+    unique_datasets: cookies.size,
+    encouragement: `Active datasets in last ${windowDays} days: ${cookies.size}. Submissions in window: ${submissions}.`
+  };
 }
 
 function backendSelfTestDryRun() {

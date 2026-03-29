@@ -23,6 +23,11 @@ This backend accepts pseudonymised usage summaries from the web app and sends pe
 - `MWH_MAX_SUBMISSIONS_PER_COOKIE_PER_HOUR`: optional per-cookie hourly cap (default `12`).
 - `MWH_MAX_PAYLOAD_BYTES`: optional payload-size cap (default `4096`).
 - `MWH_DUPLICATE_TTL_SECONDS`: optional duplicate suppression window (default `3600`).
+- `MWH_STATS_WINDOW_DAYS`: optional stats/encouragement window in days (default `14`).
+
+Script-managed property:
+
+- `MWH_LAST_DIGEST_AT`: maintained automatically by `sendPeriodicDigest`.
 
 For your workbook:
 
@@ -64,6 +69,15 @@ When a user approves a summary prompt:
 
 - If endpoint submission succeeds, the summary is sent directly.
 - If endpoint submission fails or is missing, the app falls back to clipboard copy.
+- App can request encouraging aggregate stats via `GET /exec?stats=1`.
+- Stats window is backend-controlled via `MWH_STATS_WINDOW_DAYS` (not client-supplied).
+
+Stats query response (`doGet`):
+
+- `window_days`
+- `submissions`
+- `active_datasets` (unique magic cookies in window)
+- `unique_datasets` (same as `active_datasets`)
 
 ## Backend self-tests
 

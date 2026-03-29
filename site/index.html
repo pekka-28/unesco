@@ -179,7 +179,7 @@
       <div class="row setting-line compact">
         <span class="setting-label">Reminder interval (days)</span>
         <div class="setting-inline">
-          <input id="share-interval" class="field compact-number" type="number" min="1">
+          <input id="share-interval" class="field compact-number" type="number" min="0.0001" step="any">
           <label><input id="share-none" type="checkbox"> None</label>
         </div>
       </div>
@@ -269,7 +269,7 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.1.3";
+    const APP_VERSION = "0.1.4";
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
@@ -1081,6 +1081,11 @@
       if (!at && !state && !message) return "";
       return `Last submission: ${at || "-"} | ${state || "unknown"} | ${message || "-"}`;
     }
+    function normaliseIntervalDays(rawValue, fallback = 7) {
+      const n = Number(rawValue);
+      if (!Number.isFinite(n) || n <= 0) return fallback;
+      return Math.max(0.0001, n);
+    }
     function renderSubmitStatus() {
       if (!ui.shareSubmitStatus) return;
       const status = loadSubmitStatus();
@@ -1115,7 +1120,7 @@
       profile.settings.usageSummaryToken = asText(ui.shareToken.value).trim();
       profile.publishPreference = profile.publishPreference || {};
       profile.publishPreference.enabled = !!ui.shareEnabled.checked;
-      profile.publishPreference.intervalDays = ui.shareNone.checked ? null : Math.max(1, Number(ui.shareInterval.value || 7));
+      profile.publishPreference.intervalDays = ui.shareNone.checked ? null : normaliseIntervalDays(ui.shareInterval.value, 7);
       if (profile.publishPreference.consentAskedAtStartup == null) profile.publishPreference.consentAskedAtStartup = true;
       profile.magicCookie = profile.magicCookie || randomCookie();
       profile.usage = profile.usage || { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 };
@@ -1358,6 +1363,31 @@
       if (fromProfile) return fromProfile;
       return asText(localStorage.getItem("mwh_usage_summary_token")).trim();
     }
+    async function fetchUsageStats() {
+      const endpoint = getUsageSummaryEndpoint();
+      if (!endpoint) return null;
+      try {
+        const sep = endpoint.includes("?") ? "&" : "?";
+        const url = `${endpoint}${sep}stats=1`;
+        const res = await fetch(url, { method: "GET" });
+        if (!res.ok) return null;
+        const payload = await res.json();
+        if (!(payload && payload.ok && payload.stats)) return null;
+        return payload.stats;
+      } catch {
+        return null;
+      }
+    }
+    function formatStatsLine(stats) {
+      if (!stats || typeof stats !== "object") return "";
+      const encouragement = asText(stats.encouragement).trim();
+      if (encouragement) return encouragement;
+      const days = Number(stats.window_days || 14);
+      const active = Number(stats.active_datasets || stats.unique_datasets || 0);
+      const submissions = Number(stats.submissions || 0);
+      if (!Number.isFinite(days) || !Number.isFinite(active) || !Number.isFinite(submissions)) return "";
+      return `Active datasets in last ${days} days: ${active}. Submissions in window: ${submissions}.`;
+    }
     async function submitUsageSummary(summary) {
       const endpoint = getUsageSummaryEndpoint();
       if (!endpoint) return { ok: false, reason: "No endpoint configured." };
@@ -1379,7 +1409,7 @@
         try { parsed = raw ? JSON.parse(raw) : null; } catch {}
         if (!res.ok) return { ok: false, reason: `HTTP ${res.status}`, detail: asText(raw).slice(0, 240) };
         if (parsed && parsed.ok === false) return { ok: false, reason: asText(parsed.error) || "Endpoint rejected submission.", detail: asText(raw).slice(0, 240) };
-        return { ok: true, duplicate: !!(parsed && parsed.duplicate), detail: asText(raw).slice(0, 240) };
+        return { ok: true, duplicate: !!(parsed && parsed.duplicate), detail: asText(raw).slice(0, 240), stats: parsed && parsed.stats ? parsed.stats : null };
       } catch (e) {
         const reason = asText(e && e.message) || "Submission failed.";
         const token = getUsageSummaryToken();
@@ -1459,17 +1489,19 @@
       if (sent) {
         profile.usage.publishedUseCount = Number(profile.usage.useCount || 0);
         persistProfile();
+        const stats = submitted && submitted.stats ? submitted.stats : await fetchUsageStats();
+        const statsLine = formatStatsLine(stats);
         if (submitted.ok) {
           if (submitted.duplicate) {
-            recordSubmitStatus("duplicate", "Endpoint accepted request but flagged duplicate.");
-            alert("Usage summary already received recently (duplicate suppressed by backend).");
+            recordSubmitStatus("duplicate", `Endpoint accepted request but flagged duplicate.${statsLine ? " " + statsLine : ""}`);
+            alert(`Usage summary already received recently (duplicate suppressed by backend).${statsLine ? "\n" + statsLine : ""}`);
           } else if (submitted.unverified) {
             const via = asText(submitted.transport) || "fallback";
-            recordSubmitStatus("submitted_unverified", `Submitted via ${via}; endpoint response not readable due browser CORS policy.`);
-            alert(`Usage summary submitted via ${via}. Endpoint response cannot be read because of browser CORS policy.`);
+            recordSubmitStatus("submitted_unverified", `Submitted via ${via}; endpoint response not readable due browser CORS policy.${statsLine ? " " + statsLine : ""}`);
+            alert(`Usage summary submitted via ${via}. Endpoint response cannot be read because of browser CORS policy.${statsLine ? "\n" + statsLine : ""}`);
           } else {
-            recordSubmitStatus("submitted", "Endpoint accepted usage summary.");
-            alert("Usage summary submitted.");
+            recordSubmitStatus("submitted", `Endpoint accepted usage summary.${statsLine ? " " + statsLine : ""}`);
+            alert(`Usage summary submitted.${statsLine ? "\n" + statsLine : ""}`);
           }
         } else {
           recordSubmitStatus("clipboard_fallback", `Endpoint failed (${asText(submitted.reason)}); summary copied to clipboard.`);
@@ -1491,20 +1523,22 @@
         event_type: "adoption"
       };
       const submitted = await submitUsageSummary(summary);
+      const stats = submitted && submitted.stats ? submitted.stats : await fetchUsageStats();
+      const statsLine = formatStatsLine(stats);
       if (!submitted.ok) {
-        recordSubmitStatus("adoption_failed", `Adoption submission failed (${asText(submitted.reason)}).`);
+        recordSubmitStatus("adoption_failed", `Adoption submission failed (${asText(submitted.reason)}).${statsLine ? " " + statsLine : ""}`);
         return;
       }
       if (submitted.duplicate) {
-        recordSubmitStatus("adoption_duplicate", "Adoption submission flagged duplicate.");
+        recordSubmitStatus("adoption_duplicate", `Adoption submission flagged duplicate.${statsLine ? " " + statsLine : ""}`);
         return;
       }
       if (submitted.unverified) {
         const via = asText(submitted.transport) || "fallback";
-        recordSubmitStatus("adoption_submitted_unverified", `Adoption submission queued via ${via}; endpoint response not readable due browser CORS policy.`);
+        recordSubmitStatus("adoption_submitted_unverified", `Adoption submission queued via ${via}; endpoint response not readable due browser CORS policy.${statsLine ? " " + statsLine : ""}`);
         return;
       }
-      recordSubmitStatus("adoption_submitted", "Adoption submission accepted by endpoint.");
+      recordSubmitStatus("adoption_submitted", `Adoption submission accepted by endpoint.${statsLine ? " " + statsLine : ""}`);
     }
     function ensureStartupConsentPrompt() {
       if (!connected || !profile) return;
