@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- index.html 0.1.5 -->
+<!-- index.html 0.1.6 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -248,7 +248,13 @@
     <div class="modal" style="max-width:560px;">
       <h3 style="margin-top:0;">My World Heritage</h3>
       <p class="meta">Version <span id="app-version">-</span></p>
-      <p>Track World heritage visits and travel with a maintained UNESCO site catalogue, while keeping personal data under your control.</p>
+      <p>Track World heritage visits and travel with a maintained UNESCO site catalogue, while keeping personal data under your control. A periodic opt-in statistical submission can be enabled to track usage interest; no personally identifiable information is submitted, and a pseudonomous identity links submissions from the same client.</p>
+      <h4 style="margin-bottom:6px;">Where data is stored</h4>
+      <ul>
+        <li>Site catalogue in use: <code>data/current/unesco_official_sites.geojson</code>.</li>
+        <li>Profile, visits and usage counters: browser <code>localStorage</code> (persists across browser restarts).</li>
+        <li>Logout state: in-memory on the current page only (no browser storage key).</li>
+      </ul>
       <h4 style="margin-bottom:6px;">Dataset extract status</h4>
       <div class="status-grid">
         <div><strong>Status</strong></div><div id="extract-status-result">Unavailable</div>
@@ -260,14 +266,8 @@
         <div><strong>Most recent attempt</strong></div><div id="extract-status-attempt-at">-</div>
         <div><strong>Retry interval</strong></div><div id="extract-status-retry">-</div>
       </div>
-      <h4 style="margin-bottom:6px;">Where data is stored</h4>
-      <ul>
-        <li>Site catalogue in use: <code>data/current/unesco_official_sites.geojson</code>.</li>
-        <li>Profile, visits and usage counters: browser <code>localStorage</code> (persists across browser restarts).</li>
-        <li>Logout state: in-memory on the current page only (no browser storage key).</li>
-      </ul>
       <p><strong>Export</strong> downloads your local profile JSON. <strong>Import</strong> loads a compatible profile JSON, so you can migrate data between systems without backend support.</p>
-      <p>Sites with very large UNESCO component counts are grouped as <strong>Multiple sites</strong> and hidden by default to reduce map and list noise; visited, searched, or explicitly selected items are still shown.</p>
+      <p>Sites with very large UNESCO component counts are grouped under <strong>Multiple sites</strong> and not shown to reduce map and list clutter; visited, searched, or explicitly selected sites are shown.</p>
       <h4 style="margin-bottom:6px;">Tooling used</h4>
       <ul>
         <li>Leaflet for map rendering and interaction.</li>
@@ -292,7 +292,7 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.1.5";
+    const APP_VERSION = "0.1.6";
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
@@ -322,7 +322,7 @@
       appVersion: document.getElementById("app-version")
     };
     let whsData = null, layer = null, markersBySiteId = new Map(), profile = null, connected = false, manuallyDisconnected = false, selectedHome = null, homeMatches = [], enrolSelectedHome = null, enrolMatches = [], lastSearchedSiteIds = [], searchFocusBySiteId = new Map(), ignoreMapClickUntil = 0, selectedSiteId = null, listSortBy = "name", listSortDir = "asc", selectionContext = "";
-    let summaryReminderTimer = null, startupSummaryChecked = false, pendingSummaryDialog = null;
+    let summaryReminderTimer = null, startupSummaryChecked = false, pendingSummaryDialog = null, submissionInProgress = false;
     let componentCountByRootId = new Map(), highVolumeComponentSiteIds = new Set(), explicitVisibleSiteIds = new Set();
     const asText = (v) => v == null ? "" : String(v);
     const nowIso = () => new Date().toISOString();
@@ -352,17 +352,32 @@
       if (ix <= 0) return null;
       return { root: text.slice(0, ix).trim(), child: text.slice(ix + 3).trim() };
     }
+    function sanitizeSiteName(value) {
+      return asText(value).replace(/\\/g, "").replace(/\s{2,}/g, " ").trim();
+    }
+    function foldTextForCompare(value) {
+      return asText(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    }
+    function namesEquivalent(a, b) {
+      const aa = foldTextForCompare(a);
+      const bb = foldTextForCompare(b);
+      return !!aa && !!bb && aa === bb;
+    }
+    function findFeatureBySiteId(siteId) {
+      if (!whsData || !Array.isArray(whsData.features) || !siteId) return null;
+      return whsData.features.find((f) => asText(f && f.properties && f.properties.site_id) === asText(siteId)) || null;
+    }
     function displayName(p) {
       const raw = rawDisplayName(p);
       if (asText(p && p.site_scope) === "component") {
         const parts = splitComponentName(raw);
-        if (parts && parts.child) return parts.child;
+        if (parts && parts.child) return sanitizeSiteName(parts.child);
       }
-      return raw;
+      return sanitizeSiteName(raw);
     }
     function detectNativeScriptName(p, primaryName = "") {
       const mapped = asText(p && p.native_display).trim();
-      if (mapped) return mapped;
+      if (mapped && !namesEquivalent(mapped, primaryName)) return mapped;
       const strongScript = /[\u0370-\u03FF\u0400-\u052F\u0590-\u08FF\u0900-\u0DFF\u0E00-\u0E7F\u1100-\u11FF\u2D30-\u2D7F\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/;
       const nativeObj = p && typeof p.native_names === "object" ? p.native_names : null;
       const mappedFields = nativeObj ? [asText(nativeObj.name_ar), asText(nativeObj.name_ru), asText(nativeObj.name_zh)] : [];
@@ -371,8 +386,15 @@
         const t = asText(c).trim();
         if (!t) continue;
         if (!strongScript.test(t)) continue;
-        if (t === asText(primaryName).trim()) continue;
+        if (namesEquivalent(t, primaryName)) continue;
         return t;
+      }
+      const scope = asText(p && p.site_scope);
+      const parentId = asText(p && p.parent_site_id);
+      if (scope === "component" && parentId) {
+        const parent = findFeatureBySiteId(parentId);
+        const parentNative = asText(parent && parent.properties && parent.properties.native_display).trim();
+        if (parentNative && strongScript.test(parentNative) && !namesEquivalent(parentNative, primaryName)) return parentNative;
       }
       return "";
     }
@@ -463,7 +485,12 @@
       const id = asText(p.site_id) || "n/a";
       const scope = asText(p.site_scope);
       const parent = asText(p.parent_site_id);
-      if (scope === "component" && parent) return `Site id ${id} (component of WHS ${parent})`;
+      if (scope === "component" && parent) {
+        const rootFeature = findFeatureBySiteId(parent);
+        const rootName = rootFeature ? displayName(rootFeature.properties || {}) : "";
+        if (rootName) return `Component site of WHS ${parent}: ${rootName}`;
+        return `Component site of WHS ${parent}`;
+      }
       if (/^\d+$/.test(id)) return `WHS ${id}`;
       return `Site id ${id}`;
     }
@@ -1138,7 +1165,8 @@
         magic_cookie: asText(profile && profile.magicCookie),
         use_count_since_last_push: Math.max(0, Number(profile && profile.usage && profile.usage.useCount || 0) - Number(profile && profile.usage && profile.usage.publishedUseCount || 0)),
         visited_site_count: visitedSiteCount,
-        event_type: asText(eventType) || "manual"
+        event_type: asText(eventType) || "manual",
+        client_version: APP_VERSION
       };
     }
     function isSummaryDue() {
@@ -1174,15 +1202,16 @@
         `<div><strong>Timestamp (UTC)</strong></div><div>${escapeHtml(asText(summary.submitted_at_utc))}</div>`,
         `<div><strong>Uses since last summary</strong></div><div>${escapeHtml(String(summary.use_count_since_last_push))}</div>`,
         `<div><strong>Visited site count</strong></div><div>${escapeHtml(String(summary.visited_site_count))}</div>`,
+        `<div><strong>Client version</strong></div><div>${escapeHtml(asText(summary.client_version || APP_VERSION))}</div>`,
         `<div><strong>Destination</strong></div><div>${escapeHtml(destination)}</div>`
       ].join("");
     }
     function setSubmissionDialogStatus(lines) {
-      const text = Array.isArray(lines) ? lines.filter(Boolean).join("\n") : asText(lines);
+      const text = Array.isArray(lines) ? lines.map((x) => asText(x)).join("\n") : asText(lines);
       ui.submitStatus.textContent = text || "";
     }
     function closeSubmissionDialog() {
-      if (ui.submitSend && ui.submitSend.disabled) return;
+      if (submissionInProgress) return;
       ui.submitOverlay.style.display = "none";
       pendingSummaryDialog = null;
     }
@@ -1197,6 +1226,7 @@
     async function runSubmissionDialogSend() {
       if (!(pendingSummaryDialog && pendingSummaryDialog.summary)) return;
       const summary = pendingSummaryDialog.summary;
+      submissionInProgress = true;
       ui.submitSend.disabled = true;
       ui.submitClose.disabled = true;
       setSubmissionDialogStatus("Submitting usage summary...");
@@ -1207,6 +1237,7 @@
           "Submission response timed out.",
           "You may close this dialog and check workbook entries."
         ]);
+        submissionInProgress = false;
         ui.submitClose.disabled = false;
       }, 20000);
 
@@ -1236,25 +1267,32 @@
       if (submitted.ok) {
         if (submitted.duplicate) {
           lines.push("A recent summary from this profile was already recorded.");
+          lines.push("No further action is required.");
           recordSubmitStatus("duplicate", `Recent summary already recorded.${statsLine ? " " + statsLine : ""}`);
         } else if (submitted.unverified) {
-          lines.push("Summary sent.");
-          lines.push("Direct confirmation is not available in this browser.");
+          lines.push("Summary submitted.");
+          lines.push("Thank you for supporting My World Heritage.");
           recordSubmitStatus("submitted_unverified", `Summary sent without direct confirmation.${statsLine ? " " + statsLine : ""}`);
         } else {
           lines.push("Summary received.");
+          lines.push("Thank you for supporting My World Heritage.");
           recordSubmitStatus("submitted", `Summary received.${statsLine ? " " + statsLine : ""}`);
         }
       } else if (sent) {
-        lines.push("Direct submit failed, summary copied to clipboard for manual use.");
+        lines.push("Direct submit failed.");
+        lines.push("Summary copied to clipboard for manual use.");
         recordSubmitStatus("clipboard_fallback", `Direct submit failed (${asText(submitted.reason)}); copied to clipboard.`);
       } else {
         lines.push("Submission failed.");
         lines.push(asText(submitted.reason) || "Unknown error.");
         recordSubmitStatus("failed", `Submission failed (${asText(submitted.reason)}).`);
       }
-      if (statsLine) lines.push(statsLine);
+      if (statsLine) {
+        lines.push("");
+        lines.push(statsLine);
+      }
       setSubmissionDialogStatus(lines);
+      submissionInProgress = false;
       ui.submitClose.disabled = false;
     }
     function saveSettings() {
@@ -1561,11 +1599,10 @@
       if (!stats || typeof stats !== "object") return "";
       const encouragement = asText(stats.encouragement).trim();
       if (encouragement) return encouragement;
-      const days = Number(stats.window_days || 14);
       const active = Number(stats.active_datasets || stats.unique_datasets || 0);
       const avgVisited = Number(stats.average_visited_sites);
-      if (!Number.isFinite(days) || !Number.isFinite(active) || !Number.isFinite(avgVisited)) return "";
-      return `Recent usage (${days} days): ${active} active users, average visited sites ${avgVisited.toFixed(1)}.`;
+      if (!Number.isFinite(active) || !Number.isFinite(avgVisited)) return "";
+      return `Recent usage: ${active} active users, average visited sites ${Math.round(avgVisited)}.`;
     }
     async function submitUsageSummary(summary) {
       const endpoint = getUsageSummaryEndpoint();

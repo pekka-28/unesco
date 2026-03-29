@@ -1,4 +1,4 @@
-<!-- Requirements.md 0.1.5 -->
+<!-- Requirements.md 0.1.6 -->
 # UNESCO World heritage GIS requirements
 
 ## Product intent
@@ -140,6 +140,14 @@ Figure 1. My World Heritage data and application architecture.
 - multiple-sites threshold setting (default `5`) controlling when component entries move into `Multiple sites`.
 - Home location search uses selectable list (combo-style), not button-per-result.
 - If one canonical match is selected, subsequent search confirms that selection.
+
+### Interface localisation (pending)
+
+- Add an interface-language setting in Settings (default `English`).
+- Keep UNESCO canonical dataset structure unchanged; localisation targets interface text and formatting, not source dataset identity keys.
+- Prefer curated local-script site labels when available for the selected interface language/script, while retaining English as the universal fallback handle.
+- Support locale-aware date and number rendering in UI while preserving canonical stored date forms.
+- Treat localisation delivery as optional resource bundles that can be extended by contributors.
 
 ### Usage summary and census (pending integration)
 
@@ -291,6 +299,58 @@ Table 2. Backend interfaces and purpose.
 - Active users: unique `magic_cookie` values in the configured stats window.
 - Average visited sites: average of each active user’s latest `visited_site_count` in that window.
 - Encouragement text is backend-generated so wording/window policy is centrally controlled.
+
+#### Backend settings guidance (soft dependencies)
+
+- Set `MWH_STATS_WINDOW_DAYS` to approximately `2 x MWH_REPORT_DAYS` so in-app encouragement reflects a broader window than owner digest cadence.
+- Keep `MWH_DUPLICATE_TTL_SECONDS` greater than or equal to `MWH_MIN_INTERVAL_SECONDS` to avoid duplicate suppression gaps.
+- Keep `MWH_MAX_SUBMISSIONS_PER_COOKIE_PER_HOUR` above expected legitimate retry volume but low enough to damp scripted burst traffic.
+
+## Localisation implementation details (pending exercise)
+
+This section records the investigation outcome and a practical contribution path for an interested contributor.
+
+### Scope and complexity summary
+
+- Estimated effort for a first practical cut: medium (roughly 2 to 4 focused days).
+- Primary complexity is UI text extraction, runtime language switching, and preserving existing behaviour across dialogs and map/list flows.
+- UNESCO dataset ingestion does not need to be localised for phase 1.
+
+### Recommended implementation approach
+
+1. Introduce resource bundles:
+- Add `site/i18n/en.json` as baseline.
+- Add one additional bundle (for example `fr.json`) to validate structure and fallbacks.
+
+2. Add runtime i18n service in SPA:
+- Add `t(key, params)` helper with fallback to English.
+- Add `setLanguage(langCode)` and persist selected language in profile settings.
+
+3. Externalise user-facing strings:
+- Move menu labels, dialog labels, button text, validation messages, status messages, and tooltips into bundle keys.
+- Keep telemetry payload keys and dataset field names unchanged.
+
+4. Localise formatting:
+- Use `Intl.DateTimeFormat` and `Intl.NumberFormat` for display-only rendering by selected language.
+- Keep stored visit-date values canonical (`YYYY`, `YYYY-MM`, `YYYY-MM-DD`).
+
+5. Site-name display strategy:
+- Keep English site name as primary handle.
+- Show curated local-script name as supplemental line when it matches selected language/script policy.
+- Avoid duplicate render where local and English forms are equivalent.
+
+6. Testing and acceptance:
+- Verify language switch across enrolment, settings, detail pane, help, and usage-summary dialog.
+- Verify no regression in search, visits, export/import, or usage-summary submission.
+
+### Suggested pull request exercise
+
+- Suggested PR title: `Add interface localisation framework and language setting`.
+- Suggested PR scope:
+- add i18n bundles (`site/i18n/en.json`, one additional language),
+- add i18n runtime helper and language setting wiring,
+- migrate high-visibility UI strings first (menus, settings, help, submit dialog),
+- document contributor workflow for adding a new language bundle.
 
 ## Acceptance criteria
 

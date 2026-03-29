@@ -1,4 +1,4 @@
-<!-- README.md 0.1.5 -->
+<!-- README.md 0.1.6 -->
 # Usage summary backend
 
 This backend accepts pseudonymised usage summaries from the web app and sends periodic email digests.
@@ -61,6 +61,7 @@ Current primary fields:
 - `use_count_since_last_push`
 - `visited_site_count`
 - `event_type` (`periodic`, `manual`, `adoption`)
+- `client_version` (app version string, for divergence tracking)
 
 ## App integration
 
@@ -81,6 +82,26 @@ Stats query response (`doGet`):
 - `average_visited_sites` (average of latest `visited_site_count` per active dataset in window)
 - `encouragement` (backend-owned text message based on active users and average visited sites)
 - `submissions` (window total; diagnostic only)
+
+## Configuration guidance
+
+Soft dependencies (recommended):
+
+- Set `MWH_STATS_WINDOW_DAYS` to about twice `MWH_REPORT_DAYS` (for example `14` and `7`).
+- Keep `MWH_DUPLICATE_TTL_SECONDS >= MWH_MIN_INTERVAL_SECONDS`.
+- Keep `MWH_MAX_SUBMISSIONS_PER_COOKIE_PER_HOUR` above expected legitimate retry volume, but low enough to damp scripted burst traffic.
+
+Hard dependencies (required):
+
+- Workbook binding must be configured (`MWH_ALLOWED_SPREADSHEET_ID`; optional strict-name check with `MWH_ALLOWED_SPREADSHEET_NAME`).
+- Endpoint must be deployed as web app with access `Anyone`.
+- If `MWH_INGEST_TOKEN` is configured, frontend token must match.
+- Required Apps Script scopes must remain as documented in this file.
+
+## Workbook structure note
+
+- A formal Sheets table object is optional; the script appends rows by position and does not require a table object.
+- Recommended worksheet headers now include `client_version` as the final column.
 
 ## Backend self-tests
 

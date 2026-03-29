@@ -57,6 +57,10 @@
       "type": "string",
       "minLength": 8,
       "maxLength": 256
+    },
+    "client_version": {
+      "type": "string",
+      "maxLength": 32
     }
   },
   "additionalProperties": false

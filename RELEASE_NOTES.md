@@ -1,7 +1,21 @@
-<!-- RELEASE_NOTES.md 0.1.5 -->
+<!-- RELEASE_NOTES.md 0.1.6 -->
 # Release notes
 
 This file tracks published updates with version numbers.
+
+## Version 0.1.6 (2026-03-29)
+
+- Updated usage-summary result messaging for cleaner multi-line feedback and reduced technical noise.
+- Fixed usage-summary dialog close behaviour after submit; close and Escape now work once submission processing is complete.
+- Kept Submit inactive after a send attempt to avoid accidental duplicate sends from the same dialog instance.
+- Removed day-window text from encouragement display and rounded average visited sites to integer presentation.
+- Added `client_version` to usage summary payload/backend storage/schema for client divergence tracking.
+- Added site-name sanitisation to remove stray backslashes from component names.
+- Suppressed duplicate local-name rendering when local and English forms are equivalent.
+- Improved component caption text to identify parent WHS more clearly.
+- Updated help dialog text/order and wording for periodic opt-in telemetry and multiple-site visibility.
+- Added localisation investigation output to pending requirements, including a concrete implementation exercise and suggested PR scope.
+- Added backend settings guidance documenting soft property dependencies and hard deployment dependencies.
 
 ## Version 0.1.5 (2026-03-29)
 

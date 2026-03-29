@@ -1,4 +1,4 @@
-// Code.gs 0.1.5
+// Code.gs 0.1.6
 const SHEET_NAME = 'submissions';
 const PROPS = PropertiesService.getScriptProperties();
 const FALLBACK_ALLOWED_SPREADSHEET_ID = '';
@@ -60,6 +60,7 @@ function validatePayload_(p) {
   getSubmittedAtUtc_(p);
   if (!/^[a-fA-F0-9]{16,64}$/.test(String(p.magic_cookie || ''))) throw new Error('magic_cookie must be hex.');
   if (!Number.isInteger(p.use_count_since_last_push) || p.use_count_since_last_push < 0) throw new Error('use_count_since_last_push must be a non-negative integer.');
+  if (p.client_version != null && (typeof p.client_version !== 'string' || String(p.client_version).trim().length > 32)) throw new Error('client_version must be a string up to 32 chars.');
   const hasVisited = Number.isInteger(p.visited_site_count) && p.visited_site_count >= 0;
   const hasTotal = Number.isInteger(p.total_site_count) && p.total_site_count >= 0;
   if (!hasVisited && !hasTotal) throw new Error('visited_site_count (or legacy total_site_count) must be a non-negative integer.');
@@ -136,7 +137,8 @@ function appendSubmission_(p) {
       'event_type',
       'source',
       'user_agent',
-      'token_used'
+      'token_used',
+      'client_version'
     ]);
   }
   const eventType = String(p.event_type || 'periodic').trim() || 'periodic';
@@ -149,7 +151,8 @@ function appendSubmission_(p) {
     eventType,
     String(p.source || 'web-app'),
     String(p.user_agent || ''),
-    String(p.token ? 'yes' : 'no')
+    String(p.token ? 'yes' : 'no'),
+    String(p.client_version || '')
   ]);
 }
 
@@ -245,7 +248,7 @@ function buildRecentStats_(days) {
       active_datasets: 0,
       unique_datasets: 0,
       average_visited_sites: 0,
-      encouragement: `Recent usage (${windowDays} days): 0 active users, average visited sites 0.0.`
+      encouragement: 'Recent usage: 0 active users, average visited sites 0.'
     };
   }
   const sinceMs = Date.now() - (windowDays * 24 * 60 * 60 * 1000);
@@ -269,13 +272,14 @@ function buildRecentStats_(days) {
   for (const entry of latestByCookie.values()) visitedTotal += Number(entry.visitedSiteCount || 0);
   const activeUsers = latestByCookie.size;
   const averageVisitedSites = activeUsers > 0 ? (visitedTotal / activeUsers) : 0;
+  const averageVisitedRounded = Math.round(averageVisitedSites);
   return {
     window_days: windowDays,
     submissions: submissions,
     active_datasets: activeUsers,
     unique_datasets: activeUsers,
-    average_visited_sites: Number(averageVisitedSites.toFixed(2)),
-    encouragement: `Recent usage (${windowDays} days): ${activeUsers} active users, average visited sites ${averageVisitedSites.toFixed(1)}.`
+    average_visited_sites: averageVisitedRounded,
+    encouragement: `Recent usage: ${activeUsers} active users, average visited sites ${averageVisitedRounded}.`
   };
 }
 
@@ -288,7 +292,8 @@ function backendSelfTestDryRun() {
     visited_site_count: 0,
     event_type: 'manual',
     source: 'backend-self-test',
-    user_agent: 'apps-script'
+    user_agent: 'apps-script',
+    client_version: 'backend-self-test'
   };
   const expectedToken = String(PROPS.getProperty('MWH_INGEST_TOKEN') || '').trim();
   if (expectedToken) payload.token = expectedToken;
@@ -312,7 +317,8 @@ function backendSelfTestAppend() {
     visited_site_count: 0,
     event_type: 'manual',
     source: 'backend-self-test',
-    user_agent: 'apps-script'
+    user_agent: 'apps-script',
+    client_version: 'backend-self-test'
   };
   const expectedToken = String(PROPS.getProperty('MWH_INGEST_TOKEN') || '').trim();
   if (expectedToken) payload.token = expectedToken;
