@@ -269,7 +269,7 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.1.2";
+    const APP_VERSION = "0.1.3";
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
@@ -1035,6 +1035,7 @@
       updateUserUi();
       refreshMarkers();
       map.setView([profile.homeLat, profile.homeLon], 6);
+      submitAdoptionSummary().catch(() => {});
     }
     function openEnrolment() {
       ui.enrolOverlay.style.display = "flex";
@@ -1430,17 +1431,18 @@
       if (!force && last && (Date.now() - last) < intervalDays * 86400000) return;
       const visitedSiteCount = Object.values(profile.siteStatuses || {}).filter((s) => asText(s) === "visited").length;
       const summary = {
-        date: nowIso().slice(0, 10),
+        submitted_at_utc: nowIso(),
         magic_cookie: profile.magicCookie,
         use_count_since_last_push: Math.max(0, Number(profile.usage.useCount || 0) - Number(profile.usage.publishedUseCount || 0)),
-        visited_site_count: visitedSiteCount
+        visited_site_count: visitedSiteCount,
+        event_type: force ? "manual" : "periodic"
       };
       const endpoint = getUsageSummaryEndpoint();
       const destination = endpoint ? `Configured endpoint (${asText(endpoint)})` : "No endpoint configured (clipboard fallback)";
       const prompt = [
         "Send a pseudonomous usage summary?",
         "",
-        `Date: ${summary.date}`,
+        `Timestamp (UTC): ${summary.submitted_at_utc}`,
         `Uses since last summary: ${summary.use_count_since_last_push}`,
         `Visited site count: ${summary.visited_site_count}`,
         `Destination: ${destination}`
@@ -1477,6 +1479,32 @@
         recordSubmitStatus("failed", `Submission failed (${asText(submitted.reason)}); clipboard fallback unavailable.`);
         alert(`Submission failed (${asText(submitted.reason)}). Clipboard fallback unavailable.`);
       }
+    }
+    async function submitAdoptionSummary() {
+      if (!(connected && profile)) return;
+      const visitedSiteCount = Object.values(profile.siteStatuses || {}).filter((s) => asText(s) === "visited").length;
+      const summary = {
+        submitted_at_utc: nowIso(),
+        magic_cookie: profile.magicCookie,
+        use_count_since_last_push: 0,
+        visited_site_count: visitedSiteCount,
+        event_type: "adoption"
+      };
+      const submitted = await submitUsageSummary(summary);
+      if (!submitted.ok) {
+        recordSubmitStatus("adoption_failed", `Adoption submission failed (${asText(submitted.reason)}).`);
+        return;
+      }
+      if (submitted.duplicate) {
+        recordSubmitStatus("adoption_duplicate", "Adoption submission flagged duplicate.");
+        return;
+      }
+      if (submitted.unverified) {
+        const via = asText(submitted.transport) || "fallback";
+        recordSubmitStatus("adoption_submitted_unverified", `Adoption submission queued via ${via}; endpoint response not readable due browser CORS policy.`);
+        return;
+      }
+      recordSubmitStatus("adoption_submitted", "Adoption submission accepted by endpoint.");
     }
     function ensureStartupConsentPrompt() {
       if (!connected || !profile) return;

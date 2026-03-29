@@ -46,7 +46,7 @@ function enforcePayloadSize_(e) {
 
 function validatePayload_(p) {
   if (!p || typeof p !== 'object') throw new Error('Payload is required.');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(p.date || ''))) throw new Error('date must be YYYY-MM-DD.');
+  getSubmittedAtUtc_(p);
   if (!/^[a-fA-F0-9]{16,64}$/.test(String(p.magic_cookie || ''))) throw new Error('magic_cookie must be hex.');
   if (!Number.isInteger(p.use_count_since_last_push) || p.use_count_since_last_push < 0) throw new Error('use_count_since_last_push must be a non-negative integer.');
   const hasVisited = Number.isInteger(p.visited_site_count) && p.visited_site_count >= 0;
@@ -85,7 +85,7 @@ function enforceRateLimits_(p) {
 function isDuplicate_(p) {
   const cache = CacheService.getScriptCache();
   const keyMaterial = JSON.stringify([
-    String(p.date || ''),
+    getSubmittedAtUtc_(p).toISOString(),
     String(p.magic_cookie || ''),
     Number(p.use_count_since_last_push || 0),
     getVisitedSiteCount_(p)
@@ -118,21 +118,24 @@ function appendSubmission_(p) {
     sh = ss.insertSheet(SHEET_NAME);
     sh.appendRow([
       'received_at_utc',
-      'date',
+      'submitted_at_utc',
       'magic_cookie',
       'use_count_since_last_push',
       'visited_site_count',
+      'event_type',
       'source',
       'user_agent',
       'token_used'
     ]);
   }
+  const eventType = String(p.event_type || 'periodic').trim() || 'periodic';
   sh.appendRow([
-    new Date().toISOString(),
-    String(p.date),
+    new Date(),
+    getSubmittedAtUtc_(p),
     String(p.magic_cookie),
     Number(p.use_count_since_last_push),
     getVisitedSiteCount_(p),
+    eventType,
     String(p.source || 'web-app'),
     String(p.user_agent || ''),
     String(p.token ? 'yes' : 'no')
@@ -160,9 +163,9 @@ function sendPeriodicDigest() {
     return;
   }
 
-  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 7).getValues();
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 9).getValues();
   const recent = rows.filter((r) => {
-    const t = Date.parse(String(r[0] || ''));
+    const t = toMillis_(r[0]);
     return Number.isFinite(t) && t >= sinceMs;
   });
 
@@ -194,6 +197,72 @@ function getVisitedSiteCount_(p) {
   const legacyTotal = Number(p.total_site_count);
   if (Number.isInteger(legacyTotal) && legacyTotal >= 0) return legacyTotal;
   return 0;
+}
+
+function getSubmittedAtUtc_(p) {
+  const ts = String(p.submitted_at_utc || '').trim();
+  if (ts) {
+    const ms = Date.parse(ts);
+    if (!Number.isFinite(ms)) throw new Error('submitted_at_utc must be an ISO timestamp.');
+    return new Date(ms);
+  }
+  const legacyDate = String(p.date || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(legacyDate)) return new Date(legacyDate + 'T00:00:00Z');
+  throw new Error('submitted_at_utc is required (ISO timestamp).');
+}
+
+function toMillis_(value) {
+  if (value instanceof Date) return value.getTime();
+  const t = Date.parse(String(value || ''));
+  return Number.isFinite(t) ? t : NaN;
+}
+
+function backendSelfTestDryRun() {
+  enforceWorkbookBinding_();
+  const payload = {
+    submitted_at_utc: new Date().toISOString(),
+    magic_cookie: 'abcdef0123456789',
+    use_count_since_last_push: 0,
+    visited_site_count: 0,
+    event_type: 'manual',
+    source: 'backend-self-test',
+    user_agent: 'apps-script'
+  };
+  const expectedToken = String(PROPS.getProperty('MWH_INGEST_TOKEN') || '').trim();
+  if (expectedToken) payload.token = expectedToken;
+  validatePayload_(payload);
+  validateToken_(payload);
+  return {
+    ok: true,
+    workbook_id: SpreadsheetApp.getActiveSpreadsheet().getId(),
+    workbook_name: SpreadsheetApp.getActiveSpreadsheet().getName(),
+    endpoint_ready: true,
+    token_required: !!expectedToken
+  };
+}
+
+function backendSelfTestAppend() {
+  const dry = backendSelfTestDryRun();
+  const payload = {
+    submitted_at_utc: new Date().toISOString(),
+    magic_cookie: 'abcdef0123456789',
+    use_count_since_last_push: 0,
+    visited_site_count: 0,
+    event_type: 'manual',
+    source: 'backend-self-test',
+    user_agent: 'apps-script'
+  };
+  const expectedToken = String(PROPS.getProperty('MWH_INGEST_TOKEN') || '').trim();
+  if (expectedToken) payload.token = expectedToken;
+  validatePayload_(payload);
+  validateToken_(payload);
+  appendSubmission_(payload);
+  return {
+    ok: true,
+    appended: true,
+    workbook_id: dry.workbook_id,
+    workbook_name: dry.workbook_name
+  };
 }
 
 function installDailyDigestTrigger() {

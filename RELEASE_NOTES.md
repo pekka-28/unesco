@@ -2,6 +2,17 @@
 
 This file tracks published updates with version numbers.
 
+## Version 0.1.3 (2026-03-29)
+
+- Changed usage summary payload date from `date` to `submitted_at_utc` (ISO UTC timestamp).
+- Added `event_type` to usage summary payload (`periodic`, `manual`, `adoption`).
+- Added automatic `adoption` submission on enrolment.
+- Updated backend append format to write parsed datetime values into sheet cells (not plain text timestamps).
+- Existing sheet headers are left unchanged (no automatic header rewrites).
+- Added backend editor-only self-test functions (`backendSelfTestDryRun`, `backendSelfTestAppend`).
+- Added integration test plan document (`TEST_PLAN.md`) covering endpoint matching, workbook inspection, and all `event_type` flows.
+- Bumped app version to `0.1.3`.
+
 ## Version 0.1.2 (2026-03-29)
 
 - Added submission transport fallback for browser CORS-blocked environments:

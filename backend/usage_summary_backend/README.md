@@ -48,6 +48,14 @@ This narrows spreadsheet access to the current bound sheet context.
 
 Use `usage_summary.schema.json` as the contract for submissions.
 
+Current primary fields:
+
+- `submitted_at_utc` (ISO 8601 timestamp, UTC)
+- `magic_cookie` (pseudonymous dataset key)
+- `use_count_since_last_push`
+- `visited_site_count`
+- `event_type` (`periodic`, `manual`, `adoption`)
+
 ## App integration
 
 Set the endpoint URL in the application Settings field `Usage summary endpoint URL`.
@@ -57,10 +65,24 @@ When a user approves a summary prompt:
 - If endpoint submission succeeds, the summary is sent directly.
 - If endpoint submission fails or is missing, the app falls back to clipboard copy.
 
+## Backend self-tests
+
+These functions are for Apps Script editor runs only and are not exposed through the web app endpoint (`doGet`/`doPost`):
+
+- `backendSelfTestDryRun`: validates workbook binding, payload shape, and token configuration without writing a row.
+- `backendSelfTestAppend`: runs dry-run checks and appends one test row (`source=backend-self-test`).
+
+Use these before frontend tests to confirm backend readiness.
+
 ## Accessing collected data
 
 - Open the Google Sheet used by the Apps Script project.
 - Read collected submissions in the `submissions` worksheet.
-- Filter by `received_at_utc`, `date`, or `magic_cookie` for trend analysis.
+- Filter by `received_at_utc`, `submitted_at_utc`, or `magic_cookie` for trend analysis.
 - Use File > Download to export as CSV/XLSX for local analysis.
 - Owner digest emails are sent to `MWH_REPORT_EMAIL` by `sendPeriodicDigest`.
+
+`token_used` values:
+
+- `yes`: request included a token field.
+- `no`: request did not include a token field.
