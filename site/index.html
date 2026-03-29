@@ -225,6 +225,7 @@
   <div id="help-overlay" class="modal-overlay">
     <div class="modal" style="max-width:560px;">
       <h3 style="margin-top:0;">My World Heritage</h3>
+      <p class="meta">Version <span id="app-version">-</span></p>
       <p>Track World heritage visits and travel with a maintained UNESCO site catalogue, while keeping personal data under your control.</p>
       <h4 style="margin-bottom:6px;">Dataset extract status</h4>
       <div class="status-grid">
@@ -268,6 +269,7 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
+    const APP_VERSION = "0.1.0";
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
@@ -292,7 +294,8 @@
       extractStatusCount: document.getElementById("extract-status-count"), extractStatusInput: document.getElementById("extract-status-input"),
       extractStatusSize: document.getElementById("extract-status-size"), extractStatusDataAt: document.getElementById("extract-status-data-at"),
       extractStatusAttemptAt: document.getElementById("extract-status-attempt-at"), extractStatusRetry: document.getElementById("extract-status-retry"),
-      dateFormat: document.getElementById("date-format"), lengthUnits: document.getElementById("length-units"), multipleThreshold: document.getElementById("multiple-threshold")
+      dateFormat: document.getElementById("date-format"), lengthUnits: document.getElementById("length-units"), multipleThreshold: document.getElementById("multiple-threshold"),
+      appVersion: document.getElementById("app-version")
     };
     let whsData = null, layer = null, markersBySiteId = new Map(), profile = null, connected = false, manuallyDisconnected = false, selectedHome = null, homeMatches = [], enrolSelectedHome = null, enrolMatches = [], lastSearchedSiteIds = [], searchFocusBySiteId = new Map(), ignoreMapClickUntil = 0, selectedSiteId = null, listSortBy = "name", listSortDir = "asc", selectionContext = "";
     let componentCountByRootId = new Map(), highVolumeComponentSiteIds = new Set(), explicitVisibleSiteIds = new Set();
@@ -1534,6 +1537,10 @@
       ui.extractStatusAttemptAt.textContent = asText(status.most_recent_attempt) || "-";
       ui.extractStatusRetry.textContent = status.retry_interval_days == null ? "-" : `every ${status.retry_interval_days} days`;
     }
+    function renderAppVersion() {
+      if (!ui.appVersion) return;
+      ui.appVersion.textContent = APP_VERSION;
+    }
 
     function bootData() {
       showLoading("Loading ...");
@@ -1590,6 +1597,7 @@
     }
     applyFeatureFlags();
     wireUi();
+    renderAppVersion();
     updateUserUi();
     applyScaleUnits();
     bootData();
