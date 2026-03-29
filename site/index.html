@@ -11,7 +11,8 @@
     #search-controls { position: absolute; top: 10px; left: 56px; right: 10px; z-index: 1200; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     #search-wrap { position: relative; display: flex; align-items: center; background: #fff; border: 1px solid #b8c1cc; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; }
     #search-input { width: 220px; border: 0; outline: none; padding: 8px 10px; font: 13px sans-serif; }
-    .icon-btn { width: 36px; height: 36px; border: 0; background: #fff; cursor: pointer; font: 14px sans-serif; }
+    .icon-btn { width: 36px; height: 36px; border: 0; background: #fff; cursor: pointer; font: 14px sans-serif; display: inline-flex; align-items: center; justify-content: center; }
+    .icon-btn svg { width: 18px; height: 18px; stroke: #2f465c; stroke-width: 2; fill: none; pointer-events: none; }
     .pill { background: #fff; border: 1px solid #b8c1cc; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 6px 10px; font: 13px sans-serif; }
     #search-results { position: absolute; top: 44px; left: 0; width: 420px; max-height: 280px; overflow: auto; background: #fff; border: 1px solid #b8c1cc; border-radius: 8px; box-shadow: 0 8px 18px rgba(0,0,0,0.2); display: none; font: 13px/1.4 sans-serif; }
     .result-row { padding: 8px 10px; border-bottom: 1px solid #eef2f6; cursor: pointer; }
@@ -68,11 +69,20 @@
     <button id="app-title-btn" class="pill" type="button"><strong>My World Heritage</strong></button>
     <div id="search-wrap">
       <input id="search-input" type="text" placeholder="Search">
-      <button id="search-btn" class="icon-btn" type="button" title="Search">&#128269;</button>
+      <button id="search-btn" class="icon-btn" type="button" title="Search" aria-label="Search">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+        </svg>
+      </button>
       <div id="search-results"></div>
     </div>
-    <button id="copy-list-btn" class="icon-btn pill" type="button" title="Copy current list">&#128203;</button>
-    <button id="copy-snapshot-btn" class="icon-btn pill" type="button" title="Snapshot image">&#128247;</button>
+    <button id="copy-snapshot-btn" class="icon-btn pill" type="button" title="Snapshot image" aria-label="Copy snapshot image">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="9" y="9" width="10" height="10" rx="2" ry="2"></rect>
+        <path d="M5 15V7c0-1.1 0.9-2 2-2h8"></path>
+      </svg>
+    </button>
     <select id="site-list-mode" class="pill" style="height:36px;">
       <option value=""></option>
       <option value="all" selected>All sites</option>
@@ -178,7 +188,7 @@
         <input id="share-token" class="field" type="password" placeholder="Optional shared token">
       </div>
       <div class="row">
-        <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonymised usage summary (date, use count since last publication, total site count, magic cookie) so project maintainers can understand usage trends. If an endpoint is configured, the summary is posted there; otherwise the app falls back to clipboard copy.</div>
+        <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonomous usage summary (date, use count since last publication, visited site count, magic cookie) so project maintainers can understand usage trends. If an endpoint is configured, the summary is posted there; otherwise the app falls back to clipboard copy.</div>
       </div>
       <div class="row setting-line">
         <label for="date-format" class="setting-label">Date display format</label>
@@ -276,7 +286,7 @@
       extractStatusAttemptAt: document.getElementById("extract-status-attempt-at"), extractStatusRetry: document.getElementById("extract-status-retry"),
       dateFormat: document.getElementById("date-format"), lengthUnits: document.getElementById("length-units"), multipleThreshold: document.getElementById("multiple-threshold")
     };
-    let whsData = null, layer = null, markersBySiteId = new Map(), profile = null, connected = false, manuallyDisconnected = false, selectedHome = null, homeMatches = [], enrolSelectedHome = null, enrolMatches = [], lastSearchedSiteIds = [], searchFocusBySiteId = new Map(), ignoreMapClickUntil = 0, selectedSiteId = null, listSortBy = "name", listSortDir = "asc", selectionContext = "", currentListItems = [];
+    let whsData = null, layer = null, markersBySiteId = new Map(), profile = null, connected = false, manuallyDisconnected = false, selectedHome = null, homeMatches = [], enrolSelectedHome = null, enrolMatches = [], lastSearchedSiteIds = [], searchFocusBySiteId = new Map(), ignoreMapClickUntil = 0, selectedSiteId = null, listSortBy = "name", listSortDir = "asc", selectionContext = "";
     let componentCountByRootId = new Map(), highVolumeComponentSiteIds = new Set(), explicitVisibleSiteIds = new Set();
     const asText = (v) => v == null ? "" : String(v);
     const nowIso = () => new Date().toISOString();
@@ -633,7 +643,6 @@
     function renderSiteList(mode) {
       if (!whsData || !Array.isArray(whsData.features)) return;
       if (!mode) {
-        currentListItems = [];
         selectedSiteId = null;
         ui.detailPane.style.display = "none";
         ui.detailPane.innerHTML = "";
@@ -665,11 +674,6 @@
         if (listSortDir === "desc") return nb.localeCompare(na);
         return na.localeCompare(nb);
       });
-      currentListItems = features.map((f) => ({
-        site_id: asText(f.properties && f.properties.site_id),
-        name: displayName(f.properties || {}),
-        visited: formatVisitDateForDisplay(latestVisitDate(asText(f.properties && f.properties.site_id)))
-      }));
       ui.detailPane.style.display = "block";
       if (!features.length) {
         ui.detailPane.innerHTML = `<div class="site-table-head"><span>Site</span><span>Visited</span></div><p class="meta">No sites in this list.</p>`;
@@ -698,17 +702,6 @@
           zoomToSite(id);
         });
       });
-    }
-    async function copyCurrentList() {
-      if (!currentListItems.length) return alert("No list available to copy.");
-      const lines = ["Site\tVisited"];
-      for (const row of currentListItems) lines.push(`${row.name}\t${row.visited || ""}`);
-      try {
-        await navigator.clipboard.writeText(lines.join("\n"));
-        alert("List copied.");
-      } catch {
-        alert("Clipboard copy failed.");
-      }
     }
     async function copySnapshot() {
       if (typeof html2canvas !== "function") return alert("Snapshot image capture is unavailable in this browser.");
@@ -1360,20 +1353,21 @@
       if (!force && intervalDays == null) return;
       const last = profile.publishPreference.lastPromptAt ? new Date(profile.publishPreference.lastPromptAt).getTime() : 0;
       if (!force && last && (Date.now() - last) < intervalDays * 86400000) return;
+      const visitedSiteCount = Object.values(profile.siteStatuses || {}).filter((s) => asText(s) === "visited").length;
       const summary = {
         date: nowIso().slice(0, 10),
         magic_cookie: profile.magicCookie,
         use_count_since_last_push: Math.max(0, Number(profile.usage.useCount || 0) - Number(profile.usage.publishedUseCount || 0)),
-        total_site_count: Array.isArray(whsData && whsData.features) ? whsData.features.length : 0
+        visited_site_count: visitedSiteCount
       };
       const endpoint = getUsageSummaryEndpoint();
       const destination = endpoint ? `Configured endpoint (${asText(endpoint)})` : "No endpoint configured (clipboard fallback)";
       const prompt = [
-        "Send an anonymous usage summary?",
+        "Send a pseudonomous usage summary?",
         "",
         `Date: ${summary.date}`,
         `Uses since last summary: ${summary.use_count_since_last_push}`,
-        `Total site count: ${summary.total_site_count}`,
+        `Visited site count: ${summary.visited_site_count}`,
         `Destination: ${destination}`
       ].join("\n");
       const ok = confirm(prompt);
@@ -1394,7 +1388,7 @@
       if (!connected || !profile) return;
       profile.publishPreference = profile.publishPreference || { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false };
       if (profile.publishPreference.consentAskedAtStartup) return;
-      const ok = confirm("Allow weekly prompts to publish a pseudonymised usage summary to the project repository?");
+      const ok = confirm("Allow periodic prompts to publish a pseudonomous usage summary to the project repository?");
       profile.publishPreference.enabled = ok;
       if (profile.publishPreference.intervalDays == null) profile.publishPreference.intervalDays = 7;
       profile.publishPreference.lastPromptAt = nowIso();
@@ -1412,7 +1406,6 @@
     }
     function wireUi() {
       document.getElementById("search-btn").addEventListener("click", runSearch);
-      document.getElementById("copy-list-btn").addEventListener("click", copyCurrentList);
       document.getElementById("copy-snapshot-btn").addEventListener("click", copySnapshot);
       ui.searchInput.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTransientUi(); if (e.key === "Enter") { e.preventDefault(); runSearch(); } });
       ui.siteListMode.addEventListener("change", () => { renderSiteList(asText(ui.siteListMode.value)); });
