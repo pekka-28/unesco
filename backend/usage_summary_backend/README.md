@@ -1,4 +1,4 @@
-<!-- README.md 0.1.4 -->
+<!-- README.md 0.1.5 -->
 # Usage summary backend
 
 This backend accepts pseudonymised usage summaries from the web app and sends periodic email digests.
@@ -76,9 +76,11 @@ When a user approves a summary prompt:
 Stats query response (`doGet`):
 
 - `window_days`
-- `submissions`
 - `active_datasets` (unique magic cookies in window)
 - `unique_datasets` (same as `active_datasets`)
+- `average_visited_sites` (average of latest `visited_site_count` per active dataset in window)
+- `encouragement` (backend-owned text message based on active users and average visited sites)
+- `submissions` (window total; diagnostic only)
 
 ## Backend self-tests
 

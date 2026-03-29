@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- index.html 0.1.4 -->
+<!-- index.html 0.1.5 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -57,6 +57,8 @@
     .compact-select { min-width: 160px; }
     .compact-number { width: 110px; min-width: 0; }
     .setting-inline { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+    .notify-dot { position: absolute; right: 6px; top: 6px; width: 8px; height: 8px; border-radius: 999px; background: #c21a1a; display: none; }
+    .submit-status { min-height: 72px; }
     @media (max-width: 800px) {
       #search-controls { left: 50px; right: 8px; gap: 4px; }
       #search-input { width: min(46vw, 200px); }
@@ -98,6 +100,13 @@
   </div>
 
   <div id="title-bar">
+    <button id="summary-inbox-btn" class="icon-btn pill" type="button" title="Usage summary reminder" aria-label="Usage summary reminder" style="position:relative; display:none;">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 6h18v12H3z"></path>
+        <path d="M3 7l9 6 9-6"></path>
+      </svg>
+      <span id="summary-inbox-dot" class="notify-dot"></span>
+    </button>
     <div id="user-menu-wrap">
       <button id="user-menu-toggle" class="pill" type="button">Guest</button>
       <div id="user-menu">
@@ -223,6 +232,18 @@
     </div>
   </div>
 
+  <div id="submit-overlay" class="modal-overlay">
+    <div class="modal" style="max-width:560px;">
+      <h3 style="margin-top:0;">Usage summary</h3>
+      <div id="submit-summary" class="status-grid"></div>
+      <div id="submit-status" class="status-scroll submit-status">Ready to submit.</div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+        <button id="submit-send" class="btn primary" type="button">Submit</button>
+        <button id="submit-close" class="btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div id="help-overlay" class="modal-overlay">
     <div class="modal" style="max-width:560px;">
       <h3 style="margin-top:0;">My World Heritage</h3>
@@ -266,15 +287,15 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
+    const DEFAULT_USAGE_SUMMARY_ENDPOINT = "https://script.google.com/macros/s/AKfycbzPtSZnPoymM9sw2NV2GpSXVsDKAps9txWh_oSmCUw2PvkCjzuM_KHfhVd4MC5Y7BbF/exec";
     const PROFILE_KEY = "mwh_profile";
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.1.4";
+    const APP_VERSION = "0.1.5";
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
-    const DEFAULT_USAGE_SUMMARY_ENDPOINT = "https://script.google.com/macros/s/AKfycbzPtSZnPoymM9sw2NV2GpSXVsDKAps9txWh_oSmCUw2PvkCjzuM_KHfhVd4MC5Y7BbF/exec";
     const CRITERIA_URL = "https://whc.unesco.org/en/criteria/";
     const criteriaTitles = { i: "Masterpiece of human creative genius", ii: "Interchange of human values", iii: "Exceptional testimony to a tradition or civilisation", iv: "Outstanding example illustrating stages in history", v: "Outstanding settlement, land-use, or sea-use example", vi: "Association with events, traditions, ideas, or beliefs", vii: "Exceptional natural beauty", viii: "Earth history and geomorphic processes", ix: "Ecological and biological processes", x: "In-situ biodiversity conservation" };
     const map = L.map("map").setView([20, 0], 2);
@@ -288,6 +309,8 @@
       locStatus: document.getElementById("loc-status"), visitedOnlySetting: document.getElementById("visited-only-setting"),
       shareEnabled: document.getElementById("share-enabled"), shareInterval: document.getElementById("share-interval"), shareNone: document.getElementById("share-none"), shareEndpoint: document.getElementById("share-endpoint"), shareToken: document.getElementById("share-token"), shareSubmitStatus: document.getElementById("share-submit-status"),
       shareInfoLink: document.getElementById("share-info-link"), shareInfoBubble: document.getElementById("share-info-bubble"),
+      summaryInboxBtn: document.getElementById("summary-inbox-btn"), summaryInboxDot: document.getElementById("summary-inbox-dot"),
+      submitOverlay: document.getElementById("submit-overlay"), submitSummary: document.getElementById("submit-summary"), submitStatus: document.getElementById("submit-status"), submitSend: document.getElementById("submit-send"), submitClose: document.getElementById("submit-close"),
       enrolUserName: document.getElementById("enrol-user-name"), enrolHomeQuery: document.getElementById("enrol-home-query"), enrolHomeMatchSelect: document.getElementById("enrol-home-match-select"),
       enrolLocStatus: document.getElementById("enrol-loc-status"), enrolHomeSelected: document.getElementById("enrol-home-selected"), enrolNearbyList: document.getElementById("enrol-nearby-list"),
       siteListMode: document.getElementById("site-list-mode"), appTitleBtn: document.getElementById("app-title-btn"),
@@ -299,6 +322,7 @@
       appVersion: document.getElementById("app-version")
     };
     let whsData = null, layer = null, markersBySiteId = new Map(), profile = null, connected = false, manuallyDisconnected = false, selectedHome = null, homeMatches = [], enrolSelectedHome = null, enrolMatches = [], lastSearchedSiteIds = [], searchFocusBySiteId = new Map(), ignoreMapClickUntil = 0, selectedSiteId = null, listSortBy = "name", listSortDir = "asc", selectionContext = "";
+    let summaryReminderTimer = null, startupSummaryChecked = false, pendingSummaryDialog = null;
     let componentCountByRootId = new Map(), highVolumeComponentSiteIds = new Set(), explicitVisibleSiteIds = new Set();
     const asText = (v) => v == null ? "" : String(v);
     const nowIso = () => new Date().toISOString();
@@ -579,7 +603,17 @@
       persistProfile();
     }
     function setTitle() { const suffix = connected && profile && profile.name ? ` - ${profile.name}` : ""; document.title = `My World Heritage${suffix}`; }
-    function updateUserUi() { if (connected && profile && profile.name) ui.userMenuToggle.textContent = profile.name; else if (manuallyDisconnected) ui.userMenuToggle.textContent = "Disconnected"; else ui.userMenuToggle.textContent = "Guest"; document.getElementById("menu-connect").style.display = connected ? "none" : "block"; document.getElementById("menu-settings").style.display = connected ? "block" : "none"; document.getElementById("menu-export").style.display = connected ? "block" : "none"; document.getElementById("menu-logout").style.display = connected ? "block" : "none"; setTitle(); }
+    function updateUserUi() {
+      if (connected && profile && profile.name) ui.userMenuToggle.textContent = profile.name;
+      else if (manuallyDisconnected) ui.userMenuToggle.textContent = "Disconnected";
+      else ui.userMenuToggle.textContent = "Guest";
+      document.getElementById("menu-connect").style.display = connected ? "none" : "block";
+      document.getElementById("menu-settings").style.display = connected ? "block" : "none";
+      document.getElementById("menu-export").style.display = connected ? "block" : "none";
+      document.getElementById("menu-logout").style.display = connected ? "block" : "none";
+      setTitle();
+      updateSummaryReminderUi();
+    }
     function parseCriteriaTokens(raw) { const t = asText(raw).toLowerCase(); const m = t.match(/(x|ix|viii|vii|vi|iv|v|iii|ii|i)/g) || []; const out = []; const seen = new Set(); for (const k of m) if (!seen.has(k)) { seen.add(k); out.push(k); } return out; }
     function criteriaHtml(raw) { const tokens = parseCriteriaTokens(raw); if (!tokens.length) return "n/a"; return tokens.map(t => `<a href="${CRITERIA_URL}" target="_blank" rel="noopener" title="${asText(criteriaTitles[t] || "UNESCO criterion")}">(${t})</a>`).join(" "); }
     function getVisitStatus(siteId) {
@@ -698,8 +732,8 @@
         const d = formatVisitDateForDisplay(latestVisitDate(sid));
         return `<div class="site-row-grid"><a href="#" class="plain-link site-pick" data-site-id="${sid}" dir="auto" title="${nm}"><span class="site-name-clip">${nm}</span></a><span class="meta" dir="ltr">${d || ""}</span></div>`;
       }).join("");
-      const nameDir = listSortBy === "name" ? (listSortDir === "asc" ? "↑" : "↓") : "";
-      const dateDir = listSortBy === "date" ? (listSortDir === "asc" ? "↑" : "↓") : "";
+      const nameDir = listSortBy === "name" ? (listSortDir === "asc" ? "^" : "v") : "";
+      const dateDir = listSortBy === "date" ? (listSortDir === "asc" ? "^" : "v") : "";
       ui.detailPane.innerHTML = `<div class="site-list-wrap"><div class="site-table-head"><a href="#" id="sort-name">Site (${features.length}) ${nameDir}</a><a href="#" id="sort-date">Visited ${dateDir}</a></div>${rows}</div>`;
       const sortName = document.getElementById("sort-name");
       const sortDate = document.getElementById("sort-date");
@@ -1097,6 +1131,132 @@
       localStorage.setItem(USAGE_SUBMIT_STATUS_KEY, JSON.stringify(status));
       renderSubmitStatus();
     }
+    function buildUsageSummary(eventType = "manual") {
+      const visitedSiteCount = Object.values((profile && profile.siteStatuses) || {}).filter((s) => asText(s) === "visited").length;
+      return {
+        submitted_at_utc: nowIso(),
+        magic_cookie: asText(profile && profile.magicCookie),
+        use_count_since_last_push: Math.max(0, Number(profile && profile.usage && profile.usage.useCount || 0) - Number(profile && profile.usage && profile.usage.publishedUseCount || 0)),
+        visited_site_count: visitedSiteCount,
+        event_type: asText(eventType) || "manual"
+      };
+    }
+    function isSummaryDue() {
+      if (!(connected && profile)) return false;
+      if (!(profile.publishPreference && profile.publishPreference.enabled)) return false;
+      const intervalDays = Number(profile.publishPreference.intervalDays);
+      if (!Number.isFinite(intervalDays) || intervalDays <= 0) return false;
+      const last = profile.publishPreference.lastPromptAt ? Date.parse(profile.publishPreference.lastPromptAt) : NaN;
+      if (!Number.isFinite(last)) return true;
+      return (Date.now() - last) >= intervalDays * 86400000;
+    }
+    function updateSummaryReminderUi() {
+      const due = isSummaryDue();
+      if (ui.summaryInboxBtn) ui.summaryInboxBtn.style.display = due ? "inline-flex" : "none";
+      if (ui.summaryInboxDot) ui.summaryInboxDot.style.display = due ? "block" : "none";
+    }
+    function startSummaryReminderWatch() {
+      if (summaryReminderTimer) return;
+      summaryReminderTimer = window.setInterval(() => {
+        updateSummaryReminderUi();
+      }, 15000);
+    }
+    function stopSummaryReminderWatch() {
+      if (!summaryReminderTimer) return;
+      window.clearInterval(summaryReminderTimer);
+      summaryReminderTimer = null;
+    }
+    function setSubmissionDialogContent(summary) {
+      const endpoint = getUsageSummaryEndpoint();
+      const destination = endpoint ? "Configured endpoint" : "Clipboard fallback";
+      ui.submitSummary.innerHTML = [
+        `<div><strong>Event</strong></div><div>${escapeHtml(asText(summary.event_type) || "manual")}</div>`,
+        `<div><strong>Timestamp (UTC)</strong></div><div>${escapeHtml(asText(summary.submitted_at_utc))}</div>`,
+        `<div><strong>Uses since last summary</strong></div><div>${escapeHtml(String(summary.use_count_since_last_push))}</div>`,
+        `<div><strong>Visited site count</strong></div><div>${escapeHtml(String(summary.visited_site_count))}</div>`,
+        `<div><strong>Destination</strong></div><div>${escapeHtml(destination)}</div>`
+      ].join("");
+    }
+    function setSubmissionDialogStatus(lines) {
+      const text = Array.isArray(lines) ? lines.filter(Boolean).join("\n") : asText(lines);
+      ui.submitStatus.textContent = text || "";
+    }
+    function closeSubmissionDialog() {
+      if (ui.submitSend && ui.submitSend.disabled) return;
+      ui.submitOverlay.style.display = "none";
+      pendingSummaryDialog = null;
+    }
+    function openSubmissionDialog(summary) {
+      pendingSummaryDialog = { summary };
+      setSubmissionDialogContent(summary);
+      setSubmissionDialogStatus("Review and submit when ready.");
+      ui.submitSend.disabled = false;
+      ui.submitClose.disabled = false;
+      ui.submitOverlay.style.display = "flex";
+    }
+    async function runSubmissionDialogSend() {
+      if (!(pendingSummaryDialog && pendingSummaryDialog.summary)) return;
+      const summary = pendingSummaryDialog.summary;
+      ui.submitSend.disabled = true;
+      ui.submitClose.disabled = true;
+      setSubmissionDialogStatus("Submitting usage summary...");
+      let timedOut = false;
+      const timeoutHandle = window.setTimeout(() => {
+        timedOut = true;
+        setSubmissionDialogStatus([
+          "Submission response timed out.",
+          "You may close this dialog and check workbook entries."
+        ]);
+        ui.submitClose.disabled = false;
+      }, 20000);
+
+      let submitted = { ok: false, reason: "Submission timed out." };
+      try {
+        submitted = await submitUsageSummary(summary);
+      } finally {
+        if (!timedOut) window.clearTimeout(timeoutHandle);
+      }
+      if (timedOut) return;
+
+      profile.publishPreference = profile.publishPreference || {};
+      profile.publishPreference.lastPromptAt = nowIso();
+      let sent = !!submitted.ok;
+      if (!sent) {
+        try { sent = await copySummaryToClipboard(summary); } catch {}
+      }
+      if (sent) {
+        profile.usage.publishedUseCount = Number(profile.usage.useCount || 0);
+      }
+      persistProfile();
+      updateSummaryReminderUi();
+
+      const stats = submitted && submitted.stats ? submitted.stats : await fetchUsageStats();
+      const statsLine = formatStatsLine(stats);
+      const lines = [];
+      if (submitted.ok) {
+        if (submitted.duplicate) {
+          lines.push("A recent summary from this profile was already recorded.");
+          recordSubmitStatus("duplicate", `Recent summary already recorded.${statsLine ? " " + statsLine : ""}`);
+        } else if (submitted.unverified) {
+          lines.push("Summary sent.");
+          lines.push("Direct confirmation is not available in this browser.");
+          recordSubmitStatus("submitted_unverified", `Summary sent without direct confirmation.${statsLine ? " " + statsLine : ""}`);
+        } else {
+          lines.push("Summary received.");
+          recordSubmitStatus("submitted", `Summary received.${statsLine ? " " + statsLine : ""}`);
+        }
+      } else if (sent) {
+        lines.push("Direct submit failed, summary copied to clipboard for manual use.");
+        recordSubmitStatus("clipboard_fallback", `Direct submit failed (${asText(submitted.reason)}); copied to clipboard.`);
+      } else {
+        lines.push("Submission failed.");
+        lines.push(asText(submitted.reason) || "Unknown error.");
+        recordSubmitStatus("failed", `Submission failed (${asText(submitted.reason)}).`);
+      }
+      if (statsLine) lines.push(statsLine);
+      setSubmissionDialogStatus(lines);
+      ui.submitClose.disabled = false;
+    }
     function saveSettings() {
       const name = asText(ui.userName.value).trim();
       if (!name) return alert("Please provide a user name.");
@@ -1140,6 +1300,8 @@
       if (!raw) {
         connected = false;
         profile = null;
+        startupSummaryChecked = false;
+        stopSummaryReminderWatch();
         updateUserUi();
         openEnrolment();
         return;
@@ -1177,9 +1339,25 @@
       refreshMarkers();
       applyScaleUnits();
       ensureStartupConsentPrompt();
-      maybePromptPublishSummary();
+      updateSummaryReminderUi();
+      startSummaryReminderWatch();
+      if (!startupSummaryChecked && isSummaryDue()) {
+        startupSummaryChecked = true;
+        openSubmissionDialog(buildUsageSummary("periodic"));
+      } else {
+        startupSummaryChecked = true;
+      }
     }
-    function disconnect() { connected = false; profile = null; manuallyDisconnected = true; updateUserUi(); refreshMarkers(); clearSelection(); }
+    function disconnect() {
+      connected = false;
+      profile = null;
+      manuallyDisconnected = true;
+      startupSummaryChecked = false;
+      stopSummaryReminderWatch();
+      updateUserUi();
+      refreshMarkers();
+      clearSelection();
+    }
     function exportProfile() {
       if (!connected || !profile) return alert("No connected profile to export.");
       const payload = { app: "My World Heritage", schemaVersion: PROFILE_SCHEMA_VERSION, exportedAt: nowIso(), profile };
@@ -1385,9 +1563,9 @@
       if (encouragement) return encouragement;
       const days = Number(stats.window_days || 14);
       const active = Number(stats.active_datasets || stats.unique_datasets || 0);
-      const submissions = Number(stats.submissions || 0);
-      if (!Number.isFinite(days) || !Number.isFinite(active) || !Number.isFinite(submissions)) return "";
-      return `Active datasets in last ${days} days: ${active}. Submissions in window: ${submissions}.`;
+      const avgVisited = Number(stats.average_visited_sites);
+      if (!Number.isFinite(days) || !Number.isFinite(active) || !Number.isFinite(avgVisited)) return "";
+      return `Recent usage (${days} days): ${active} active users, average visited sites ${avgVisited.toFixed(1)}.`;
     }
     async function submitUsageSummary(summary) {
       const endpoint = getUsageSummaryEndpoint();
@@ -1455,91 +1633,33 @@
     }
     async function maybePromptPublishSummary(force = false) {
       if (!connected || !profile) return;
-      if (!force && !(profile.publishPreference && profile.publishPreference.enabled)) return;
-      const intervalDays = profile.publishPreference.intervalDays;
-      if (!force && intervalDays == null) return;
-      const last = profile.publishPreference.lastPromptAt ? new Date(profile.publishPreference.lastPromptAt).getTime() : 0;
-      if (!force && last && (Date.now() - last) < intervalDays * 86400000) return;
-      const visitedSiteCount = Object.values(profile.siteStatuses || {}).filter((s) => asText(s) === "visited").length;
-      const summary = {
-        submitted_at_utc: nowIso(),
-        magic_cookie: profile.magicCookie,
-        use_count_since_last_push: Math.max(0, Number(profile.usage.useCount || 0) - Number(profile.usage.publishedUseCount || 0)),
-        visited_site_count: visitedSiteCount,
-        event_type: force ? "manual" : "periodic"
-      };
-      const endpoint = getUsageSummaryEndpoint();
-      const destination = endpoint ? `Configured endpoint (${asText(endpoint)})` : "No endpoint configured (clipboard fallback)";
-      const prompt = [
-        "Send a pseudonomous usage summary?",
-        "",
-        `Timestamp (UTC): ${summary.submitted_at_utc}`,
-        `Uses since last summary: ${summary.use_count_since_last_push}`,
-        `Visited site count: ${summary.visited_site_count}`,
-        `Destination: ${destination}`
-      ].join("\n");
-      const ok = confirm(prompt);
-      profile.publishPreference.lastPromptAt = nowIso();
-      persistProfile();
-      if (!ok) return;
-      const submitted = await submitUsageSummary(summary);
-      let sent = !!submitted.ok;
-      if (!sent) {
-        try { sent = await copySummaryToClipboard(summary); } catch {}
+      if (force) {
+        openSubmissionDialog(buildUsageSummary("manual"));
+        return;
       }
-      if (sent) {
-        profile.usage.publishedUseCount = Number(profile.usage.useCount || 0);
-        persistProfile();
-        const stats = submitted && submitted.stats ? submitted.stats : await fetchUsageStats();
-        const statsLine = formatStatsLine(stats);
-        if (submitted.ok) {
-          if (submitted.duplicate) {
-            recordSubmitStatus("duplicate", `Endpoint accepted request but flagged duplicate.${statsLine ? " " + statsLine : ""}`);
-            alert(`Usage summary already received recently (duplicate suppressed by backend).${statsLine ? "\n" + statsLine : ""}`);
-          } else if (submitted.unverified) {
-            const via = asText(submitted.transport) || "fallback";
-            recordSubmitStatus("submitted_unverified", `Submitted via ${via}; endpoint response not readable due browser CORS policy.${statsLine ? " " + statsLine : ""}`);
-            alert(`Usage summary submitted via ${via}. Endpoint response cannot be read because of browser CORS policy.${statsLine ? "\n" + statsLine : ""}`);
-          } else {
-            recordSubmitStatus("submitted", `Endpoint accepted usage summary.${statsLine ? " " + statsLine : ""}`);
-            alert(`Usage summary submitted.${statsLine ? "\n" + statsLine : ""}`);
-          }
-        } else {
-          recordSubmitStatus("clipboard_fallback", `Endpoint failed (${asText(submitted.reason)}); summary copied to clipboard.`);
-          alert(`Submission failed (${asText(submitted.reason)}). Summary copied to clipboard.`);
-        }
-      } else {
-        recordSubmitStatus("failed", `Submission failed (${asText(submitted.reason)}); clipboard fallback unavailable.`);
-        alert(`Submission failed (${asText(submitted.reason)}). Clipboard fallback unavailable.`);
-      }
+      if (!isSummaryDue()) return;
+      openSubmissionDialog(buildUsageSummary("periodic"));
     }
     async function submitAdoptionSummary() {
       if (!(connected && profile)) return;
-      const visitedSiteCount = Object.values(profile.siteStatuses || {}).filter((s) => asText(s) === "visited").length;
-      const summary = {
-        submitted_at_utc: nowIso(),
-        magic_cookie: profile.magicCookie,
-        use_count_since_last_push: 0,
-        visited_site_count: visitedSiteCount,
-        event_type: "adoption"
-      };
+      const summary = buildUsageSummary("adoption");
+      summary.use_count_since_last_push = 0;
       const submitted = await submitUsageSummary(summary);
       const stats = submitted && submitted.stats ? submitted.stats : await fetchUsageStats();
       const statsLine = formatStatsLine(stats);
       if (!submitted.ok) {
-        recordSubmitStatus("adoption_failed", `Adoption submission failed (${asText(submitted.reason)}).${statsLine ? " " + statsLine : ""}`);
+        recordSubmitStatus("adoption_failed", `Adoption submission failed.${statsLine ? " " + statsLine : ""}`);
         return;
       }
       if (submitted.duplicate) {
-        recordSubmitStatus("adoption_duplicate", `Adoption submission flagged duplicate.${statsLine ? " " + statsLine : ""}`);
+        recordSubmitStatus("adoption_duplicate", `Adoption summary already recently recorded.${statsLine ? " " + statsLine : ""}`);
         return;
       }
       if (submitted.unverified) {
-        const via = asText(submitted.transport) || "fallback";
-        recordSubmitStatus("adoption_submitted_unverified", `Adoption submission queued via ${via}; endpoint response not readable due browser CORS policy.${statsLine ? " " + statsLine : ""}`);
+        recordSubmitStatus("adoption_submitted_unverified", `Adoption summary sent without direct confirmation.${statsLine ? " " + statsLine : ""}`);
         return;
       }
-      recordSubmitStatus("adoption_submitted", `Adoption submission accepted by endpoint.${statsLine ? " " + statsLine : ""}`);
+      recordSubmitStatus("adoption_submitted", `Adoption summary received.${statsLine ? " " + statsLine : ""}`);
     }
     function ensureStartupConsentPrompt() {
       if (!connected || !profile) return;
@@ -1556,6 +1676,7 @@
       ui.helpOverlay.style.display = "none";
       ui.settingsOverlay.style.display = "none";
       ui.enrolOverlay.style.display = "none";
+      if (ui.submitOverlay.style.display !== "none") closeSubmissionDialog();
       ui.userMenu.style.display = "none";
       ui.searchResults.style.display = "none";
       selectionContext = "";
@@ -1564,6 +1685,9 @@
     function wireUi() {
       document.getElementById("search-btn").addEventListener("click", runSearch);
       document.getElementById("copy-snapshot-btn").addEventListener("click", copySnapshot);
+      ui.summaryInboxBtn.addEventListener("click", () => { maybePromptPublishSummary(false); ui.userMenu.style.display = "none"; });
+      ui.submitSend.addEventListener("click", runSubmissionDialogSend);
+      ui.submitClose.addEventListener("click", closeSubmissionDialog);
       ui.searchInput.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTransientUi(); if (e.key === "Enter") { e.preventDefault(); runSearch(); } });
       ui.siteListMode.addEventListener("change", () => { renderSiteList(asText(ui.siteListMode.value)); });
       ui.appTitleBtn.addEventListener("click", () => { ui.helpOverlay.style.display = "flex"; });

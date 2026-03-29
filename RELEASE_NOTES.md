@@ -1,7 +1,18 @@
-<!-- RELEASE_NOTES.md 0.1.4 -->
+<!-- RELEASE_NOTES.md 0.1.5 -->
 # Release notes
 
 This file tracks published updates with version numbers.
+
+## Version 0.1.5 (2026-03-29)
+
+- Added structured usage-summary submission dialog (payload preview, live status area, submit/close controls).
+- Added due-reminder mailbox icon for periodic summaries during active use; startup prompt remains one-time.
+- Removed submission-count wording from encouragement text shown to users.
+- Backend stats now report active users and average visited sites (`average_visited_sites`) for the configured window.
+- Simplified sort direction indicators in site list headers to avoid mojibake rendering.
+- Added specification coverage in `Requirements.md` for both site and backend, including captioned UI/interface tables.
+- Updated test plan and backend README for the new aggregate metrics and version checks.
+- Bumped app version to `0.1.5`.
 
 ## Version 0.1.4 (2026-03-29)
 

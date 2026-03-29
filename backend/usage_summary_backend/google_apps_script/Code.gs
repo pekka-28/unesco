@@ -1,4 +1,4 @@
-// Code.gs 0.1.4
+// Code.gs 0.1.5
 const SHEET_NAME = 'submissions';
 const PROPS = PropertiesService.getScriptProperties();
 const FALLBACK_ALLOWED_SPREADSHEET_ID = '';
@@ -239,25 +239,43 @@ function buildRecentStats_(days) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sh = ss.getSheetByName(SHEET_NAME);
   if (!sh || sh.getLastRow() < 2) {
-    return { window_days: windowDays, submissions: 0, active_datasets: 0, unique_datasets: 0 };
+    return {
+      window_days: windowDays,
+      submissions: 0,
+      active_datasets: 0,
+      unique_datasets: 0,
+      average_visited_sites: 0,
+      encouragement: `Recent usage (${windowDays} days): 0 active users, average visited sites 0.0.`
+    };
   }
   const sinceMs = Date.now() - (windowDays * 24 * 60 * 60 * 1000);
   const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues();
   let submissions = 0;
-  const cookies = new Set();
+  const latestByCookie = new Map();
   for (const r of rows) {
     const t = toMillis_(r[0]);
     if (!Number.isFinite(t) || t < sinceMs) continue;
     submissions += 1;
     const cookie = String(r[2] || '').trim();
-    if (cookie) cookies.add(cookie);
+    if (!cookie) continue;
+    const visited = Number(r[4] || 0);
+    const safeVisited = Number.isFinite(visited) && visited >= 0 ? visited : 0;
+    const prev = latestByCookie.get(cookie);
+    if (!prev || t >= prev.receivedAtMs) {
+      latestByCookie.set(cookie, { receivedAtMs: t, visitedSiteCount: safeVisited });
+    }
   }
+  let visitedTotal = 0;
+  for (const entry of latestByCookie.values()) visitedTotal += Number(entry.visitedSiteCount || 0);
+  const activeUsers = latestByCookie.size;
+  const averageVisitedSites = activeUsers > 0 ? (visitedTotal / activeUsers) : 0;
   return {
     window_days: windowDays,
     submissions: submissions,
-    active_datasets: cookies.size,
-    unique_datasets: cookies.size,
-    encouragement: `Active datasets in last ${windowDays} days: ${cookies.size}. Submissions in window: ${submissions}.`
+    active_datasets: activeUsers,
+    unique_datasets: activeUsers,
+    average_visited_sites: Number(averageVisitedSites.toFixed(2)),
+    encouragement: `Recent usage (${windowDays} days): ${activeUsers} active users, average visited sites ${averageVisitedSites.toFixed(1)}.`
   };
 }
 

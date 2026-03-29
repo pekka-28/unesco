@@ -1,7 +1,7 @@
-<!-- TEST_PLAN.md 0.1.4 -->
+<!-- TEST_PLAN.md 0.1.5 -->
 # Integration test plan
 
-Version scope: `0.1.4`
+Version scope: `0.1.5`
 
 This plan validates backend ingest, frontend submit flow, and workbook outputs for all supported `event_type` values.
 
@@ -27,6 +27,9 @@ This plan validates backend ingest, frontend submit flow, and workbook outputs f
 - `MWH_INGEST_TOKEN` is either unset, or matches frontend token.
 - `MWH_STATS_WINDOW_DAYS` is set to intended encouragement window (for example `14` or `30`).
 3. In the workbook, confirm target sheet is `submissions`.
+4. Version checks:
+- Site help dialog version equals current release version (`0.1.5`).
+- `site/index.html` and backend `Code.gs` header comments carry the same release version tag.
 
 ## 2. Backend self-test (editor only)
 
@@ -89,6 +92,7 @@ For each new row, inspect:
 5. `source` is expected (`my-world-heritage` or `backend-self-test`).
 6. Optional encouraging stats check:
 - `GET /exec?stats=1` returns `ok: true` and non-negative `active_datasets`.
+- `average_visited_sites` is present and non-negative.
 - Returned `window_days` matches backend property `MWH_STATS_WINDOW_DAYS` (or default `14`).
 
 ## 6. Endpoint and deployment verification

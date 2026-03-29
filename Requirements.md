@@ -1,4 +1,4 @@
-<!-- Requirements.md 0.1.4 -->
+<!-- Requirements.md 0.1.5 -->
 # UNESCO World heritage GIS requirements
 
 ## Product intent
@@ -15,6 +15,8 @@ Build a public, reusable UNESCO World heritage dataset and viewer workflow that:
 Provide a practical, user-controlled World heritage companion that keeps UNESCO site data current and transparent, while keeping personal visit data private by default.
 
 ## Architecture
+
+Figure 1 shows the end-to-end data and application flow used by the project.
 
 ```mermaid
 flowchart LR
@@ -43,6 +45,8 @@ flowchart LR
   D5 --> C5
   D5 --> C6
 ```
+
+Figure 1. My World Heritage data and application architecture.
 
 ## Functional requirements
 
@@ -145,11 +149,12 @@ flowchart LR
 - Summary includes:
 - date,
 - use count since last summary publication,
-- total site count in catalogue,
+- visited site count,
 - dataset magic cookie.
 - Support an optional anonymous form/endpoint URL in Settings for direct summary submission.
 - Keep clipboard/manual fallback when endpoint submission is unavailable.
 - Provide a periodic owner digest email path from collected summaries.
+- Backend encouragement message reports active users and average visited sites in the configured window.
 - Record coarse per-load census counter without detailed telemetry.
 - Note that counts are approximate due to abandoned sessions, multi-device use, and repeated use.
 - Distance display in nearby-site suggestions is deferred until locale-sensitive formatting/unit strategy is defined.
@@ -194,7 +199,7 @@ flowchart LR
 - Search-on-typing as primary interaction:
 - reason not selected: replaced with explicit search-trigger behaviour for predictable updates.
 - Detailed usage-summary payload (visited/inspected counts and duration):
-- reason not selected: replaced by minimal usage-interest summary (`use count since last push`, `total site count`, date, magic cookie).
+- reason not selected: replaced by minimal usage-interest summary (`use count since last push`, `visited site count`, date, magic cookie).
 
 ## Non-goals and deferred items
 
@@ -207,6 +212,85 @@ flowchart LR
 - UNESCO official-list scraper integration replacing Overpass bootstrap source (pending legal/licensing/format review).
 - Manual local-file import fallback for UNESCO extract refresh.
 - Comprehensive locationation support.
+
+## Specifications
+
+This section provides concrete implementation specifications for the site and backend script. Table 1 anchors the user-facing controls used in the site.
+
+### Site specification
+
+- Runtime: single-page HTML application in `site/index.html`, served as a static GitHub Pages site.
+- Map stack: Leaflet + OpenStreetMap tiles.
+- Search stack: local WHS text match plus optional Nominatim geographic search.
+- Persistence model: browser `localStorage` for profile/visits/settings/counters; in-memory logout state for current page.
+- Dataset load: `data/current/unesco_official_sites.geojson` (map), with extract metadata from `data/current/unesco_official_sites.json`.
+- Submission flow: manual and periodic usage summary submission dialog with endpoint POST and clipboard fallback.
+
+Table 1. User interface elements and purpose.
+
+| User interface element | Purpose |
+| --- | --- |
+| Application title (`My World Heritage`) | Opens the help and dataset status dialog. |
+| Search box + magnifier | Runs explicit site/place search and updates result list. |
+| Search results list | Lets the user choose a matched site or place result. |
+| Snapshot button | Captures and copies/downloads current map image. |
+| Site list selector | Switches right-side list mode (`All`, `Multiple`, `Visited`, `Searched`, blank). |
+| Map markers | Show WHS/site points with visited-aware styling and selection. |
+| Site detail pane | Shows selected site details and visit log editor. |
+| Visit log editor | Adds/edits/deletes dated visit entries with status and note. |
+| User menu | Accesses connect/settings/export/import/submit/reset/logout actions. |
+| Settings dialog | Edits profile, filters, formatting, thresholds, and submission settings. |
+| Enrolment dialog | First-run setup for user identity and home location. |
+| Usage summary inbox icon | Appears when periodic submission is due. |
+| Usage summary dialog | Shows payload summary, submit state, and backend encouragement message. |
+| Loading indicator | Signals active load/long-running map operations. |
+
+#### Search control
+
+- Search runs on explicit action (magnifier or Enter), not on every keystroke.
+- A single WHS match recentres the map to that site and updates `Searched sites`.
+- Geographic matches are selectable and can seed WHS matches by bounding box.
+
+#### Site list and detail panes
+
+- The right pane hosts either list mode output or selected-site detail.
+- List header sorting is in-place (`Site`, `Visited`) and remains visible during scroll.
+- Selecting map background clears site detail and keeps list state consistent with current list mode.
+
+#### Visit log editor
+
+- Date entry accepts `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`.
+- Status values are constrained to `visited`, `pending`, `won't visit`, `not visited`.
+- Double-clicking a marker toggles visited/not visited without opening the editor.
+
+#### Usage summary flow
+
+- Startup prompt asks for opt-in once per profile.
+- During active use, due reminders show a mailbox icon instead of interrupting map flow.
+- Submission dialog handles success, duplicate, deferred confirmation, and clipboard fallback states.
+
+### Backend script specification
+
+The Apps Script backend in `backend/usage_summary_backend/google_apps_script/Code.gs` provides ingest, aggregate stats, and owner digest support. Table 2 anchors callable interfaces.
+
+Table 2. Backend interfaces and purpose.
+
+| Interface | Purpose |
+| --- | --- |
+| `doGet` | Health response and aggregate stats response (`?stats=1`). |
+| `doPost` | Validates payload and appends usage summary rows. |
+| `buildRecentStats_` | Computes windowed active users and average visited sites. |
+| `sendPeriodicDigest` | Sends owner digest email from recent workbook rows. |
+| `backendSelfTestDryRun` | Validates workbook/token wiring without row insert. |
+| `backendSelfTestAppend` | Inserts one controlled test row for verification. |
+| `installDailyDigestTrigger` | Creates daily trigger for digest function. |
+| `enforceWorkbookBinding_` | Restricts writes to configured workbook id/name. |
+
+#### Backend aggregate metrics
+
+- Active users: unique `magic_cookie` values in the configured stats window.
+- Average visited sites: average of each active user’s latest `visited_site_count` in that window.
+- Encouragement text is backend-generated so wording/window policy is centrally controlled.
 
 ## Acceptance criteria
 
