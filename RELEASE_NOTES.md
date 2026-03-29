@@ -1,7 +1,28 @@
-<!-- RELEASE_NOTES.md 0.1.9 -->
+<!-- RELEASE_NOTES.md 0.1.10 -->
 # Release notes
 
 This file tracks published updates with version numbers.
+
+## Version 0.1.10 (2026-03-29)
+
+- Updated summary report layout and formatting:
+- title now `My World Heritage – <User>` (en dash),
+- top metadata row now shows local generated timestamp and visited count on same line as prepared-by link,
+- prepared-by line is right-aligned below heading,
+- prepared-by link now includes printable URL text and both name/URL are hyperlinks,
+- removed `Visited sites map` heading,
+- added table column guide block at end,
+- tuned table sizing so `Site` collapses and `Country` is constrained (`max-width: 25em`),
+- added non-breaking spaces in site ids for stable one-line rendering.
+- Changed report visit-date rendering to `d Mmm YYYY` style for full dates (`Mmm YYYY` for year-month, `YYYY` for year).
+- Changed profile export filename to `My World Heritage - <user>.profile`.
+- Improved fallback summary-map rendering with simplified landmasses for clearer non-blurry output.
+- Updated enrolment/home location matching flow:
+- location search results are now dropdown-style selectors (not multi-line list boxes),
+- multi-match searches no longer overwrite input text automatically,
+- nearby seeding list is shown only after a single concrete location is selected,
+- nearby seeding is sorted by distance, capped at first 10 entries, with a 500 km cutoff.
+- empty nearby result text is now unit-neutral (`No nearby sites found.`).
 
 ## Version 0.1.9 (2026-03-29)
 

@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- index.html 0.1.9 -->
+<!-- index.html 0.1.10 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -142,7 +142,7 @@
           <button id="enrol-use-my-location" class="btn" type="button">Use my location</button>
           <span id="enrol-loc-status" class="meta"></span>
         </div>
-        <select id="enrol-home-match-select" class="field" size="6" style="display:none; margin-top:6px;"></select>
+        <select id="enrol-home-match-select" class="field" style="display:none; margin-top:6px;"></select>
         <div id="enrol-home-selected" class="meta" style="margin-top:4px;"></div>
       </div>
       <div class="row">
@@ -173,7 +173,7 @@
           <button id="use-my-location" class="btn" type="button">Use my location</button>
           <span id="loc-status" class="meta"></span>
         </div>
-        <select id="home-match-select" class="field" size="6" style="display:none; margin-top:6px;"></select>
+        <select id="home-match-select" class="field" style="display:none; margin-top:6px;"></select>
         <div id="home-selected" class="meta" style="margin-top:4px;"></div>
       </div>
       <div class="row setting-line">
@@ -293,7 +293,7 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.1.9";
+    const APP_VERSION = "0.1.10";
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
@@ -649,6 +649,33 @@
       if (fmt === "m-d-y") return `${m}-${day}-${y}`;
       return `${y}-${m}-${day}`;
     }
+    function formatVisitDateForReport(raw) {
+      const d = normalizeDateOnly(raw);
+      if (!d) return "";
+      const p = d.split("-");
+      if (p.length === 1) return p[0];
+      if (p.length === 2) {
+        const dt = new Date(Number(p[0]), Number(p[1]) - 1, 1);
+        if (Number.isNaN(dt.getTime())) return `${p[1]} ${p[0]}`;
+        const mon = dt.toLocaleString(undefined, { month: "short" });
+        return `${mon} ${p[0]}`;
+      }
+      const dt = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+      if (Number.isNaN(dt.getTime())) return d;
+      const day = dt.toLocaleString(undefined, { day: "numeric" });
+      const mon = dt.toLocaleString(undefined, { month: "short" });
+      const year = dt.toLocaleString(undefined, { year: "numeric" });
+      return `${day} ${mon} ${year}`;
+    }
+    function formatTimestampLocal(raw) {
+      const dt = raw instanceof Date ? raw : new Date(raw);
+      if (Number.isNaN(dt.getTime())) return asText(raw);
+      const day = dt.toLocaleString(undefined, { day: "numeric" });
+      const mon = dt.toLocaleString(undefined, { month: "short" });
+      const year = dt.toLocaleString(undefined, { year: "numeric" });
+      const time = dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+      return `${day} ${mon} ${year} ${time}`;
+    }
     function applyScaleUnits() {
       if (scaleControl) map.removeControl(scaleControl);
       const units = asText(profile && profile.settings && profile.settings.lengthUnits) || "km";
@@ -907,7 +934,7 @@
           country: asText(p.country),
           status: formatStatusLabel(getVisitStatus(id)),
           latestVisitRaw: latest,
-          latestVisitDisplay: formatVisitDateForDisplay(latest),
+          latestVisitDisplay: formatVisitDateForReport(latest),
           feature
         });
       }
@@ -918,7 +945,7 @@
       return assertValidSiteId(siteId, "report site id");
     }
     function reportSiteIdHtml(siteId) {
-      return escapeHtml(formatReportSiteId(siteId)).replace(/-/g, "\u2011");
+      return escapeHtml(formatReportSiteId(siteId)).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
     }
     function plotVisitedPointsOnProjection(ctx, rows, box) {
       for (const row of rows) {
@@ -943,19 +970,49 @@
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#eef2f7";
+      const bg = ctx.createLinearGradient(0, 0, 0, height);
+      bg.addColorStop(0, "#f6f8fb");
+      bg.addColorStop(1, "#e8edf3");
+      ctx.fillStyle = bg;
       ctx.fillRect(0, 0, width, height);
-      const mapRect = { x: width * 0.04, y: height * 0.10, w: width * 0.92, h: height * 0.80 };
+      const mapRect = { x: width * 0.03, y: height * 0.08, w: width * 0.94, h: height * 0.84 };
       const ocean = ctx.createLinearGradient(0, mapRect.y, 0, mapRect.y + mapRect.h);
-      ocean.addColorStop(0, "#7ca8c7");
-      ocean.addColorStop(0.32, "#76b58f");
-      ocean.addColorStop(0.58, "#9e976f");
-      ocean.addColorStop(0.82, "#d4d8c5");
-      ocean.addColorStop(1, "#e9f0f7");
+      ocean.addColorStop(0, "#86b0ca");
+      ocean.addColorStop(0.45, "#91b694");
+      ocean.addColorStop(1, "#c7d3df");
       ctx.fillStyle = ocean;
       ctx.fillRect(mapRect.x, mapRect.y, mapRect.w, mapRect.h);
-      ctx.strokeStyle = "rgba(255,255,255,0.20)";
-      ctx.lineWidth = 0.9;
+      const toXY = (lon, lat) => ([
+        mapRect.x + ((lon + 180) / 360) * mapRect.w,
+        mapRect.y + ((90 - lat) / 180) * mapRect.h
+      ]);
+      const drawLand = (points, fill = "#c8c9ad") => {
+        if (!Array.isArray(points) || points.length < 3) return;
+        ctx.beginPath();
+        points.forEach((pt, i) => {
+          const [x, y] = toXY(pt[0], pt[1]);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(83, 97, 89, 0.45)";
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      };
+      const landPolys = [
+        [[-169, 72], [-140, 72], [-125, 66], [-105, 56], [-98, 50], [-90, 44], [-82, 27], [-100, 16], [-111, 19], [-120, 26], [-135, 41], [-150, 57], [-165, 65]],
+        [[-82, 12], [-72, 7], [-66, -4], [-59, -16], [-54, -31], [-57, -45], [-66, -55], [-74, -49], [-80, -33], [-82, -17], [-84, -2]],
+        [[-11, 34], [5, 37], [18, 32], [32, 30], [43, 18], [49, 6], [45, -10], [36, -24], [18, -35], [2, -34], [-8, -20], [-11, -2], [-12, 18]],
+        [[-9, 36], [12, 44], [32, 52], [58, 58], [85, 63], [115, 56], [142, 49], [156, 44], [160, 31], [141, 17], [120, 10], [104, 6], [90, 10], [70, 21], [50, 25], [32, 25], [20, 34], [6, 44], [-5, 43]],
+        [[112, -12], [126, -12], [142, -19], [153, -28], [146, -40], [130, -41], [116, -34], [111, -23]],
+        [[-52, 60], [-39, 61], [-28, 72], [-39, 82], [-55, 80], [-63, 70]],
+        [[46, -12], [50, -16], [48, -24], [42, -23], [41, -17]]
+      ];
+      for (const poly of landPolys) drawLand(poly);
+      ctx.strokeStyle = "rgba(255,255,255,0.16)";
+      ctx.lineWidth = 0.75;
       for (let lon = -150; lon <= 150; lon += 30) {
         const x = mapRect.x + ((lon + 180) / 360) * mapRect.w;
         ctx.beginPath();
@@ -971,9 +1028,6 @@
         ctx.stroke();
       }
       plotVisitedPointsOnProjection(ctx, rows, mapRect);
-      ctx.strokeStyle = "#1e3550";
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(mapRect.x, mapRect.y, mapRect.w, mapRect.h);
       return { dataUrl: canvas.toDataURL("image/png"), mode: "fallback" };
     }
     async function renderVisitedSummaryMap(rows) {
@@ -986,38 +1040,48 @@
       try {
         const mapImage = await renderVisitedSummaryMap(rows);
         const now = new Date();
-        const generatedAt = now.toISOString();
+        const generatedAtLocal = formatTimestampLocal(now);
         const displayNameSafe = asText(profile.name || "user");
         const tableRows = rows.map((r) => {
           const url = asText(r.feature && r.feature.properties && r.feature.properties.unesco_url);
           const siteNameHtml = url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(r.name)}</a>` : escapeHtml(r.name);
           return `<tr><td class="site-id">${reportSiteIdHtml(r.siteId)}</td><td>${siteNameHtml}</td><td>${escapeHtml(r.latestVisitDisplay || "")}</td><td>${escapeHtml(r.status)}</td><td class="country">${escapeHtml(r.country)}</td></tr>`;
         }).join("");
+        const appUrl = "https://pekka-28.github.io/unesco/site/";
         const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My World Heritage summary</title>
+<title>My World Heritage &ndash; ${escapeHtml(displayNameSafe)}</title>
 <style>
 body{font:14px/1.4 sans-serif;margin:18px;color:#1f2b38;background:#f6f8fb}
-h1{margin:0 0 4px 0} .meta{color:#45566b;margin:0 0 12px 0}
+h1{margin:0 0 6px 0}
+.meta{color:#45566b;margin:0 0 12px 0}
+.meta-row{display:flex;justify-content:flex-end;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.meta-row .right{text-align:right}
 .card{background:#fff;border:1px solid #c9d4df;border-radius:10px;padding:12px;margin-bottom:14px}
-img{max-width:100%;height:auto;border:1px solid #c9d4df;border-radius:8px;background:#eef2f7}
-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
+img{max-width:100%;height:auto;border:1px solid #c9d4df;border-radius:8px;background:#eef2f7;display:block}
+table{width:100%;border-collapse:collapse;background:#fff;table-layout:auto}
 th,td{border:1px solid #d7e0e8;padding:6px 8px;text-align:left;vertical-align:top}
 th{background:#eef3f8}
-.site-id{white-space:nowrap}
-.country{white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.site-id{white-space:nowrap;width:1%}
+.country{max-width:25em;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
 a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
 </style></head><body>
-<h1>My World Heritage summary</h1>
-<p class="meta">User: ${escapeHtml(displayNameSafe)} | Generated (UTC): ${escapeHtml(generatedAt)} | Visited sites: ${rows.length}</p>
-<p class="meta">Prepared with <a href="https://pekka-28.github.io/unesco/site/" target="_blank" rel="noopener">My World Heritage</a>.</p>
-<div class="card">
-<h2 style="margin-top:0;">Visited sites map</h2>
+<h1>My World Heritage &ndash; ${escapeHtml(displayNameSafe)}</h1>
+<p class="meta meta-row"><span class="right">Generated: ${escapeHtml(generatedAtLocal)} | Visited sites: ${rows.length} | Prepared with <a href="${appUrl}" target="_blank" rel="noopener">My World Heritage</a> (<a href="${appUrl}" target="_blank" rel="noopener">${appUrl}</a>)</span></p>
+<div style="margin:0 0 14px 0;">
 <img alt="Visited sites world map" src="${mapImage.dataUrl}">
 </div>
 <div class="card">
 <h2 style="margin-top:0;">Visited sites</h2>
-<table><colgroup><col style="width:16%"><col style="width:40%"><col style="width:12%"><col style="width:12%"><col style="width:20%"></colgroup><thead><tr><th>Site</th><th>Name</th><th>Visited</th><th>Status</th><th>Country</th></tr></thead><tbody>${tableRows || '<tr><td colspan="5">No visited sites recorded.</td></tr>'}</tbody></table>
+<table><colgroup><col style="width:1%"><col><col style="width:11ch"><col style="width:12ch"><col style="width:25em"></colgroup><thead><tr><th class="site-id">Site</th><th>Name</th><th>Visited</th><th>Status</th><th>Country</th></tr></thead><tbody>${tableRows || '<tr><td colspan="5">No visited sites recorded.</td></tr>'}</tbody></table>
+</div>
+<div class="card">
+<h3 style="margin-top:0;">Table columns</h3>
+<p class="meta"><strong>Site</strong>: unique site identifier used by the application.</p>
+<p class="meta"><strong>Name</strong>: site name, linked to UNESCO narrative page when available.</p>
+<p class="meta"><strong>Visited</strong>: most recent recorded visit date for the site.</p>
+<p class="meta"><strong>Status</strong>: latest visit status recorded for the site.</p>
+<p class="meta"><strong>Country</strong>: jurisdiction list provided by the dataset for the site.</p>
 </div>
 </body></html>`;
         const blob = new Blob([html], { type: "text/html" });
@@ -1167,14 +1231,14 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         return;
       }
       selectEl.style.display = "block";
-      selectEl.innerHTML = matches.map((r, i) => {
+      selectEl.innerHTML = `<option value="">Select one location...</option>` + matches.map((r, i) => {
         return `<option value="${i}">${compactPlaceLabel(r.display_name)}</option>`;
       }).join("");
-      selectEl.selectedIndex = 0;
+      selectEl.value = "";
     }
-    function setSelectedHome(lat, lon, label) {
+    function setSelectedHome(lat, lon, label, updateInput = true) {
       selectedHome = { lat, lon, label };
-      ui.homeQuery.value = label;
+      if (updateInput) ui.homeQuery.value = label;
       ui.homeSelected.textContent = `Selected home location: ${label}`;
       map.setView([lat, lon], 6);
     }
@@ -1201,25 +1265,26 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       return rows;
     }
     function renderEnrolNearby(lat, lon) {
-      const near = getNearbySites(lat, lon, 500);
+      const near = getNearbySites(lat, lon, 500).slice(0, 10);
       if (!near.length) {
         ui.enrolNearbyList.innerHTML = '<div class="meta">No nearby sites found.</div>';
         return;
       }
-      ui.enrolNearbyList.innerHTML = "";
+      ui.enrolNearbyList.innerHTML = '<ol style="margin:0; padding-left:20px;"></ol>';
+      const list = ui.enrolNearbyList.querySelector("ol");
       for (const row of near) {
         const p = row.feature.properties || {};
         const id = asText(p.site_id);
         const name = displayName(p);
-        const el = document.createElement("label");
-        el.className = "visited-row";
-        el.innerHTML = `<input type="checkbox" data-site-id="${id}"> ${name}`;
-        ui.enrolNearbyList.appendChild(el);
+        const li = document.createElement("li");
+        li.className = "visited-row";
+        li.innerHTML = `<label><input type="checkbox" data-site-id="${id}"> <span dir="auto">${escapeHtml(name)}</span></label>`;
+        list.appendChild(li);
       }
     }
-    function setEnrolHome(lat, lon, label) {
+    function setEnrolHome(lat, lon, label, updateInput = true) {
       enrolSelectedHome = { lat, lon, label };
-      ui.enrolHomeQuery.value = label;
+      if (updateInput) ui.enrolHomeQuery.value = label;
       ui.enrolHomeSelected.textContent = `Selected home location: ${label}`;
     }
     async function searchHomeLocation() {
@@ -1251,7 +1316,6 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
           ui.locStatus.textContent = "Unique match found.";
           return;
         }
-        setSelectedHome(Number(results[0].lat), Number(results[0].lon), canonicalPlaceName(results[0].display_name));
         ui.locStatus.textContent = "Select one match from the list.";
       } catch (e) {
         ui.locStatus.textContent = "Search failed: " + e.message;
@@ -1293,8 +1357,9 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
           renderEnrolNearby(Number(m.lat), Number(m.lon));
           return;
         }
-        setEnrolHome(Number(results[0].lat), Number(results[0].lon), canonicalPlaceName(results[0].display_name));
-        renderEnrolNearby(Number(results[0].lat), Number(results[0].lon));
+        enrolSelectedHome = null;
+        ui.enrolHomeSelected.textContent = "";
+        ui.enrolNearbyList.innerHTML = '<div class="meta">Select one location match to list nearby sites.</div>';
         ui.enrolLocStatus.textContent = "Select one match from the list.";
       } catch (e) {
         ui.enrolLocStatus.textContent = "Search failed: " + e.message;
@@ -1335,7 +1400,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       ui.enrolHomeQuery.value = "";
       ui.enrolHomeMatchSelect.style.display = "none";
       ui.enrolHomeMatchSelect.innerHTML = "";
-      ui.enrolNearbyList.innerHTML = '<div class="meta">Select a home location, then press Search to list nearby sites.</div>';
+      ui.enrolNearbyList.innerHTML = '<div class="meta">Search for a home location, then select one match to list nearby sites.</div>';
       ui.enrolLocStatus.textContent = "";
       ui.enrolHomeSelected.textContent = "";
       enrolSelectedHome = null;
@@ -1631,7 +1696,8 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       if (!connected || !profile) return alert("No connected profile to export.");
       const payload = { app: "My World Heritage", schemaVersion: PROFILE_SCHEMA_VERSION, exportedAt: nowIso(), profile };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `my-world-heritage-profile-${(profile.name || "user").replace(/\s+/g, "-").toLowerCase()}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+      const safeUser = asText(profile.name || "User").trim().replace(/[\\/:*?"<>|]/g, "_") || "User";
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `My World Heritage - ${safeUser}.profile`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
     }
     function importProfileFile(file) {
       const reader = new FileReader();
