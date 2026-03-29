@@ -1,7 +1,17 @@
-<!-- RELEASE_NOTES.md 0.1.6 -->
+<!-- RELEASE_NOTES.md 0.1.7 -->
 # Release notes
 
 This file tracks published updates with version numbers.
+
+## Version 0.1.7 (2026-03-29)
+
+- Restored component site identifier visibility in site detail captions to make visit-record keys explicit.
+- Extended search so UNESCO-key queries such as `WHS 500` return all matching records (root plus component sites).
+- Added `Summary` action to the user menu.
+- Added export of a self-contained HTML summary report including:
+- a full-world clipped map image with visited markers (terrain tile mode with fallback rendering),
+- and a visited-sites table suitable for mailing as attachment.
+- Report map rendering includes a robust fallback when terrain tile capture is not available.
 
 ## Version 0.1.6 (2026-03-29)
 

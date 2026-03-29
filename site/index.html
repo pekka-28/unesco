@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- index.html 0.1.6 -->
+<!-- index.html 0.1.7 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -114,6 +114,7 @@
         <button id="menu-settings" class="menu-item" type="button">Settings</button>
         <button id="menu-export" class="menu-item" type="button">Export</button>
         <button id="menu-import" class="menu-item" type="button">Import</button>
+        <button id="menu-summary" class="menu-item" type="button">Summary</button>
         <button id="menu-submit" class="menu-item" type="button">Submit</button>
         <button id="menu-reset" class="menu-item" type="button">Reset</button>
         <button id="menu-logout" class="menu-item" type="button">Logout</button>
@@ -292,7 +293,7 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.1.6";
+    const APP_VERSION = "0.1.7";
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
@@ -304,7 +305,7 @@
     const ui = {
       detailPane: document.getElementById("detail-pane"), searchInput: document.getElementById("search-input"), searchResults: document.getElementById("search-results"), loadingIndicator: document.getElementById("loading-indicator"),
       helpOverlay: document.getElementById("help-overlay"), settingsOverlay: document.getElementById("settings-overlay"), enrolOverlay: document.getElementById("enrol-overlay"), userMenuToggle: document.getElementById("user-menu-toggle"),
-      userMenu: document.getElementById("user-menu"), menuSubmit: document.getElementById("menu-submit"), menuReset: document.getElementById("menu-reset"), importFile: document.getElementById("import-file"), userName: document.getElementById("user-name"),
+      userMenu: document.getElementById("user-menu"), menuSummary: document.getElementById("menu-summary"), menuSubmit: document.getElementById("menu-submit"), menuReset: document.getElementById("menu-reset"), importFile: document.getElementById("import-file"), userName: document.getElementById("user-name"),
       homeQuery: document.getElementById("home-query"), homeMatchSelect: document.getElementById("home-match-select"), homeSelected: document.getElementById("home-selected"),
       locStatus: document.getElementById("loc-status"), visitedOnlySetting: document.getElementById("visited-only-setting"),
       shareEnabled: document.getElementById("share-enabled"), shareInterval: document.getElementById("share-interval"), shareNone: document.getElementById("share-none"), shareEndpoint: document.getElementById("share-endpoint"), shareToken: document.getElementById("share-token"), shareSubmitStatus: document.getElementById("share-submit-status"),
@@ -637,6 +638,7 @@
       document.getElementById("menu-connect").style.display = connected ? "none" : "block";
       document.getElementById("menu-settings").style.display = connected ? "block" : "none";
       document.getElementById("menu-export").style.display = connected ? "block" : "none";
+      if (ui.menuSummary) ui.menuSummary.style.display = connected ? "block" : "none";
       document.getElementById("menu-logout").style.display = connected ? "block" : "none";
       setTitle();
       updateSummaryReminderUi();
@@ -801,6 +803,219 @@
         alert("Snapshot image downloaded.");
       } catch {
         alert("Snapshot image failed.");
+      } finally {
+        hideLoading();
+      }
+    }
+    function featureBySiteId(siteId) {
+      const marker = markersBySiteId.get(asText(siteId));
+      if (marker && marker.feature) return marker.feature;
+      if (!whsData || !Array.isArray(whsData.features)) return null;
+      return whsData.features.find((f) => asText(f && f.properties && f.properties.site_id) === asText(siteId)) || null;
+    }
+    function collectVisitedReportRows() {
+      if (!(connected && profile)) return [];
+      const rows = [];
+      const seen = new Set();
+      const candidateIds = new Set([...(profile.visitedSiteIds || []), ...Object.keys(profile.siteStatuses || {})]);
+      for (const siteId of candidateIds) {
+        if (getVisitStatus(siteId) !== "visited") continue;
+        const feature = featureBySiteId(siteId);
+        if (!feature) continue;
+        const p = feature.properties || {};
+        const id = asText(p.site_id);
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        const whsId = asText(p.site_scope) === "component" ? asText(p.parent_site_id) : asText(p.site_id);
+        const latest = latestVisitDate(id);
+        rows.push({
+          siteId: id,
+          whsId: whsId,
+          name: displayName(p),
+          country: asText(p.country),
+          status: formatStatusLabel(getVisitStatus(id)),
+          latestVisitRaw: latest,
+          latestVisitDisplay: formatVisitDateForDisplay(latest),
+          feature
+        });
+      }
+      rows.sort((a, b) => asText(a.name).localeCompare(asText(b.name)));
+      return rows;
+    }
+    function plotVisitedPointsOnProjection(ctx, rows, box) {
+      for (const row of rows) {
+        const f = row.feature;
+        if (!(f && f.geometry && Array.isArray(f.geometry.coordinates))) continue;
+        const lon = Number(f.geometry.coordinates[0]);
+        const lat = Number(f.geometry.coordinates[1]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+        const x = box.x + ((lon + 180) / 360) * box.w;
+        const y = box.y + ((90 - lat) / 180) * box.h;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = "#d62d20";
+        ctx.fill();
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+      }
+    }
+    function renderFallbackSummaryMap(rows, width = 1200, height = 650) {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#eef2f7";
+      ctx.fillRect(0, 0, width, height);
+      const globe = { x: width * 0.05, y: height * 0.12, w: width * 0.90, h: height * 0.68 };
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(globe.x + globe.w / 2, globe.y + globe.h / 2, globe.w / 2, globe.h / 2, 0, 0, Math.PI * 2);
+      ctx.clip();
+      const ocean = ctx.createLinearGradient(0, globe.y, 0, globe.y + globe.h);
+      ocean.addColorStop(0, "#2e5f8a");
+      ocean.addColorStop(0.52, "#3d7c54");
+      ocean.addColorStop(0.80, "#8f8a66");
+      ocean.addColorStop(1, "#f4f7ff");
+      ctx.fillStyle = ocean;
+      ctx.fillRect(globe.x, globe.y, globe.w, globe.h);
+      ctx.strokeStyle = "rgba(255,255,255,0.22)";
+      ctx.lineWidth = 1;
+      for (let lon = -150; lon <= 150; lon += 30) {
+        const x = globe.x + ((lon + 180) / 360) * globe.w;
+        ctx.beginPath();
+        ctx.moveTo(x, globe.y);
+        ctx.lineTo(x, globe.y + globe.h);
+        ctx.stroke();
+      }
+      for (let lat = -60; lat <= 60; lat += 30) {
+        const y = globe.y + ((90 - lat) / 180) * globe.h;
+        ctx.beginPath();
+        ctx.moveTo(globe.x, y);
+        ctx.lineTo(globe.x + globe.w, y);
+        ctx.stroke();
+      }
+      plotVisitedPointsOnProjection(ctx, rows, globe);
+      ctx.restore();
+      ctx.strokeStyle = "#1e3550";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(globe.x + globe.w / 2, globe.y + globe.h / 2, globe.w / 2, globe.h / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      return { dataUrl: canvas.toDataURL("image/png"), mode: "fallback" };
+    }
+    async function renderVisitedSummaryMap(rows) {
+      if (typeof html2canvas !== "function") return renderFallbackSummaryMap(rows);
+      const host = document.createElement("div");
+      host.style.position = "fixed";
+      host.style.left = "-10000px";
+      host.style.top = "-10000px";
+      host.style.width = "1200px";
+      host.style.height = "650px";
+      host.style.background = "#ffffff";
+      document.body.appendChild(host);
+      let tempMap = null;
+      try {
+        tempMap = L.map(host, { zoomControl: false, attributionControl: false, worldCopyJump: false, inertia: false, preferCanvas: true });
+        const tile = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", { maxZoom: 17, crossOrigin: "anonymous" }).addTo(tempMap);
+        tempMap.setView([15, 0], 1);
+        tempMap.setMaxBounds([[-85, -180], [85, 180]]);
+        for (const row of rows) {
+          const f = row.feature;
+          if (!(f && f.geometry && Array.isArray(f.geometry.coordinates))) continue;
+          const lon = Number(f.geometry.coordinates[0]);
+          const lat = Number(f.geometry.coordinates[1]);
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+          L.circleMarker([lat, lon], { radius: 5, color: "#fff", weight: 1.2, fillColor: "#d62d20", fillOpacity: 0.95 }).addTo(tempMap);
+        }
+        await new Promise((resolve) => {
+          let done = false;
+          const finish = () => { if (!done) { done = true; resolve(); } };
+          tile.on("load", finish);
+          window.setTimeout(finish, 5000);
+        });
+        const mapCanvas = await html2canvas(host, { useCORS: true, backgroundColor: "#ffffff", logging: false, scale: 1 });
+        const finalCanvas = document.createElement("canvas");
+        finalCanvas.width = 1200;
+        finalCanvas.height = 700;
+        const ctx = finalCanvas.getContext("2d");
+        ctx.fillStyle = "#eef2f7";
+        ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+        const globe = { x: finalCanvas.width * 0.05, y: finalCanvas.height * 0.10, w: finalCanvas.width * 0.90, h: finalCanvas.height * 0.72 };
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(globe.x + globe.w / 2, globe.y + globe.h / 2, globe.w / 2, globe.h / 2, 0, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(mapCanvas, globe.x, globe.y, globe.w, globe.h);
+        const tint = ctx.createLinearGradient(0, globe.y, 0, globe.y + globe.h);
+        tint.addColorStop(0, "rgba(160,120,70,0.18)");
+        tint.addColorStop(0.5, "rgba(60,150,80,0.08)");
+        tint.addColorStop(1, "rgba(240,240,250,0.15)");
+        ctx.fillStyle = tint;
+        ctx.fillRect(globe.x, globe.y, globe.w, globe.h);
+        ctx.restore();
+        ctx.strokeStyle = "#1e3550";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(globe.x + globe.w / 2, globe.y + globe.h / 2, globe.w / 2, globe.h / 2, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        return { dataUrl: finalCanvas.toDataURL("image/png"), mode: "terrain" };
+      } catch {
+        return renderFallbackSummaryMap(rows);
+      } finally {
+        if (tempMap) tempMap.remove();
+        host.remove();
+      }
+    }
+    async function exportVisitedSummaryReport() {
+      if (!(connected && profile)) return alert("Connect first.");
+      const rows = collectVisitedReportRows();
+      showLoading("Preparing summary report...");
+      try {
+        const mapImage = await renderVisitedSummaryMap(rows);
+        const now = new Date();
+        const generatedAt = now.toISOString();
+        const displayNameSafe = asText(profile.name || "user");
+        const tableRows = rows.map((r) => {
+          const url = asText(r.feature && r.feature.properties && r.feature.properties.unesco_url);
+          const siteNameHtml = url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(r.name)}</a>` : escapeHtml(r.name);
+          return `<tr><td>${escapeHtml(r.siteId)}</td><td>${escapeHtml(r.whsId)}</td><td>${siteNameHtml}</td><td>${escapeHtml(r.latestVisitDisplay || "")}</td><td>${escapeHtml(r.status)}</td><td>${escapeHtml(r.country)}</td></tr>`;
+        }).join("");
+        const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My World Heritage summary</title>
+<style>
+body{font:14px/1.4 sans-serif;margin:18px;color:#1f2b38;background:#f6f8fb}
+h1{margin:0 0 4px 0} .meta{color:#45566b;margin:0 0 12px 0}
+.card{background:#fff;border:1px solid #c9d4df;border-radius:10px;padding:12px;margin-bottom:14px}
+img{max-width:100%;height:auto;border:1px solid #c9d4df;border-radius:8px;background:#eef2f7}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{border:1px solid #d7e0e8;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#eef3f8}
+</style></head><body>
+<h1>My World Heritage summary</h1>
+<p class="meta">User: ${escapeHtml(displayNameSafe)} | Generated (UTC): ${escapeHtml(generatedAt)} | Visited sites: ${rows.length}</p>
+<div class="card">
+<h2 style="margin-top:0;">Visited sites map</h2>
+<p class="meta">World view clipped to 360-degree earth with visited markers. Basemap mode: ${mapImage.mode === "terrain" ? "terrain" : "fallback"}.</p>
+<img alt="Visited sites world map" src="${mapImage.dataUrl}">
+</div>
+<div class="card">
+<h2 style="margin-top:0;">Visited sites list</h2>
+<table><thead><tr><th>Site id</th><th>WHS id</th><th>Site</th><th>Latest visit</th><th>Status</th><th>Country</th></tr></thead><tbody>${tableRows || '<tr><td colspan="6">No visited sites recorded.</td></tr>'}</tbody></table>
+</div>
+</body></html>`;
+        const blob = new Blob([html], { type: "text/html" });
+        const stamp = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}-${String(now.getUTCHours()).padStart(2, "0")}${String(now.getUTCMinutes()).padStart(2, "0")}`;
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `my-world-heritage-summary-${stamp}.html`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+      } catch (e) {
+        alert("Summary report failed: " + asText(e && e.message));
       } finally {
         hideLoading();
       }
@@ -1763,6 +1978,7 @@
       document.getElementById("menu-settings").addEventListener("click", () => { openSettings(true); ui.userMenu.style.display = "none"; });
       document.getElementById("menu-export").addEventListener("click", () => { exportProfile(); ui.userMenu.style.display = "none"; });
       document.getElementById("menu-import").addEventListener("click", () => { ui.importFile.click(); ui.userMenu.style.display = "none"; });
+      if (ui.menuSummary) ui.menuSummary.addEventListener("click", () => { exportVisitedSummaryReport(); ui.userMenu.style.display = "none"; });
       if (ui.menuSubmit && flags.submitEnabled) ui.menuSubmit.addEventListener("click", () => { maybePromptPublishSummary(true); ui.userMenu.style.display = "none"; });
       if (ui.menuReset && flags.resetEnabled) ui.menuReset.addEventListener("click", () => { if (!confirm("Reset local test data and reload?")) return; localStorage.removeItem(PROFILE_KEY); localStorage.removeItem(CENSUS_KEY); location.reload(); });
       document.getElementById("menu-logout").addEventListener("click", () => { disconnect(); ui.userMenu.style.display = "none"; });

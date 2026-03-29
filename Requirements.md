@@ -1,4 +1,4 @@
-<!-- Requirements.md 0.1.6 -->
+<!-- Requirements.md 0.1.7 -->
 # UNESCO World heritage GIS requirements
 
 ## Product intent
@@ -101,6 +101,7 @@ Figure 1. My World Heritage data and application architecture.
 - Initial load fits WHS bounds; subsequent loads restore prior viewport.
 - Site identifier (WHS id) is shown only in the detail pane in de-emphasised form.
 - Snapshot action captures a map image for sharing (clipboard image copy when supported, otherwise file download).
+- Summary action exports a static HTML report with a world-map image of visited sites and a visited-sites table.
 - Show a visible loading indicator during data load and other long-running user actions.
 
 ### Search
@@ -246,7 +247,7 @@ Table 1. User interface elements and purpose.
 | Map markers | Show WHS/site points with visited-aware styling and selection. |
 | Site detail pane | Shows selected site details and visit log editor. |
 | Visit log editor | Adds/edits/deletes dated visit entries with status and note. |
-| User menu | Accesses connect/settings/export/import/submit/reset/logout actions. |
+| User menu | Accesses connect/settings/export/import/summary/submit/reset/logout actions. |
 | Settings dialog | Edits profile, filters, formatting, thresholds, and submission settings. |
 | Enrolment dialog | First-run setup for user identity and home location. |
 | Usage summary inbox icon | Appears when periodic submission is due. |
