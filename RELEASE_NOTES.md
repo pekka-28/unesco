@@ -1,7 +1,16 @@
-<!-- RELEASE_NOTES.md 0.1.8 -->
+<!-- RELEASE_NOTES.md 0.1.9 -->
 # Release notes
 
 This file tracks published updates with version numbers.
+
+## Version 0.1.9 (2026-03-29)
+
+- Fixed published app/data mismatch that caused `Invalid lookup site id: 99` on load.
+- Published canonical dataset files with `WHS/MWH` identifiers.
+- Added one-time local profile id migration (`99` -> `WHS 99`, legacy `MWH` normalisation) to preserve existing user data.
+- Removed runtime throw-on-lookup for non-canonical ids in feature lookup helpers to avoid hard load failures.
+- Changed dataset fetches to `cache: no-store` so browser cache does not pin stale site-id shapes across deployments.
+- Bumped app version to `0.1.9`.
 
 ## Version 0.1.8 (2026-03-29)
 

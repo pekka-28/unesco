@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- index.html 0.1.8 -->
+<!-- index.html 0.1.9 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -293,7 +293,7 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.1.8";
+    const APP_VERSION = "0.1.9";
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
@@ -385,7 +385,8 @@
     }
     function findFeatureBySiteId(siteId) {
       if (!whsData || !Array.isArray(whsData.features) || !siteId) return null;
-      const wanted = assertValidSiteId(siteId, "lookup site id");
+      const wanted = asText(siteId).trim();
+      if (!wanted) return null;
       return whsData.features.find((f) => asText(f && f.properties && f.properties.site_id).trim() === wanted) || null;
     }
     function displayName(p) {
@@ -880,7 +881,8 @@
       }
     }
     function featureBySiteId(siteId) {
-      const wanted = assertValidSiteId(siteId, "feature lookup site id");
+      const wanted = asText(siteId).trim();
+      if (!wanted) return null;
       const marker = markersBySiteId.get(wanted);
       if (marker && marker.feature) return marker.feature;
       return findFeatureBySiteId(wanted);
@@ -2010,10 +2012,10 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
 
     function bootData() {
       showLoading("Loading ...");
-      fetch("../data/current/unesco_official_sites.json").then(r => r.json()).then(statusData => {
+      fetch("../data/current/unesco_official_sites.json", { cache: "no-store" }).then(r => r.json()).then(statusData => {
         updateExtractStatus(statusData && statusData.metadata && statusData.metadata.extract_status);
       }).catch(() => {});
-      fetch("../data/current/unesco_official_sites.geojson").then(r => r.json()).then(data => {
+      fetch("../data/current/unesco_official_sites.geojson", { cache: "no-store" }).then(r => r.json()).then(data => {
         whsData = data;
         updateExtractStatus(data && data.metadata && data.metadata.extract_status);
         layer = L.geoJSON(data, {
