@@ -52,6 +52,10 @@
     .setting-line { display: flex; align-items: center; gap: 10px; }
     .setting-line .setting-label { min-width: 220px; flex: 0 0 220px; font-weight: 700; }
     .setting-line .field { flex: 1 1 auto; }
+    .setting-line.compact .field { flex: 0 0 auto; width: auto; }
+    .compact-select { min-width: 160px; }
+    .compact-number { width: 110px; min-width: 0; }
+    .setting-inline { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
     @media (max-width: 800px) {
       #search-controls { left: 50px; right: 8px; gap: 4px; }
       #search-input { width: min(46vw, 200px); }
@@ -172,10 +176,10 @@
           <button id="share-info-link" class="info-btn hint-link" type="button" aria-label="Usage summary info">i</button>
         </div>
       </div>
-      <div class="row setting-line">
+      <div class="row setting-line compact">
         <span class="setting-label">Reminder interval (days)</span>
-        <div style="display:flex; align-items:center; gap:8px; flex:1;">
-          <input id="share-interval" class="field" type="number" min="1" style="width:110px; flex:0 0 110px;">
+        <div class="setting-inline">
+          <input id="share-interval" class="field compact-number" type="number" min="1">
           <label><input id="share-none" type="checkbox"> None</label>
         </div>
       </div>
@@ -190,24 +194,27 @@
       <div class="row">
         <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonomous usage summary (date, use count since last publication, visited site count, magic cookie) so project maintainers can understand usage trends. If an endpoint is configured, the summary is posted there; otherwise the app falls back to clipboard copy.</div>
       </div>
-      <div class="row setting-line">
+      <div class="row">
+        <div id="share-submit-status" class="meta"></div>
+      </div>
+      <div class="row setting-line compact">
         <label for="date-format" class="setting-label">Date display format</label>
-        <select id="date-format" class="field">
+        <select id="date-format" class="field compact-select">
           <option value="y-m-d">y-m-d</option>
           <option value="d-m-y">d-m-y</option>
           <option value="m-d-y">m-d-y</option>
         </select>
       </div>
-      <div class="row setting-line">
+      <div class="row setting-line compact">
         <label for="length-units" class="setting-label">Length units</label>
-        <select id="length-units" class="field">
+        <select id="length-units" class="field compact-select">
           <option value="km">Kilometres</option>
           <option value="mi">Miles</option>
         </select>
       </div>
-      <div class="row setting-line">
+      <div class="row setting-line compact">
         <label for="multiple-threshold" class="setting-label">Multiple sites threshold</label>
-        <input id="multiple-threshold" class="field" type="number" min="1" step="1" value="5">
+        <input id="multiple-threshold" class="field compact-number" type="number" min="1" step="1" value="5">
       </div>
       <div class="row" style="display:flex; justify-content:flex-end; gap:8px;">
         <button id="settings-save" class="btn primary" type="button">Save</button>
@@ -260,6 +267,7 @@
     const PROFILE_KEY = "mwh_profile";
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
+    const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
@@ -275,7 +283,7 @@
       userMenu: document.getElementById("user-menu"), menuSubmit: document.getElementById("menu-submit"), menuReset: document.getElementById("menu-reset"), importFile: document.getElementById("import-file"), userName: document.getElementById("user-name"),
       homeQuery: document.getElementById("home-query"), homeMatchSelect: document.getElementById("home-match-select"), homeSelected: document.getElementById("home-selected"),
       locStatus: document.getElementById("loc-status"), visitedOnlySetting: document.getElementById("visited-only-setting"),
-      shareEnabled: document.getElementById("share-enabled"), shareInterval: document.getElementById("share-interval"), shareNone: document.getElementById("share-none"), shareEndpoint: document.getElementById("share-endpoint"), shareToken: document.getElementById("share-token"),
+      shareEnabled: document.getElementById("share-enabled"), shareInterval: document.getElementById("share-interval"), shareNone: document.getElementById("share-none"), shareEndpoint: document.getElementById("share-endpoint"), shareToken: document.getElementById("share-token"), shareSubmitStatus: document.getElementById("share-submit-status"),
       shareInfoLink: document.getElementById("share-info-link"), shareInfoBubble: document.getElementById("share-info-bubble"),
       enrolUserName: document.getElementById("enrol-user-name"), enrolHomeQuery: document.getElementById("enrol-home-query"), enrolHomeMatchSelect: document.getElementById("enrol-home-match-select"),
       enrolLocStatus: document.getElementById("enrol-loc-status"), enrolHomeSelected: document.getElementById("enrol-home-selected"), enrolNearbyList: document.getElementById("enrol-nearby-list"),
@@ -1051,6 +1059,33 @@
       ui.shareNone.checked = profile.publishPreference && profile.publishPreference.intervalDays == null;
       ui.shareEndpoint.value = getUsageSummaryEndpoint();
       ui.shareToken.value = getUsageSummaryToken();
+      renderSubmitStatus();
+    }
+    function loadSubmitStatus() {
+      try {
+        const parsed = JSON.parse(asText(localStorage.getItem(USAGE_SUBMIT_STATUS_KEY)) || "{}");
+        if (!parsed || typeof parsed !== "object") return null;
+        return parsed;
+      } catch {
+        return null;
+      }
+    }
+    function formatSubmitStatus(status) {
+      const at = asText(status && status.at);
+      const state = asText(status && status.state);
+      const message = asText(status && status.message);
+      if (!at && !state && !message) return "";
+      return `Last submission: ${at || "-"} | ${state || "unknown"} | ${message || "-"}`;
+    }
+    function renderSubmitStatus() {
+      if (!ui.shareSubmitStatus) return;
+      const status = loadSubmitStatus();
+      ui.shareSubmitStatus.textContent = formatSubmitStatus(status);
+    }
+    function recordSubmitStatus(state, message) {
+      const status = { at: nowIso(), state: asText(state), message: asText(message) };
+      localStorage.setItem(USAGE_SUBMIT_STATUS_KEY, JSON.stringify(status));
+      renderSubmitStatus();
     }
     function saveSettings() {
       const name = asText(ui.userName.value).trim();
@@ -1335,8 +1370,12 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
-        if (!res.ok) return { ok: false, reason: `HTTP ${res.status}` };
-        return { ok: true };
+        const raw = await res.text();
+        let parsed = null;
+        try { parsed = raw ? JSON.parse(raw) : null; } catch {}
+        if (!res.ok) return { ok: false, reason: `HTTP ${res.status}`, detail: asText(raw).slice(0, 240) };
+        if (parsed && parsed.ok === false) return { ok: false, reason: asText(parsed.error) || "Endpoint rejected submission.", detail: asText(raw).slice(0, 240) };
+        return { ok: true, duplicate: !!(parsed && parsed.duplicate), detail: asText(raw).slice(0, 240) };
       } catch (e) {
         return { ok: false, reason: asText(e && e.message) || "Submission failed." };
       }
@@ -1382,6 +1421,21 @@
       if (sent) {
         profile.usage.publishedUseCount = Number(profile.usage.useCount || 0);
         persistProfile();
+        if (submitted.ok) {
+          if (submitted.duplicate) {
+            recordSubmitStatus("duplicate", "Endpoint accepted request but flagged duplicate.");
+            alert("Usage summary already received recently (duplicate suppressed by backend).");
+          } else {
+            recordSubmitStatus("submitted", "Endpoint accepted usage summary.");
+            alert("Usage summary submitted.");
+          }
+        } else {
+          recordSubmitStatus("clipboard_fallback", `Endpoint failed (${asText(submitted.reason)}); summary copied to clipboard.`);
+          alert(`Submission failed (${asText(submitted.reason)}). Summary copied to clipboard.`);
+        }
+      } else {
+        recordSubmitStatus("failed", `Submission failed (${asText(submitted.reason)}); clipboard fallback unavailable.`);
+        alert(`Submission failed (${asText(submitted.reason)}). Clipboard fallback unavailable.`);
       }
     }
     function ensureStartupConsentPrompt() {
