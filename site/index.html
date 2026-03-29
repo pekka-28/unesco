@@ -58,6 +58,13 @@
     .plain-link:hover { text-decoration: underline; }
     .hint-link { margin-left: 6px; font-size: 12px; }
     .inline-bubble { display: none; margin-top: 6px; background: #f7fafc; border: 1px solid #d7dde5; border-radius: 6px; padding: 8px; font-size: 12px; color: #334; }
+    .combo-inline { display:flex; gap:8px; margin-top:6px; align-items:stretch; }
+    .combo-field-wrap { position: relative; flex: 1 1 auto; }
+    .combo-results { margin-top: 6px; width: 100%; max-height: 220px; overflow: auto; background: #fff; border: 1px solid #b8c1cc; border-radius: 8px; box-shadow: 0 6px 14px rgba(0,0,0,0.12); display: none; font: 13px/1.4 sans-serif; }
+    .combo-results.infield { position:absolute; top:calc(100% + 2px); left:0; right:0; margin-top:0; z-index:12; }
+    .combo-row { padding: 8px 10px; border-bottom: 1px solid #eef2f6; cursor: pointer; }
+    .combo-row:hover { background: #f6f9fc; }
+    .combo-row:last-child { border-bottom: 0; }
     .info-btn { width: 24px; height: 24px; border: 1px solid #8ea1b5; border-radius: 999px; background: #fff; cursor: pointer; font: 12px sans-serif; line-height: 1; }
     .status-scroll { max-height: 110px; overflow: auto; background: #f7fafc; border: 1px solid #d7dde5; border-radius: 6px; padding: 8px; white-space: pre-wrap; word-break: break-word; font: 12px/1.35 sans-serif; }
     .status-grid { display: grid; grid-template-columns: 140px 1fr; gap: 6px 10px; font-size: 12px; margin-bottom: 8px; }
@@ -154,15 +161,17 @@
       </div>
       <div class="row">
         <strong>Home location</strong>
-        <div style="display:flex; gap:8px; margin-top:6px;">
-          <input id="enrol-home-query" class="field" type="text" list="enrol-home-matches" placeholder="Search for your home place">
+        <div class="combo-inline">
+          <div class="combo-field-wrap">
+            <input id="enrol-home-query" class="field" type="text" placeholder="Search for your home place">
+            <div id="enrol-home-suggestions" class="combo-results infield"></div>
+          </div>
           <button id="enrol-home-search" class="btn" type="button">Search</button>
         </div>
         <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
           <button id="enrol-use-my-location" class="btn" type="button">Use my location</button>
           <span id="enrol-loc-status" class="meta"></span>
         </div>
-        <datalist id="enrol-home-matches"></datalist>
         <div id="enrol-home-selected" class="meta" style="margin-top:4px;"></div>
       </div>
       <div class="row">
@@ -334,7 +343,7 @@
       shareInfoLink: document.getElementById("share-info-link"), shareInfoBubble: document.getElementById("share-info-bubble"),
       summaryInboxBtn: document.getElementById("summary-inbox-btn"), summaryInboxDot: document.getElementById("summary-inbox-dot"),
       submitOverlay: document.getElementById("submit-overlay"), submitSummary: document.getElementById("submit-summary"), submitStatus: document.getElementById("submit-status"), submitSend: document.getElementById("submit-send"), submitClose: document.getElementById("submit-close"),
-      enrolUserName: document.getElementById("enrol-user-name"), enrolHomeQuery: document.getElementById("enrol-home-query"), enrolHomeMatchesList: document.getElementById("enrol-home-matches"),
+      enrolUserName: document.getElementById("enrol-user-name"), enrolHomeQuery: document.getElementById("enrol-home-query"), enrolHomeSuggestions: document.getElementById("enrol-home-suggestions"),
       enrolLocStatus: document.getElementById("enrol-loc-status"), enrolHomeSelected: document.getElementById("enrol-home-selected"), enrolNearbyList: document.getElementById("enrol-nearby-list"),
       siteListMode: document.getElementById("site-list-mode"), appTitleBtn: document.getElementById("app-title-btn"),
       extractStatusResult: document.getElementById("extract-status-result"), extractStatusSource: document.getElementById("extract-status-source"),
@@ -1340,11 +1349,11 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       if (!tail || tail.toLowerCase() === canonical.toLowerCase()) return canonical;
       return `${canonical} (${tail})`;
     }
-    function renderLocationMatches(listEl, matches, indexByLabel) {
+    function buildLocationMatchIndex(matches, indexByLabel) {
       indexByLabel.clear();
-      listEl.innerHTML = "";
-      if (!matches.length) return;
+      if (!matches.length) return [];
       const used = new Set();
+      const labels = [];
       for (let i = 0; i < matches.length; i++) {
         const r = matches[i];
         const base = compactPlaceLabel(r.display_name) || `Match ${i + 1}`;
@@ -1356,10 +1365,30 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         }
         used.add(label.toLowerCase());
         indexByLabel.set(label.toLowerCase(), i);
+        labels.push(label);
+      }
+      return labels;
+    }
+    function renderLocationMatches(listEl, matches, indexByLabel) {
+      listEl.innerHTML = "";
+      const labels = buildLocationMatchIndex(matches, indexByLabel);
+      if (!labels.length) return;
+      for (const label of labels) {
         const opt = document.createElement("option");
         opt.value = label;
         listEl.appendChild(opt);
       }
+    }
+    function renderEnrolLocationSuggestions(containerEl, matches, indexByLabel) {
+      if (!containerEl) return;
+      const labels = buildLocationMatchIndex(matches, indexByLabel);
+      if (!labels.length) {
+        containerEl.style.display = "none";
+        containerEl.innerHTML = "";
+        return;
+      }
+      containerEl.style.display = "block";
+      containerEl.innerHTML = labels.map((label, i) => `<div class="combo-row" data-match-index="${i}">${escapeHtml(label)}</div>`).join("");
     }
     function resolveLocationMatchFromInput(inputValue, matches, indexByLabel) {
       const key = asText(inputValue).trim().toLowerCase();
@@ -1478,8 +1507,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       if (applyEnrolSelectionFromInput()) return;
 
       ui.enrolLocStatus.textContent = "Searching...";
-      ui.enrolHomeMatchesList.innerHTML = "";
-      enrolMatchIndexByLabel.clear();
+      renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, [], enrolMatchIndexByLabel);
       enrolMatches = [];
 
       try {
@@ -1490,19 +1518,20 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         if (!Array.isArray(results) || !results.length) return ui.enrolLocStatus.textContent = "No location matches found.";
         enrolMatches = results;
 
-        renderLocationMatches(ui.enrolHomeMatchesList, results, enrolMatchIndexByLabel);
+        renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, results, enrolMatchIndexByLabel);
         if (results.length === 1) {
           const m = results[0];
           const label = canonicalPlaceName(m.display_name);
           setEnrolHome(Number(m.lat), Number(m.lon), label);
           ui.enrolLocStatus.textContent = "Unique match found. Nearby sites listed.";
           renderEnrolNearby(Number(m.lat), Number(m.lon));
+          renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, [], enrolMatchIndexByLabel);
           return;
         }
         enrolSelectedHome = null;
         ui.enrolHomeSelected.textContent = "";
         ui.enrolNearbyList.innerHTML = '<div class="meta">Select one location match to list nearby sites.</div>';
-        ui.enrolLocStatus.textContent = "Select one suggestion in the search field, then press Search.";
+        ui.enrolLocStatus.textContent = "Select one match in the search control.";
       } catch (e) {
         ui.enrolLocStatus.textContent = "Search failed: " + e.message;
       } finally {
@@ -1547,8 +1576,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       ui.enrolOverlay.style.display = "flex";
       ui.enrolUserName.value = "";
       ui.enrolHomeQuery.value = "";
-      ui.enrolHomeMatchesList.innerHTML = "";
-      enrolMatchIndexByLabel.clear();
+      renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, [], enrolMatchIndexByLabel);
       ui.enrolNearbyList.innerHTML = '<div class="meta">Search for a home location, then select one match to list nearby sites.</div>';
       ui.enrolLocStatus.textContent = "";
       ui.enrolHomeSelected.textContent = "";
@@ -2163,12 +2191,24 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         ui.enrolLocStatus.textContent = "Locating...";
         navigator.geolocation.getCurrentPosition((pos) => {
           setEnrolHome(pos.coords.latitude, pos.coords.longitude, "Current device location");
-          ui.enrolHomeMatchesList.innerHTML = "";
-          enrolMatchIndexByLabel.clear();
+          renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, [], enrolMatchIndexByLabel);
           enrolMatches = [];
           ui.enrolLocStatus.textContent = "Location selected. Nearby sites listed.";
           renderEnrolNearby(pos.coords.latitude, pos.coords.longitude);
         }, (err) => { ui.enrolLocStatus.textContent = "Location failed: " + err.message; }, { timeout: 10000, maximumAge: 300000 });
+      });
+      ui.enrolHomeSuggestions.addEventListener("click", (ev) => {
+        const row = ev.target && ev.target.closest ? ev.target.closest("[data-match-index]") : null;
+        if (!row) return;
+        const idx = Number(row.getAttribute("data-match-index"));
+        if (!Number.isFinite(idx) || !enrolMatches[idx]) return;
+        const match = enrolMatches[idx];
+        const label = compactPlaceLabel(match.display_name);
+        ui.enrolHomeQuery.value = label;
+        setEnrolHome(Number(match.lat), Number(match.lon), canonicalPlaceName(match.display_name), false);
+        ui.enrolLocStatus.textContent = "Location selected. Nearby sites listed.";
+        renderEnrolNearby(Number(match.lat), Number(match.lon));
+        renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, [], enrolMatchIndexByLabel);
       });
       document.getElementById("enrol-save").addEventListener("click", saveEnrolment);
       document.getElementById("settings-save").addEventListener("click", saveSettings);
