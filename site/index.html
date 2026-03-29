@@ -1,10 +1,15 @@
 <!doctype html>
-<!-- index.html 0.1.11 -->
+<!-- index.html 0.1.25 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>My World Heritage</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="./icons/favicon-32.svg" sizes="32x40" type="image/svg+xml">
+  <link rel="icon" href="./icons/favicon-16.svg" sizes="16x20" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.svg">
+  <link rel="manifest" href="./site.webmanifest">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <style>
     html, body { height: 100%; margin: 0; }
@@ -15,6 +20,12 @@
     .icon-btn { width: 36px; height: 36px; border: 0; background: #fff; cursor: pointer; font: 14px sans-serif; display: inline-flex; align-items: center; justify-content: center; }
     .icon-btn svg { width: 18px; height: 18px; stroke: #2f465c; stroke-width: 2; fill: none; pointer-events: none; }
     .pill { background: #fff; border: 1px solid #b8c1cc; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 6px 10px; font: 13px sans-serif; }
+    #brand-mark-wrap { position: relative; }
+    #brand-mark-btn { width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+    #brand-mark-btn img { width: 20px; height: 24px; display: block; }
+    .brand-tooltip { position: absolute; top: 42px; left: 0; width: min(380px, 72vw); z-index: 1300; display: none; margin-top: 0; background:#fff; border:1px solid #b8c1cc; border-radius:3px; box-shadow:0 1px 3px rgba(0,0,0,0.25); padding:6px 8px; font:13px/1.4 sans-serif; color:#222; }
+    #brand-mark-wrap:hover .brand-tooltip, #brand-mark-wrap:focus-within .brand-tooltip { display: block; }
+    #loading-indicator { height: 36px; box-sizing: border-box; padding: 0 10px; display: inline-flex; align-items: center; }
     #search-results { position: absolute; top: 44px; left: 0; width: 420px; max-height: 280px; overflow: auto; background: #fff; border: 1px solid #b8c1cc; border-radius: 8px; box-shadow: 0 8px 18px rgba(0,0,0,0.2); display: none; font: 13px/1.4 sans-serif; }
     .result-row { padding: 8px 10px; border-bottom: 1px solid #eef2f6; cursor: pointer; }
     .result-row:hover { background: #f6f9fc; }
@@ -73,6 +84,14 @@
 </head>
 <body>
   <div id="search-controls">
+    <div id="brand-mark-wrap">
+      <button id="brand-mark-btn" class="pill icon-btn" type="button" title="Symbol information" aria-label="Symbol information">
+        <img src="./icons/mwh-temple.svg" alt="My World Heritage symbol">
+      </button>
+      <div class="brand-tooltip">
+        This symbol is a custom My World Heritage mark. It is not the UNESCO logo, not the World Heritage Emblem, and not the Hague Convention Blue Shield.
+      </div>
+    </div>
     <button id="app-title-btn" class="pill" type="button"><strong>My World Heritage</strong></button>
     <div id="search-wrap">
       <input id="search-input" type="text" placeholder="Search">
@@ -97,6 +116,7 @@
       <option value="visited">Visited sites</option>
       <option value="searched">Searched sites</option>
     </select>
+    <div id="loading-indicator" class="pill" style="display:none;">Loading ...</div>
   </div>
 
   <div id="title-bar">
@@ -282,7 +302,6 @@
   </div>
 
   <input id="import-file" type="file" accept="application/json,.json" style="display:none;">
-  <div id="loading-indicator" class="pill" style="position:absolute; left:50%; top:56px; transform:translateX(-50%); z-index:1200; display:none;">Loading ...</div>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -293,7 +312,10 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.1.11";
+    const APP_VERSION = "0.1.25";
+    const APP_NAME = "My World Heritage";
+    const APP_TITLE_SEPARATOR = " \u2013 ";
+    const REPORT_TILE_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}";
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
@@ -306,6 +328,7 @@
       detailPane: document.getElementById("detail-pane"), searchInput: document.getElementById("search-input"), searchResults: document.getElementById("search-results"), loadingIndicator: document.getElementById("loading-indicator"),
       helpOverlay: document.getElementById("help-overlay"), settingsOverlay: document.getElementById("settings-overlay"), enrolOverlay: document.getElementById("enrol-overlay"), userMenuToggle: document.getElementById("user-menu-toggle"),
       userMenu: document.getElementById("user-menu"), menuSummary: document.getElementById("menu-summary"), menuSubmit: document.getElementById("menu-submit"), menuReset: document.getElementById("menu-reset"), importFile: document.getElementById("import-file"), userName: document.getElementById("user-name"),
+      brandMarkWrap: document.getElementById("brand-mark-wrap"), brandMarkBtn: document.getElementById("brand-mark-btn"),
       homeQuery: document.getElementById("home-query"), homeMatchesList: document.getElementById("home-matches"), homeSelected: document.getElementById("home-selected"),
       locStatus: document.getElementById("loc-status"), visitedOnlySetting: document.getElementById("visited-only-setting"),
       shareEnabled: document.getElementById("share-enabled"), shareInterval: document.getElementById("share-interval"), shareNone: document.getElementById("share-none"), shareEndpoint: document.getElementById("share-endpoint"), shareToken: document.getElementById("share-token"), shareSubmitStatus: document.getElementById("share-submit-status"),
@@ -328,6 +351,10 @@
     let componentCountByRootId = new Map(), highVolumeComponentSiteIds = new Set(), explicitVisibleSiteIds = new Set();
     const asText = (v) => v == null ? "" : String(v);
     const nowIso = () => new Date().toISOString();
+    function buildAppTitle(userName = "") {
+      const who = asText(userName).trim();
+      return who ? `${APP_NAME}${APP_TITLE_SEPARATOR}${who}` : APP_NAME;
+    }
     function getBooleanFlag(name, fallback = false) {
       const qp = new URLSearchParams(window.location.search);
       const qv = qp.get(name);
@@ -424,6 +451,9 @@
     function escapeHtml(text) {
       return asText(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
     }
+    function nbspHtml(text) {
+      return escapeHtml(text).replace(/ /g, "&nbsp;");
+    }
     function tooltipContent(feature) {
       const p = feature && feature.properties ? feature.properties : {};
       const primary = displayName(p);
@@ -439,7 +469,7 @@
     function showLoading(text = "Loading ...") {
       loadingCounter += 1;
       ui.loadingIndicator.textContent = text;
-      ui.loadingIndicator.style.display = "block";
+      ui.loadingIndicator.style.display = "inline-flex";
     }
     function hideLoading() {
       loadingCounter = Math.max(0, loadingCounter - 1);
@@ -741,7 +771,10 @@
       else setVisitStatus(siteId, "not_visited");
       persistProfile();
     }
-    function setTitle() { const suffix = connected && profile && profile.name ? ` - ${profile.name}` : ""; document.title = `My World Heritage${suffix}`; }
+    function setTitle() {
+      const who = connected && profile ? asText(profile.name) : "";
+      document.title = buildAppTitle(who);
+    }
     function updateUserUi() {
       if (connected && profile && profile.name) ui.userMenuToggle.textContent = profile.name;
       else if (manuallyDisconnected) ui.userMenuToggle.textContent = "Disconnected";
@@ -1041,8 +1074,153 @@
       plotVisitedPointsOnProjection(ctx, rows, mapRect);
       return { dataUrl: canvas.toDataURL("image/png"), mode: "fallback" };
     }
+    function waitForTileLayerLoad(tileLayer, timeoutMs = 18000) {
+      return new Promise((resolve) => {
+        let done = false;
+        let timedOut = false;
+        let errorCount = 0;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          try { tileLayer.off("load", onLoad); } catch {}
+          try { tileLayer.off("tileerror", onTileError); } catch {}
+          resolve({ timedOut, errorCount });
+        };
+        const onLoad = () => finish();
+        const onTileError = () => { errorCount += 1; };
+        try { tileLayer.on("load", onLoad); } catch {}
+        try { tileLayer.on("tileerror", onTileError); } catch {}
+        setTimeout(() => {
+          timedOut = true;
+          finish();
+        }, timeoutMs);
+      });
+    }
+    async function waitForRenderedTiles(host, tileLayer, timeoutMs = 18000) {
+      const start = Date.now();
+      return new Promise((resolve, reject) => {
+        const step = () => {
+          const timedOut = (Date.now() - start) > timeoutMs;
+          const tiles = Array.from(host.querySelectorAll(".leaflet-tile"));
+          const allReady = tiles.length > 0 && tiles.every((t) => t instanceof HTMLImageElement && t.complete && t.naturalWidth > 0 && t.naturalHeight > 0);
+          const loading = tileLayer && typeof tileLayer.isLoading === "function" && tileLayer.isLoading();
+          const hasLoadingClass = !!host.querySelector(".leaflet-tile-loading");
+          if (allReady && !loading && !hasLoadingClass) {
+            resolve();
+            return;
+          }
+          if (timedOut) {
+            reject(new Error("Timed out waiting for full tile render."));
+            return;
+          }
+          requestAnimationFrame(step);
+        };
+        step();
+      });
+    }
+    function applyReportMapView(tmpMap, rows) {
+      tmpMap.setView([18, 0], 3, { animate: false });
+      for (const row of rows) {
+        const f = row && row.feature;
+        if (!(f && f.geometry && Array.isArray(f.geometry.coordinates))) continue;
+        const lon = Number(f.geometry.coordinates[0]);
+        const lat = Number(f.geometry.coordinates[1]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+        L.circleMarker([lat, lon], {
+          radius: 5,
+          color: "#ffffff",
+          weight: 1.2,
+          fillColor: "#d62d20",
+          fillOpacity: 0.95
+        }).addTo(tmpMap);
+      }
+    }
+    function createReportRenderHost(width, height) {
+      const host = document.createElement("div");
+      host.style.position = "fixed";
+      host.style.left = "0";
+      host.style.top = "0";
+      host.style.width = `${width}px`;
+      host.style.height = `${height}px`;
+      host.style.pointerEvents = "none";
+      host.style.zIndex = "-1";
+      host.style.background = "#eef2f7";
+      document.body.appendChild(host);
+      return host;
+    }
+    async function captureReportMap(width, height, rows) {
+      const host = createReportRenderHost(width, height);
+      let tmpMap = null;
+      try {
+        tmpMap = L.map(host, {
+          zoomControl: false,
+          attributionControl: false,
+          preferCanvas: true,
+          worldCopyJump: false,
+          fadeAnimation: false,
+          zoomAnimation: false,
+          markerZoomAnimation: false,
+          inertia: false
+        }).setView([18, 0], 3);
+        tmpMap.invalidateSize(true);
+        const tileLayer = L.tileLayer(REPORT_TILE_URL, {
+          minZoom: 1,
+          maxZoom: 8,
+          crossOrigin: "anonymous",
+          keepBuffer: 2,
+          updateWhenIdle: true,
+          noWrap: true
+        }).addTo(tmpMap);
+        applyReportMapView(tmpMap, rows);
+        const layerState = await waitForTileLayerLoad(tileLayer);
+        if (layerState.timedOut || layerState.errorCount > 0) throw new Error("Tile source returned incomplete tiles.");
+        await waitForRenderedTiles(host, tileLayer);
+        await new Promise((r) => setTimeout(r, 700));
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const canvas = await html2canvas(host, {
+          useCORS: true,
+          backgroundColor: "#eef2f7",
+          logging: false,
+          scale: 1
+        });
+        return canvas.toDataURL("image/png");
+      } finally {
+        try { if (tmpMap) tmpMap.remove(); } catch {}
+        host.remove();
+      }
+    }
+    async function renderTileSummaryMap(rows, width = 2048, height = 960) {
+      if (typeof html2canvas !== "function") throw new Error("html2canvas unavailable.");
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const hiResDataUrl = await captureReportMap(width, height, rows);
+          const img = await new Promise((resolve, reject) => {
+            const x = new Image();
+            x.onload = () => resolve(x);
+            x.onerror = () => reject(new Error("Failed to decode rendered map image."));
+            x.src = hiResDataUrl;
+          });
+          const out = document.createElement("canvas");
+          out.width = width;
+          out.height = height;
+          const outCtx = out.getContext("2d");
+          outCtx.drawImage(img, 0, 0, width, height);
+          return { dataUrl: out.toDataURL("image/png"), mode: "tile" };
+        } catch {
+          if (attempt < 3) {
+            await new Promise((r) => setTimeout(r, 500 * attempt));
+            continue;
+          }
+        }
+      }
+      throw new Error("No tile source could be captured.");
+    }
     async function renderVisitedSummaryMap(rows) {
-      return renderFallbackSummaryMap(rows);
+      try {
+        return await renderTileSummaryMap(rows);
+      } catch {
+        return renderFallbackSummaryMap(rows);
+      }
     }
     async function exportVisitedSummaryReport() {
       if (!(connected && profile)) return alert("Connect first.");
@@ -1052,43 +1230,53 @@
         const mapImage = await renderVisitedSummaryMap(rows);
         const now = new Date();
         const generatedAtLocal = formatTimestampLocal(now);
-        const displayNameSafe = asText(profile.name || "user");
+        const generatedAtLocalHtml = nbspHtml(generatedAtLocal);
+        const reportUserName = asText(profile.name || "user");
+        const reportTitle = buildAppTitle(reportUserName);
+        const reportTitleHtml = escapeHtml(reportTitle);
+        const reportLogoDataUrl = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 128 128\" role=\"img\" aria-label=\"My World Heritage mark\"><path d=\"M12 36 L64 10 L116 36 Z\" fill=\"#0a4f8a\"/><rect x=\"20\" y=\"44\" width=\"14\" height=\"52\" fill=\"#0a4f8a\"/><rect x=\"57\" y=\"44\" width=\"14\" height=\"52\" fill=\"#0a4f8a\"/><rect x=\"94\" y=\"44\" width=\"14\" height=\"52\" fill=\"#0a4f8a\"/><rect x=\"12\" y=\"102\" width=\"104\" height=\"12\" fill=\"#0a4f8a\"/></svg>');
         const tableRows = rows.map((r) => {
           const url = asText(r.feature && r.feature.properties && r.feature.properties.unesco_url);
           const siteNameHtml = url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(r.name)}</a>` : escapeHtml(r.name);
-          return `<tr><td class="site-id">${reportSiteIdHtml(r.siteId)}</td><td>${siteNameHtml}</td><td>${escapeHtml(r.latestVisitDisplay || "")}</td><td>${escapeHtml(r.status)}</td><td class="country">${escapeHtml(r.country)}</td></tr>`;
+          return `<tr><td class="site-id">${reportSiteIdHtml(r.siteId)}</td><td>${siteNameHtml}</td><td class="visited-date">${nbspHtml(r.latestVisitDisplay || "")}</td><td>${escapeHtml(r.status)}</td><td class="country">${escapeHtml(r.country)}</td></tr>`;
         }).join("");
         const appUrl = "https://pekka-28.github.io/unesco/site/";
         const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My World Heritage &ndash; ${escapeHtml(displayNameSafe)}</title>
+<title>${reportTitleHtml}</title>
 <style>
 body{font:14px/1.4 sans-serif;margin:18px;color:#1f2b38;background:#f6f8fb}
-h1{margin:0 0 6px 0}
-.meta{color:#45566b;margin:0 0 12px 0}
-.meta-row{display:flex;justify-content:flex-end;align-items:flex-start;gap:12px;flex-wrap:wrap}
-.meta-row .right{text-align:right}
+h1{margin:0}
+.meta{color:#45566b;margin:0}
+.head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:0 0 12px 0}
+.head-left{display:flex;align-items:flex-end;gap:12px}
+.head-left h1{margin:0 0 4px 0}
+.report-logo{width:62px;height:76px;display:block;flex:0 0 auto;object-fit:contain;object-position:center bottom;border:0 !important;background:transparent !important;box-shadow:none !important;border-radius:0}
+.head-meta{text-align:right}
 .card{background:#fff;border:1px solid #c9d4df;border-radius:10px;padding:12px;margin-bottom:14px}
-img{max-width:100%;height:auto;border:1px solid #c9d4df;border-radius:8px;background:#eef2f7;display:block}
-table{width:100%;border-collapse:collapse;background:#fff;table-layout:auto}
-th,td{border:1px solid #d7e0e8;padding:6px 8px;text-align:left;vertical-align:top}
-th{background:#eef3f8}
+img{width:100%;height:auto;border:1px solid #c9d4df;border-radius:8px;background:#eef2f7;display:block}
+table{width:100%;border-collapse:collapse;background:#fff;table-layout:auto;border:1px solid #d7e0e8}
+th,td{border:0;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:transparent}
 .site-id{white-space:nowrap;width:1%}
+.visited-date{text-align:right;white-space:nowrap}
 .country{max-width:25em;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
 a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
 </style></head><body>
-<h1>My World Heritage &ndash; ${escapeHtml(displayNameSafe)}</h1>
-<p class="meta meta-row"><span class="right">Generated: ${escapeHtml(generatedAtLocal)} | Visited sites: ${rows.length} | Prepared with <a href="${appUrl}" target="_blank" rel="noopener">My World Heritage</a> (<a href="${appUrl}" target="_blank" rel="noopener">${appUrl}</a>)</span></p>
+<div class="head-row">
+<div class="head-left"><img class="report-logo" alt="My World Heritage symbol" src="${reportLogoDataUrl}"><h1>${reportTitleHtml}</h1></div>
+<p class="meta head-meta">${generatedAtLocalHtml} Visited sites ${rows.length} <a href="${appUrl}" target="_blank" rel="noopener">${escapeHtml(APP_NAME)}</a> <a href="${appUrl}" target="_blank" rel="noopener">(${appUrl})</a></p>
+</div>
 <div style="margin:0 0 14px 0;">
 <img alt="Visited sites world map" src="${mapImage.dataUrl}">
 </div>
 <div class="card">
 <h2 style="margin-top:0;">Visited sites</h2>
-<table><colgroup><col style="width:1%"><col><col style="width:11ch"><col style="width:12ch"><col style="width:25em"></colgroup><thead><tr><th class="site-id">Site</th><th>Name</th><th>Visited</th><th>Status</th><th>Country</th></tr></thead><tbody>${tableRows || '<tr><td colspan="5">No visited sites recorded.</td></tr>'}</tbody></table>
+<table><colgroup><col style="width:1%"><col><col style="width:11ch"><col style="width:12ch"><col style="width:25em"></colgroup><thead><tr><th class="site-id">Site</th><th>Name</th><th class="visited-date">Visited</th><th>Status</th><th>Country</th></tr></thead><tbody>${tableRows || '<tr><td colspan="5">No visited sites recorded.</td></tr>'}</tbody></table>
 </div>
 <div class="card">
 <h3 style="margin-top:0;">Table columns</h3>
-<p class="meta"><strong>Site</strong>: unique site identifier used by the application.</p>
+<p class="meta"><strong>Site</strong>: unique site identifier used by the application. <strong>WHS</strong> is the UNESCO site code; <strong>MWH</strong> is a My World Heritage identifier added to disambiguate sub-site identification.</p>
 <p class="meta"><strong>Name</strong>: site name, linked to UNESCO narrative page when available.</p>
 <p class="meta"><strong>Visited</strong>: most recent recorded visit date for the site.</p>
 <p class="meta"><strong>Status</strong>: latest visit status recorded for the site.</p>
