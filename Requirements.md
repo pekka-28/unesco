@@ -331,6 +331,7 @@ The following backlog items capture material extensions discussed but not yet im
 | Backlog item | Current state | Treatment |
 | --- | --- | --- |
 | Travel sequence lines (straight or great-circle) | Not implemented | Add local-only travel-segment layer and report rendering support. |
+| Private custom datasets (for example concert series, curated travel destinations) | Not implemented | Add optional user-owned dataset overlays with the same local-only profile lifecycle and no mandatory publication path. |
 | Interface localisation setting and bundles | Partially designed | Implement i18n bundle loading and runtime language switch in SPA. |
 | Local-name update source hardening | Partially implemented | Remove Overpass-cache dependency from local-name update scripts and use UNESCO/public-reference plus curated mapping workflow only. |
 | Version coherence automation | Manual | Add CI check to enforce version consistency across app, README, test plan, and release notes. |
