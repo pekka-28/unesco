@@ -2,6 +2,14 @@
 
 This file tracks published updates with version numbers.
 
+## Version 0.1.2 (2026-03-29)
+
+- Added submission transport fallback for browser CORS-blocked environments:
+- if normal JSON fetch fails, try `sendBeacon` with JSON payload as `text/plain`.
+- if beacon is unavailable/fails, try `fetch(..., mode: "no-cors")` as final fallback.
+- Added explicit submission status `submitted_unverified` when transport succeeds but response cannot be read due CORS.
+- Bumped app version to `0.1.2`.
+
 ## Version 0.1.1 (2026-03-29)
 
 - Updated default usage summary endpoint URL to deployment `AKfycbzPtSZnPoymM9sw2NV2GpSXVsDKAps9txWh_oSmCUw2PvkCjzuM_KHfhVd4MC5Y7BbF`.

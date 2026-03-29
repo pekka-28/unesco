@@ -269,7 +269,7 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.1.1";
+    const APP_VERSION = "0.1.2";
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
@@ -1380,7 +1380,40 @@
         if (parsed && parsed.ok === false) return { ok: false, reason: asText(parsed.error) || "Endpoint rejected submission.", detail: asText(raw).slice(0, 240) };
         return { ok: true, duplicate: !!(parsed && parsed.duplicate), detail: asText(raw).slice(0, 240) };
       } catch (e) {
-        return { ok: false, reason: asText(e && e.message) || "Submission failed." };
+        const reason = asText(e && e.message) || "Submission failed.";
+        const token = getUsageSummaryToken();
+        const payload = {
+          ...summary,
+          source: "my-world-heritage",
+          user_agent: asText(navigator.userAgent).slice(0, 512)
+        };
+        if (token) payload.token = token;
+        const fallback = await submitUsageSummaryNoCors(endpoint, payload);
+        if (fallback.ok) return fallback;
+        return { ok: false, reason: reason };
+      }
+    }
+    async function submitUsageSummaryNoCors(endpoint, payload) {
+      try {
+        const asTextPayload = JSON.stringify(payload);
+        if (navigator.sendBeacon) {
+          const blob = new Blob([asTextPayload], { type: "text/plain;charset=UTF-8" });
+          const queued = navigator.sendBeacon(endpoint, blob);
+          if (queued) return { ok: true, unverified: true, transport: "beacon" };
+        }
+      } catch {}
+      try {
+        await fetch(endpoint, {
+          method: "POST",
+          mode: "no-cors",
+          redirect: "follow",
+          headers: { "Content-Type": "text/plain;charset=UTF-8" },
+          body: JSON.stringify(payload),
+          keepalive: true
+        });
+        return { ok: true, unverified: true, transport: "no-cors" };
+      } catch (e) {
+        return { ok: false, reason: asText(e && e.message) || "No-cors fallback failed." };
       }
     }
     async function copySummaryToClipboard(summary) {
@@ -1428,6 +1461,10 @@
           if (submitted.duplicate) {
             recordSubmitStatus("duplicate", "Endpoint accepted request but flagged duplicate.");
             alert("Usage summary already received recently (duplicate suppressed by backend).");
+          } else if (submitted.unverified) {
+            const via = asText(submitted.transport) || "fallback";
+            recordSubmitStatus("submitted_unverified", `Submitted via ${via}; endpoint response not readable due browser CORS policy.`);
+            alert(`Usage summary submitted via ${via}. Endpoint response cannot be read because of browser CORS policy.`);
           } else {
             recordSubmitStatus("submitted", "Endpoint accepted usage summary.");
             alert("Usage summary submitted.");
