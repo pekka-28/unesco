@@ -4,7 +4,7 @@ My World Heritage is a public, user-controlled map companion for UNESCO World He
 
 It exists to make site tracking practical without paywalls, advertising pressure, or forced social publishing.
 
-Current version: `0.1.0`
+Current version: `0.1.1`
 
 ## What it does
 

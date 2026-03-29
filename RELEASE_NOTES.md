@@ -2,6 +2,11 @@
 
 This file tracks published updates with version numbers.
 
+## Version 0.1.1 (2026-03-29)
+
+- Updated default usage summary endpoint URL to deployment `AKfycbzPtSZnPoymM9sw2NV2GpSXVsDKAps9txWh_oSmCUw2PvkCjzuM_KHfhVd4MC5Y7BbF`.
+- Bumped app version to `0.1.1`.
+
 ## Version 0.1.0 (2026-03-29)
 
 - Added formal versioning baseline for the project.
