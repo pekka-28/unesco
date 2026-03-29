@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- index.html 0.1.10 -->
+<!-- index.html 0.1.11 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -135,14 +135,14 @@
       <div class="row">
         <strong>Home location</strong>
         <div style="display:flex; gap:8px; margin-top:6px;">
-          <input id="enrol-home-query" class="field" type="text" placeholder="Search for your home place">
+          <input id="enrol-home-query" class="field" type="text" list="enrol-home-matches" placeholder="Search for your home place">
           <button id="enrol-home-search" class="btn" type="button">Search</button>
         </div>
         <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
           <button id="enrol-use-my-location" class="btn" type="button">Use my location</button>
           <span id="enrol-loc-status" class="meta"></span>
         </div>
-        <select id="enrol-home-match-select" class="field" style="display:none; margin-top:6px;"></select>
+        <datalist id="enrol-home-matches"></datalist>
         <div id="enrol-home-selected" class="meta" style="margin-top:4px;"></div>
       </div>
       <div class="row">
@@ -166,14 +166,14 @@
       <div class="row">
         <strong>Home location</strong>
         <div style="display:flex; gap:8px; margin-top:6px;">
-          <input id="home-query" class="field" type="text" placeholder="Search for your home place">
+          <input id="home-query" class="field" type="text" list="home-matches" placeholder="Search for your home place">
           <button id="home-search" class="btn" type="button">Search</button>
         </div>
         <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
           <button id="use-my-location" class="btn" type="button">Use my location</button>
           <span id="loc-status" class="meta"></span>
         </div>
-        <select id="home-match-select" class="field" style="display:none; margin-top:6px;"></select>
+        <datalist id="home-matches"></datalist>
         <div id="home-selected" class="meta" style="margin-top:4px;"></div>
       </div>
       <div class="row setting-line">
@@ -293,7 +293,7 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.1.10";
+    const APP_VERSION = "0.1.11";
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
@@ -306,13 +306,13 @@
       detailPane: document.getElementById("detail-pane"), searchInput: document.getElementById("search-input"), searchResults: document.getElementById("search-results"), loadingIndicator: document.getElementById("loading-indicator"),
       helpOverlay: document.getElementById("help-overlay"), settingsOverlay: document.getElementById("settings-overlay"), enrolOverlay: document.getElementById("enrol-overlay"), userMenuToggle: document.getElementById("user-menu-toggle"),
       userMenu: document.getElementById("user-menu"), menuSummary: document.getElementById("menu-summary"), menuSubmit: document.getElementById("menu-submit"), menuReset: document.getElementById("menu-reset"), importFile: document.getElementById("import-file"), userName: document.getElementById("user-name"),
-      homeQuery: document.getElementById("home-query"), homeMatchSelect: document.getElementById("home-match-select"), homeSelected: document.getElementById("home-selected"),
+      homeQuery: document.getElementById("home-query"), homeMatchesList: document.getElementById("home-matches"), homeSelected: document.getElementById("home-selected"),
       locStatus: document.getElementById("loc-status"), visitedOnlySetting: document.getElementById("visited-only-setting"),
       shareEnabled: document.getElementById("share-enabled"), shareInterval: document.getElementById("share-interval"), shareNone: document.getElementById("share-none"), shareEndpoint: document.getElementById("share-endpoint"), shareToken: document.getElementById("share-token"), shareSubmitStatus: document.getElementById("share-submit-status"),
       shareInfoLink: document.getElementById("share-info-link"), shareInfoBubble: document.getElementById("share-info-bubble"),
       summaryInboxBtn: document.getElementById("summary-inbox-btn"), summaryInboxDot: document.getElementById("summary-inbox-dot"),
       submitOverlay: document.getElementById("submit-overlay"), submitSummary: document.getElementById("submit-summary"), submitStatus: document.getElementById("submit-status"), submitSend: document.getElementById("submit-send"), submitClose: document.getElementById("submit-close"),
-      enrolUserName: document.getElementById("enrol-user-name"), enrolHomeQuery: document.getElementById("enrol-home-query"), enrolHomeMatchSelect: document.getElementById("enrol-home-match-select"),
+      enrolUserName: document.getElementById("enrol-user-name"), enrolHomeQuery: document.getElementById("enrol-home-query"), enrolHomeMatchesList: document.getElementById("enrol-home-matches"),
       enrolLocStatus: document.getElementById("enrol-loc-status"), enrolHomeSelected: document.getElementById("enrol-home-selected"), enrolNearbyList: document.getElementById("enrol-nearby-list"),
       siteListMode: document.getElementById("site-list-mode"), appTitleBtn: document.getElementById("app-title-btn"),
       extractStatusResult: document.getElementById("extract-status-result"), extractStatusSource: document.getElementById("extract-status-source"),
@@ -323,6 +323,7 @@
       appVersion: document.getElementById("app-version")
     };
     let whsData = null, layer = null, markersBySiteId = new Map(), profile = null, connected = false, manuallyDisconnected = false, selectedHome = null, homeMatches = [], enrolSelectedHome = null, enrolMatches = [], lastSearchedSiteIds = [], searchFocusBySiteId = new Map(), ignoreMapClickUntil = 0, selectedSiteId = null, listSortBy = "name", listSortDir = "asc", selectionContext = "";
+    let homeMatchIndexByLabel = new Map(), enrolMatchIndexByLabel = new Map();
     let summaryReminderTimer = null, startupSummaryChecked = false, pendingSummaryDialog = null, submissionInProgress = false;
     let componentCountByRootId = new Map(), highVolumeComponentSiteIds = new Set(), explicitVisibleSiteIds = new Set();
     const asText = (v) => v == null ? "" : String(v);
@@ -675,6 +676,16 @@
       const year = dt.toLocaleString(undefined, { year: "numeric" });
       const time = dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
       return `${day} ${mon} ${year} ${time}`;
+    }
+    function formatTimestampUtc(raw) {
+      const dt = raw instanceof Date ? raw : new Date(raw);
+      if (Number.isNaN(dt.getTime())) return asText(raw);
+      const mon = dt.toLocaleString("en-GB", { timeZone: "UTC", month: "short" });
+      const day = String(dt.getUTCDate());
+      const year = String(dt.getUTCFullYear());
+      const hh = String(dt.getUTCHours()).padStart(2, "0");
+      const mm = String(dt.getUTCMinutes()).padStart(2, "0");
+      return `${day} ${mon} ${year} ${hh}:${mm} UTC`;
     }
     function applyScaleUnits() {
       if (scaleControl) map.removeControl(scaleControl);
@@ -1224,17 +1235,38 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       if (!tail || tail.toLowerCase() === canonical.toLowerCase()) return canonical;
       return `${canonical} (${tail})`;
     }
-    function renderLocationMatches(selectEl, matches) {
-      if (!matches.length) {
-        selectEl.style.display = "none";
-        selectEl.innerHTML = "";
-        return;
+    function renderLocationMatches(listEl, matches, indexByLabel) {
+      indexByLabel.clear();
+      listEl.innerHTML = "";
+      if (!matches.length) return;
+      const used = new Set();
+      for (let i = 0; i < matches.length; i++) {
+        const r = matches[i];
+        const base = compactPlaceLabel(r.display_name) || `Match ${i + 1}`;
+        let label = base;
+        let n = 2;
+        while (used.has(label.toLowerCase())) {
+          label = `${base} [${n}]`;
+          n += 1;
+        }
+        used.add(label.toLowerCase());
+        indexByLabel.set(label.toLowerCase(), i);
+        const opt = document.createElement("option");
+        opt.value = label;
+        listEl.appendChild(opt);
       }
-      selectEl.style.display = "block";
-      selectEl.innerHTML = `<option value="">Select one location...</option>` + matches.map((r, i) => {
-        return `<option value="${i}">${compactPlaceLabel(r.display_name)}</option>`;
-      }).join("");
-      selectEl.value = "";
+    }
+    function resolveLocationMatchFromInput(inputValue, matches, indexByLabel) {
+      const key = asText(inputValue).trim().toLowerCase();
+      if (!key) return null;
+      const idx = indexByLabel.get(key);
+      if (Number.isFinite(idx) && matches[idx]) return matches[idx];
+      if (matches.length === 1) {
+        const one = matches[0];
+        const canon = canonicalPlaceName(one.display_name).toLowerCase();
+        if (canon === key) return one;
+      }
+      return null;
     }
     function setSelectedHome(lat, lon, label, updateInput = true) {
       selectedHome = { lat, lon, label };
@@ -1287,19 +1319,30 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       if (updateInput) ui.enrolHomeQuery.value = label;
       ui.enrolHomeSelected.textContent = `Selected home location: ${label}`;
     }
+    function applyHomeSelectionFromInput() {
+      const picked = resolveLocationMatchFromInput(ui.homeQuery.value, homeMatches, homeMatchIndexByLabel);
+      if (!picked) return false;
+      setSelectedHome(Number(picked.lat), Number(picked.lon), canonicalPlaceName(picked.display_name));
+      ui.locStatus.textContent = "Location selected.";
+      return true;
+    }
+    function applyEnrolSelectionFromInput() {
+      const picked = resolveLocationMatchFromInput(ui.enrolHomeQuery.value, enrolMatches, enrolMatchIndexByLabel);
+      if (!picked) return false;
+      setEnrolHome(Number(picked.lat), Number(picked.lon), canonicalPlaceName(picked.display_name));
+      ui.enrolLocStatus.textContent = "Location selected. Nearby sites listed.";
+      renderEnrolNearby(Number(picked.lat), Number(picked.lon));
+      return true;
+    }
     async function searchHomeLocation() {
       const q = asText(ui.homeQuery.value).trim();
       if (!q) { ui.locStatus.textContent = "Enter a location to search."; return; }
 
-      if (homeMatches.length === 1 && canonicalPlaceName(homeMatches[0].display_name).toLowerCase() === q.toLowerCase()) {
-        setSelectedHome(Number(homeMatches[0].lat), Number(homeMatches[0].lon), canonicalPlaceName(homeMatches[0].display_name));
-        ui.locStatus.textContent = "Location selected.";
-        return;
-      }
+      if (applyHomeSelectionFromInput()) return;
 
       ui.locStatus.textContent = "Searching...";
-      ui.homeMatchSelect.style.display = "none";
-      ui.homeMatchSelect.innerHTML = "";
+      ui.homeMatchesList.innerHTML = "";
+      homeMatchIndexByLabel.clear();
       homeMatches = [];
 
       try {
@@ -1310,13 +1353,13 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         if (!Array.isArray(results) || !results.length) return ui.locStatus.textContent = "No location matches found.";
 
         homeMatches = results;
-        renderLocationMatches(ui.homeMatchSelect, results);
+        renderLocationMatches(ui.homeMatchesList, results, homeMatchIndexByLabel);
         if (results.length === 1) {
           setSelectedHome(Number(results[0].lat), Number(results[0].lon), canonicalPlaceName(results[0].display_name));
           ui.locStatus.textContent = "Unique match found.";
           return;
         }
-        ui.locStatus.textContent = "Select one match from the list.";
+        ui.locStatus.textContent = "Select one suggestion in the search field, then press Search.";
       } catch (e) {
         ui.locStatus.textContent = "Search failed: " + e.message;
       } finally {
@@ -1327,17 +1370,11 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       const q = asText(ui.enrolHomeQuery.value).trim();
       if (!q) { ui.enrolLocStatus.textContent = "Enter a location to search."; return; }
 
-      if (enrolMatches.length === 1 && canonicalPlaceName(enrolMatches[0].display_name).toLowerCase() === q.toLowerCase()) {
-        const m = enrolMatches[0];
-        setEnrolHome(Number(m.lat), Number(m.lon), canonicalPlaceName(m.display_name));
-        ui.enrolLocStatus.textContent = "Location selected. Nearby sites listed.";
-        renderEnrolNearby(Number(m.lat), Number(m.lon));
-        return;
-      }
+      if (applyEnrolSelectionFromInput()) return;
 
       ui.enrolLocStatus.textContent = "Searching...";
-      ui.enrolHomeMatchSelect.style.display = "none";
-      ui.enrolHomeMatchSelect.innerHTML = "";
+      ui.enrolHomeMatchesList.innerHTML = "";
+      enrolMatchIndexByLabel.clear();
       enrolMatches = [];
 
       try {
@@ -1348,7 +1385,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         if (!Array.isArray(results) || !results.length) return ui.enrolLocStatus.textContent = "No location matches found.";
         enrolMatches = results;
 
-        renderLocationMatches(ui.enrolHomeMatchSelect, results);
+        renderLocationMatches(ui.enrolHomeMatchesList, results, enrolMatchIndexByLabel);
         if (results.length === 1) {
           const m = results[0];
           const label = canonicalPlaceName(m.display_name);
@@ -1360,7 +1397,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         enrolSelectedHome = null;
         ui.enrolHomeSelected.textContent = "";
         ui.enrolNearbyList.innerHTML = '<div class="meta">Select one location match to list nearby sites.</div>';
-        ui.enrolLocStatus.textContent = "Select one match from the list.";
+        ui.enrolLocStatus.textContent = "Select one suggestion in the search field, then press Search.";
       } catch (e) {
         ui.enrolLocStatus.textContent = "Search failed: " + e.message;
       } finally {
@@ -1398,8 +1435,8 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       ui.enrolOverlay.style.display = "flex";
       ui.enrolUserName.value = "";
       ui.enrolHomeQuery.value = "";
-      ui.enrolHomeMatchSelect.style.display = "none";
-      ui.enrolHomeMatchSelect.innerHTML = "";
+      ui.enrolHomeMatchesList.innerHTML = "";
+      enrolMatchIndexByLabel.clear();
       ui.enrolNearbyList.innerHTML = '<div class="meta">Search for a home location, then select one match to list nearby sites.</div>';
       ui.enrolLocStatus.textContent = "";
       ui.enrolHomeSelected.textContent = "";
@@ -1494,7 +1531,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       const destination = endpoint ? "Configured endpoint" : "Clipboard fallback";
       ui.submitSummary.innerHTML = [
         `<div><strong>Event</strong></div><div>${escapeHtml(asText(summary.event_type) || "manual")}</div>`,
-        `<div><strong>Timestamp (UTC)</strong></div><div>${escapeHtml(asText(summary.submitted_at_utc))}</div>`,
+        `<div><strong>Timestamp (UTC)</strong></div><div>${escapeHtml(formatTimestampUtc(summary.submitted_at_utc))}</div>`,
         `<div><strong>Uses since last summary</strong></div><div>${escapeHtml(String(summary.use_count_since_last_push))}</div>`,
         `<div><strong>Visited site count</strong></div><div>${escapeHtml(String(summary.visited_site_count))}</div>`,
         `<div><strong>Client version</strong></div><div>${escapeHtml(asText(summary.client_version || APP_VERSION))}</div>`,
@@ -1675,12 +1712,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       ensureStartupConsentPrompt();
       updateSummaryReminderUi();
       startSummaryReminderWatch();
-      if (!startupSummaryChecked && isSummaryDue()) {
-        startupSummaryChecked = true;
-        openSubmissionDialog(buildUsageSummary("periodic"));
-      } else {
-        startupSummaryChecked = true;
-      }
+      startupSummaryChecked = true;
     }
     function disconnect() {
       connected = false;
@@ -1974,10 +2006,8 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       if (!connected || !profile) return;
       profile.publishPreference = profile.publishPreference || { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false };
       if (profile.publishPreference.consentAskedAtStartup) return;
-      const ok = confirm("Allow periodic prompts to publish a pseudonomous usage summary to the project repository?");
-      profile.publishPreference.enabled = ok;
+      if (profile.publishPreference.enabled == null) profile.publishPreference.enabled = false;
       if (profile.publishPreference.intervalDays == null) profile.publishPreference.intervalDays = 7;
-      profile.publishPreference.lastPromptAt = nowIso();
       profile.publishPreference.consentAskedAtStartup = true;
       persistProfile();
     }
@@ -2014,39 +2044,26 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       ui.importFile.addEventListener("change", () => { const f = ui.importFile.files && ui.importFile.files[0]; if (f) importProfileFile(f); ui.importFile.value = ""; });
       document.getElementById("home-search").addEventListener("click", searchHomeLocation);
       ui.homeQuery.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); searchHomeLocation(); } });
-      document.getElementById("use-my-location").addEventListener("click", () => { if (!navigator.geolocation) { ui.locStatus.textContent = "Geolocation not supported."; return; } ui.locStatus.textContent = "Locating..."; navigator.geolocation.getCurrentPosition((pos) => { setSelectedHome(pos.coords.latitude, pos.coords.longitude, "Current device location"); ui.homeMatchSelect.style.display = "none"; ui.homeMatchSelect.innerHTML = ""; homeMatches = []; ui.locStatus.textContent = "Location set."; }, (err) => { ui.locStatus.textContent = "Location failed: " + err.message; }, { timeout: 10000, maximumAge: 300000 }); });
-      ui.homeMatchSelect.addEventListener("change", () => {
-        const idx = Number(ui.homeMatchSelect.value);
-        if (!Number.isFinite(idx) || !homeMatches[idx]) return;
-        const r = homeMatches[idx];
-        setSelectedHome(Number(r.lat), Number(r.lon), canonicalPlaceName(r.display_name));
-        ui.locStatus.textContent = "Location selected.";
-      });
+      ui.homeQuery.addEventListener("change", () => { applyHomeSelectionFromInput(); });
+      document.getElementById("use-my-location").addEventListener("click", () => { if (!navigator.geolocation) { ui.locStatus.textContent = "Geolocation not supported."; return; } ui.locStatus.textContent = "Locating..."; navigator.geolocation.getCurrentPosition((pos) => { setSelectedHome(pos.coords.latitude, pos.coords.longitude, "Current device location"); ui.homeMatchesList.innerHTML = ""; homeMatchIndexByLabel.clear(); homeMatches = []; ui.locStatus.textContent = "Location set."; }, (err) => { ui.locStatus.textContent = "Location failed: " + err.message; }, { timeout: 10000, maximumAge: 300000 }); });
       ui.shareInfoLink.addEventListener("click", (e) => {
         e.preventDefault();
         ui.shareInfoBubble.style.display = ui.shareInfoBubble.style.display === "block" ? "none" : "block";
       });
       document.getElementById("enrol-home-search").addEventListener("click", searchEnrolHomeLocation);
       ui.enrolHomeQuery.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); searchEnrolHomeLocation(); } });
+      ui.enrolHomeQuery.addEventListener("change", () => { applyEnrolSelectionFromInput(); });
       document.getElementById("enrol-use-my-location").addEventListener("click", () => {
         if (!navigator.geolocation) { ui.enrolLocStatus.textContent = "Geolocation not supported."; return; }
         ui.enrolLocStatus.textContent = "Locating...";
         navigator.geolocation.getCurrentPosition((pos) => {
           setEnrolHome(pos.coords.latitude, pos.coords.longitude, "Current device location");
-          ui.enrolHomeMatchSelect.style.display = "none";
-          ui.enrolHomeMatchSelect.innerHTML = "";
+          ui.enrolHomeMatchesList.innerHTML = "";
+          enrolMatchIndexByLabel.clear();
           enrolMatches = [];
           ui.enrolLocStatus.textContent = "Location selected. Nearby sites listed.";
           renderEnrolNearby(pos.coords.latitude, pos.coords.longitude);
         }, (err) => { ui.enrolLocStatus.textContent = "Location failed: " + err.message; }, { timeout: 10000, maximumAge: 300000 });
-      });
-      ui.enrolHomeMatchSelect.addEventListener("change", () => {
-        const idx = Number(ui.enrolHomeMatchSelect.value);
-        if (!Number.isFinite(idx) || !enrolMatches[idx]) return;
-        const r = enrolMatches[idx];
-        setEnrolHome(Number(r.lat), Number(r.lon), canonicalPlaceName(r.display_name));
-        ui.enrolLocStatus.textContent = "Location selected. Nearby sites listed.";
-        renderEnrolNearby(Number(r.lat), Number(r.lon));
       });
       document.getElementById("enrol-save").addEventListener("click", saveEnrolment);
       document.getElementById("settings-save").addEventListener("click", saveSettings);

@@ -1,7 +1,15 @@
-<!-- RELEASE_NOTES.md 0.1.10 -->
+﻿<!-- RELEASE_NOTES.md 0.1.11 -->
 # Release notes
 
 This file tracks published updates with version numbers.
+
+## Version 0.1.11 (2026-03-29)
+
+- Home-location selection now uses the same search control (input + suggestion list) rather than a separate match selector.
+- Home/enrolment location flows now require selecting a suggestion in the search field and confirming with Search for multi-match results.
+- Removed startup consent popup for usage summary opt-in; startup no longer raises unsolicited confirm dialogs.
+- Startup periodic-summary auto-open dialog removed; due reminders are surfaced via the mailbox icon instead.
+- Usage summary dialog timestamp now renders in human-readable UTC format (`d Mmm YYYY hh:mm UTC`) instead of raw ISO text.
 
 ## Version 0.1.10 (2026-03-29)
 
@@ -140,5 +148,6 @@ This file tracks published updates with version numbers.
 ## Earlier work
 
 Before versioned notes were introduced, changes were tracked in commit history and issue discussion.
+
 
 
