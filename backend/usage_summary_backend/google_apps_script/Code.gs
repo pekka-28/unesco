@@ -49,7 +49,9 @@ function validatePayload_(p) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(p.date || ''))) throw new Error('date must be YYYY-MM-DD.');
   if (!/^[a-fA-F0-9]{16,64}$/.test(String(p.magic_cookie || ''))) throw new Error('magic_cookie must be hex.');
   if (!Number.isInteger(p.use_count_since_last_push) || p.use_count_since_last_push < 0) throw new Error('use_count_since_last_push must be a non-negative integer.');
-  if (!Number.isInteger(p.total_site_count) || p.total_site_count < 0) throw new Error('total_site_count must be a non-negative integer.');
+  const hasVisited = Number.isInteger(p.visited_site_count) && p.visited_site_count >= 0;
+  const hasTotal = Number.isInteger(p.total_site_count) && p.total_site_count >= 0;
+  if (!hasVisited && !hasTotal) throw new Error('visited_site_count (or legacy total_site_count) must be a non-negative integer.');
 }
 
 function validateToken_(p) {
@@ -86,7 +88,7 @@ function isDuplicate_(p) {
     String(p.date || ''),
     String(p.magic_cookie || ''),
     Number(p.use_count_since_last_push || 0),
-    Number(p.total_site_count || 0)
+    getVisitedSiteCount_(p)
   ]);
   const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, keyMaterial);
   const hex = digest.map(function(b) {
@@ -119,7 +121,7 @@ function appendSubmission_(p) {
       'date',
       'magic_cookie',
       'use_count_since_last_push',
-      'total_site_count',
+      'visited_site_count',
       'source',
       'user_agent',
       'token_used'
@@ -130,7 +132,7 @@ function appendSubmission_(p) {
     String(p.date),
     String(p.magic_cookie),
     Number(p.use_count_since_last_push),
-    Number(p.total_site_count),
+    getVisitedSiteCount_(p),
     String(p.source || 'web-app'),
     String(p.user_agent || ''),
     String(p.token ? 'yes' : 'no')
@@ -166,14 +168,14 @@ function sendPeriodicDigest() {
 
   const uniqueCookies = new Set(recent.map((r) => String(r[2] || '')).filter(Boolean));
   const totalUses = recent.reduce((sum, r) => sum + Number(r[3] || 0), 0);
-  const avgSites = recent.length ? (recent.reduce((sum, r) => sum + Number(r[4] || 0), 0) / recent.length) : 0;
+  const avgVisited = recent.length ? (recent.reduce((sum, r) => sum + Number(r[4] || 0), 0) / recent.length) : 0;
 
   const body = [
     `Period: ${sinceIso} to ${new Date().toISOString()}`,
     `Submissions: ${recent.length}`,
     `Unique datasets (magic cookie): ${uniqueCookies.size}`,
     `Aggregated use_count_since_last_push: ${totalUses}`,
-    `Average total_site_count: ${avgSites.toFixed(1)}`,
+    `Average visited_site_count: ${avgVisited.toFixed(1)}`,
     '',
     'This digest is pseudonymised usage telemetry from My World Heritage.'
   ].join('\n');
@@ -184,6 +186,14 @@ function sendPeriodicDigest() {
     body: body
   });
   PROPS.setProperty('MWH_LAST_DIGEST_AT', new Date().toISOString());
+}
+
+function getVisitedSiteCount_(p) {
+  const visited = Number(p.visited_site_count);
+  if (Number.isInteger(visited) && visited >= 0) return visited;
+  const legacyTotal = Number(p.total_site_count);
+  if (Number.isInteger(legacyTotal) && legacyTotal >= 0) return legacyTotal;
+  return 0;
 }
 
 function installDailyDigestTrigger() {
