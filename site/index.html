@@ -1049,8 +1049,8 @@
       ui.shareEnabled.checked = !!(profile.publishPreference && profile.publishPreference.enabled);
       ui.shareInterval.value = Number((profile.publishPreference && profile.publishPreference.intervalDays) || 7);
       ui.shareNone.checked = profile.publishPreference && profile.publishPreference.intervalDays == null;
-      ui.shareEndpoint.value = asText(profile.settings && profile.settings.usageSummaryEndpoint);
-      ui.shareToken.value = asText(profile.settings && profile.settings.usageSummaryToken);
+      ui.shareEndpoint.value = getUsageSummaryEndpoint();
+      ui.shareToken.value = getUsageSummaryToken();
     }
     function saveSettings() {
       const name = asText(ui.userName.value).trim();
