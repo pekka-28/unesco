@@ -23,6 +23,7 @@ jobs:
     env:
       SOURCE_URL: ${{ github.event.inputs.source_url || vars.UNESCO_SOURCE_URL || 'https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json' }}
       RETRY_DAYS: ${{ github.event.inputs.retry_interval_days || '30' }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,7 +38,9 @@ jobs:
             -RawOutputFile "data/staging/unesco_source_raw.txt"
 
       - name: Convert staged UNESCO source
+        id: convert
         if: steps.fetch.outcome == 'success'
+        continue-on-error: true
         shell: pwsh
         run: |
           ./scripts/convert_unesco_source.ps1 `
@@ -51,7 +54,9 @@ jobs:
             -OverwriteExisting
 
       - name: Update extract status on fetch failure
+        id: status_update
         if: steps.fetch.outcome == 'failure'
+        continue-on-error: true
         shell: pwsh
         run: |
           ./scripts/update_extract_status.ps1 `
@@ -61,18 +66,56 @@ jobs:
             -ErrorMessage "CI fetch failed"
 
       - name: Validate UNESCO canonical JSON
+        id: validate_json
+        continue-on-error: true
         shell: pwsh
         run: |
           ./scripts/validate_whs_dataset.ps1 `
             -InputFile "data/current/unesco_official_sites.json"
 
       - name: Validate derived UNESCO GeoJSON
+        id: validate_geojson
+        continue-on-error: true
         shell: pwsh
         run: |
           ./scripts/validate_whs_dataset.ps1 `
             -InputFile "data/current/unesco_official_sites.geojson"
 
+      - name: Evaluate pipeline result
+        id: gate
+        if: always()
+        shell: pwsh
+        run: |
+          $softFailed = New-Object System.Collections.Generic.List[string]
+          $hardFailed = New-Object System.Collections.Generic.List[string]
+
+          if ("${{ steps.fetch.outcome }}" -eq "failure") { $softFailed.Add("fetch") }
+          if ("${{ steps.convert.outcome }}" -eq "failure") { $hardFailed.Add("convert") }
+          if ("${{ steps.status_update.outcome }}" -eq "failure") { $hardFailed.Add("status_update") }
+          if ("${{ steps.validate_json.outcome }}" -eq "failure") { $hardFailed.Add("validate_json") }
+          if ("${{ steps.validate_geojson.outcome }}" -eq "failure") { $hardFailed.Add("validate_geojson") }
+
+          $allFailed = New-Object System.Collections.Generic.List[string]
+          foreach ($s in $softFailed) { $allFailed.Add($s) }
+          foreach ($h in $hardFailed) { $allFailed.Add($h) }
+
+          $failed = ($allFailed.Count -gt 0)
+          $commitAllowed = ($hardFailed.Count -eq 0)
+
+          "failed=$($failed.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "commit_allowed=$($commitAllowed.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "failed_steps=$($allFailed -join ',')" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "hard_failed_steps=$($hardFailed -join ',')" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "soft_failed_steps=$($softFailed -join ',')" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+          if ($failed) {
+            Write-Host "UNESCO refresh had failures: $($allFailed -join ', ')"
+          } else {
+            Write-Host "UNESCO refresh completed without failures."
+          }
+
       - name: Commit changes
+        if: steps.gate.outputs.commit_allowed == 'true'
         shell: pwsh
         run: |
           git config user.name "github-actions[bot]"
@@ -84,3 +127,42 @@ jobs:
             git commit -m "chore: refresh UNESCO official dataset"
             git push
           }
+
+      - name: Warn when alert email secrets are missing
+        if: steps.gate.outputs.failed == 'true' && (secrets.MWH_ALERT_SMTP_SERVER == '' || secrets.MWH_ALERT_SMTP_PORT == '' || secrets.MWH_ALERT_SMTP_USERNAME == '' || secrets.MWH_ALERT_SMTP_PASSWORD == '' || secrets.MWH_ALERT_MAIL_TO == '' || secrets.MWH_ALERT_MAIL_FROM == '')
+        shell: pwsh
+        run: |
+          Write-Warning "UNESCO refresh failed, but SMTP/mail secrets are not fully configured. No alert email sent."
+          Write-Warning "Required secrets: MWH_ALERT_SMTP_SERVER, MWH_ALERT_SMTP_PORT, MWH_ALERT_SMTP_USERNAME, MWH_ALERT_SMTP_PASSWORD, MWH_ALERT_MAIL_TO, MWH_ALERT_MAIL_FROM."
+
+      - name: Send failure alert email
+        if: steps.gate.outputs.failed == 'true' && secrets.MWH_ALERT_SMTP_SERVER != '' && secrets.MWH_ALERT_SMTP_PORT != '' && secrets.MWH_ALERT_SMTP_USERNAME != '' && secrets.MWH_ALERT_SMTP_PASSWORD != '' && secrets.MWH_ALERT_MAIL_TO != '' && secrets.MWH_ALERT_MAIL_FROM != ''
+        uses: dawidd6/action-send-mail@v3
+        continue-on-error: true
+        with:
+          server_address: ${{ secrets.MWH_ALERT_SMTP_SERVER }}
+          server_port: ${{ secrets.MWH_ALERT_SMTP_PORT }}
+          username: ${{ secrets.MWH_ALERT_SMTP_USERNAME }}
+          password: ${{ secrets.MWH_ALERT_SMTP_PASSWORD }}
+          subject: "[My World Heritage] UNESCO refresh failure in ${{ github.repository }}"
+          to: ${{ secrets.MWH_ALERT_MAIL_TO }}
+          from: ${{ secrets.MWH_ALERT_MAIL_FROM }}
+          body: |
+            UNESCO refresh failed for ${{ github.repository }}.
+
+            Failed steps: ${{ steps.gate.outputs.failed_steps }}
+            Hard failures: ${{ steps.gate.outputs.hard_failed_steps }}
+            Soft failures: ${{ steps.gate.outputs.soft_failed_steps }}
+
+            Trigger: ${{ github.event_name }}
+            Source URL: ${{ env.SOURCE_URL }}
+            Retry interval days: ${{ env.RETRY_DAYS }}
+            Run URL: ${{ env.RUN_URL }}
+
+            Please inspect the run logs and update converter/mapping as needed for source drift.
+
+      - name: Fail job when refresh failed
+        if: steps.gate.outputs.failed == 'true'
+        shell: pwsh
+        run: |
+          throw "UNESCO refresh failed. Steps: ${{ steps.gate.outputs.failed_steps }}"

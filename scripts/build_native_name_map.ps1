@@ -112,8 +112,8 @@ $names = [ordered]@{}
 foreach ($row in @($rows)) {
   if (-not $row) { continue }
   $siteId = [string]$row.id_no
-  if ([string]::IsNullOrWhiteSpace($siteId)) { $siteId = [string]$row.number }
-  if ([string]::IsNullOrWhiteSpace($siteId)) { continue }
+  if ([string]::IsNullOrWhiteSpace($siteId)) { throw "UNESCO source row missing required field id_no." }
+  if ($siteId -notmatch '^\d{1,6}$') { throw "UNESCO source row has invalid id_no: $siteId" }
   $entry = [ordered]@{}
   $local = if ($localBySiteId.ContainsKey($siteId)) { Clean-Text -Value ([string]$localBySiteId[$siteId]) } else { "" }
   if (-not [string]::IsNullOrWhiteSpace($local)) { $entry["name_ar"] = $local }

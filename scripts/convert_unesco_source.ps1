@@ -34,9 +34,9 @@ function IsFiniteDouble { param([double]$Value) return (-not [double]::IsNaN($Va
 function To-WhsKey {
   param([string]$Value)
   $raw = [string]$Value
-  if ([string]::IsNullOrWhiteSpace($raw)) { return "" }
-  $m = [regex]::Match($raw.Trim(), '^(?:WHS\s+)?(\d+)$', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
-  if (-not $m.Success) { return $raw.Trim() }
+  if ([string]::IsNullOrWhiteSpace($raw)) { throw "Missing UNESCO source site id." }
+  $m = [regex]::Match($raw.Trim(), '^(\d{1,6})$')
+  if (-not $m.Success) { throw "Invalid UNESCO source site id: $raw" }
   $n = [int]$m.Groups[1].Value
   return "WHS $n"
 }
@@ -44,9 +44,9 @@ function To-WhsKey {
 function To-WhsNumber {
   param([string]$Value)
   $raw = [string]$Value
-  if ([string]::IsNullOrWhiteSpace($raw)) { return "" }
-  $m = [regex]::Match($raw.Trim(), '^(?:WHS\s+)?(\d+)$', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
-  if (-not $m.Success) { return $raw.Trim() }
+  if ([string]::IsNullOrWhiteSpace($raw)) { throw "Missing UNESCO source site id." }
+  $m = [regex]::Match($raw.Trim(), '^(\d{1,6})$')
+  if (-not $m.Success) { throw "Invalid UNESCO source site id: $raw" }
   $n = [int]$m.Groups[1].Value
   return [string]$n
 }
@@ -200,8 +200,7 @@ function Build-FeatureCollectionFromOdsArray {
   foreach ($row in @($Rows)) {
     if (-not $row) { continue }
     $sourceSiteId = [string]$row.id_no
-    if ([string]::IsNullOrWhiteSpace($sourceSiteId)) { $sourceSiteId = [string]$row.number }
-    if ([string]::IsNullOrWhiteSpace($sourceSiteId)) { continue }
+    if ([string]::IsNullOrWhiteSpace($sourceSiteId)) { throw "UNESCO source row missing required field id_no." }
     $siteId = To-WhsKey -Value $sourceSiteId
 
     $name = Clean-Text -Value ([string]$row.name_en)
@@ -225,8 +224,6 @@ function Build-FeatureCollectionFromOdsArray {
     $nativeNames = $null
     if ($NativeNameMap.ContainsKey($sourceSiteId)) {
       $nativeNames = Normalize-NativeNames -Value $NativeNameMap[$sourceSiteId]
-    } elseif ($NativeNameMap.ContainsKey($siteId)) {
-      $nativeNames = Normalize-NativeNames -Value $NativeNameMap[$siteId]
     } else {
       # Quality guard: avoid injecting uncurated multilingual text from source rows.
       # Only emit local-script text when a trusted table entry exists.
@@ -305,12 +302,26 @@ function Convert-FeatureCollectionToCanonicalJson {
     if (-not (IsFiniteDouble $lat) -or -not (IsFiniteDouble $lon)) { continue }
     $p = $f.properties
     $siteId = [string]$p.site_id
-    if ([string]::IsNullOrWhiteSpace($siteId)) { continue }
+    if ([string]::IsNullOrWhiteSpace($siteId)) { throw "Feature missing site_id in canonical conversion." }
+    if ($siteId -notmatch '^(WHS \d{1,6}|MWH \d{1,6}-\d{3})$') { throw "Invalid canonical site_id: $siteId" }
+    $siteScope = [string]$p.site_scope
+    $parentSiteId = [string]$p.parent_site_id
+    if ($siteScope -eq "component") {
+      if ($siteId -notmatch '^MWH \d{1,6}-\d{3}$') { throw "Component feature has invalid site_id: $siteId" }
+      if ($parentSiteId -notmatch '^WHS \d{1,6}$') { throw "Component feature has invalid parent_site_id: $parentSiteId" }
+    }
+    elseif ($siteScope -eq "whs") {
+      if ($siteId -notmatch '^WHS \d{1,6}$') { throw "WHS feature has invalid site_id: $siteId" }
+      if (-not [string]::IsNullOrWhiteSpace($parentSiteId)) { throw "WHS feature must not have parent_site_id: $siteId -> $parentSiteId" }
+    }
+    else {
+      throw "Feature has invalid site_scope '$siteScope' for site_id $siteId"
+    }
     $sites.Add([ordered]@{
       site_id = $siteId
       name = Clean-Text -Value ([string]$p.name)
       name_en = Clean-Text -Value ([string]$p.name_en)
-      parent_site_id = [string]$p.parent_site_id
+      parent_site_id = $parentSiteId
       component_ref = [string]$p.component_ref
       component_index = if ($null -eq $p.component_index) { $null } else { [int]$p.component_index }
       site_scope = [string]$p.site_scope
@@ -365,7 +376,21 @@ function Convert-CanonicalJsonToFeatureCollection {
     $lat = [double]$s.lat
     if (-not (IsFiniteDouble $lat) -or -not (IsFiniteDouble $lon)) { continue }
     $siteId = [string]$s.site_id
-    if ([string]::IsNullOrWhiteSpace($siteId)) { continue }
+    if ([string]::IsNullOrWhiteSpace($siteId)) { throw "Canonical site entry missing site_id." }
+    if ($siteId -notmatch '^(WHS \d{1,6}|MWH \d{1,6}-\d{3})$') { throw "Invalid canonical site_id in JSON: $siteId" }
+    $siteScope = [string]$s.site_scope
+    $parentSiteId = [string]$s.parent_site_id
+    if ($siteScope -eq "component") {
+      if ($siteId -notmatch '^MWH \d{1,6}-\d{3}$') { throw "Canonical component has invalid site_id: $siteId" }
+      if ($parentSiteId -notmatch '^WHS \d{1,6}$') { throw "Canonical component has invalid parent_site_id: $parentSiteId" }
+    }
+    elseif ($siteScope -eq "whs") {
+      if ($siteId -notmatch '^WHS \d{1,6}$') { throw "Canonical WHS has invalid site_id: $siteId" }
+      if (-not [string]::IsNullOrWhiteSpace($parentSiteId)) { throw "Canonical WHS must not have parent_site_id: $siteId -> $parentSiteId" }
+    }
+    else {
+      throw "Canonical site has invalid site_scope '$siteScope' for site_id $siteId"
+    }
     $features.Add([ordered]@{
       type = "Feature"
       geometry = [ordered]@{ type = "Point"; coordinates = @($lon, $lat) }
@@ -373,7 +398,7 @@ function Convert-CanonicalJsonToFeatureCollection {
         site_id = $siteId
       name = Clean-Text -Value ([string]$s.name)
       name_en = Clean-Text -Value ([string]$s.name_en)
-        parent_site_id = [string]$s.parent_site_id
+        parent_site_id = $parentSiteId
         component_ref = [string]$s.component_ref
         component_index = if ($null -eq $s.component_index) { $null } else { [int]$s.component_index }
         site_scope = [string]$s.site_scope

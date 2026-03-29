@@ -364,74 +364,29 @@
       const bb = foldTextForCompare(b);
       return !!aa && !!bb && aa === bb;
     }
-    function parseWhsNumericId(raw) {
-      const t = asText(raw).trim();
-      if (!t) return "";
-      if (/^\d+$/.test(t)) return t.replace(/^0+/, "") || "0";
-      const whsMatch = t.match(/^whs\s+(\d{1,6})$/i);
-      if (whsMatch) return whsMatch[1].replace(/^0+/, "") || "0";
-      const mwhMatch = t.match(/^mwh\s+(\d{1,6})-\d{1,6}$/i);
-      if (mwhMatch) return mwhMatch[1].replace(/^0+/, "") || "0";
-      return "";
+    const WHS_ID_RE = /^WHS\s+(\d{1,6})$/;
+    const MWH_ID_RE = /^MWH\s+(\d{1,6})-(\d{3})$/;
+    function isValidSiteId(id) {
+      const t = asText(id).trim();
+      return WHS_ID_RE.test(t) || MWH_ID_RE.test(t);
     }
-    function canonicalWhsKey(raw) {
-      const n = parseWhsNumericId(raw);
-      return n ? `WHS ${n}` : "";
-    }
-    function canonicalSiteId(raw) {
-      const t = asText(raw).trim();
-      if (!t) return "";
-      const mwhMatch = t.match(/^mwh\s+(\d{1,6})-(\d{1,6})$/i);
-      if (mwhMatch) {
-        const root = mwhMatch[1].replace(/^0+/, "") || "0";
-        const comp = mwhMatch[2].padStart(3, "0");
-        return `MWH ${root}-${comp}`;
-      }
-      const whs = canonicalWhsKey(t);
-      if (whs) return whs;
+    function assertValidSiteId(id, context = "site id") {
+      const t = asText(id).trim();
+      if (!isValidSiteId(t)) throw new Error(`Invalid ${context}: ${t || "<empty>"}`);
       return t;
     }
-    function canonicalizeDatasetSiteIds(dataset) {
-      if (!(dataset && Array.isArray(dataset.features))) return;
-      for (const f of dataset.features) {
-        const p = f && f.properties ? f.properties : null;
-        if (!p) continue;
-        p.site_id = canonicalSiteId(p.site_id);
-        if (p.parent_site_id != null && asText(p.parent_site_id).trim()) p.parent_site_id = canonicalWhsKey(p.parent_site_id);
-      }
-    }
-    function canonicalizeProfileSiteKeys(targetProfile) {
-      if (!targetProfile || typeof targetProfile !== "object") return false;
-      let changed = false;
-      const mapId = (id) => {
-        const c = canonicalSiteId(id);
-        if (asText(c) !== asText(id)) changed = true;
-        return c || asText(id);
-      };
-
-      if (Array.isArray(targetProfile.visitedSiteIds)) targetProfile.visitedSiteIds = Array.from(new Set(targetProfile.visitedSiteIds.map(mapId))).sort();
-      if (Array.isArray(targetProfile.inspectedSiteIds)) targetProfile.inspectedSiteIds = Array.from(new Set(targetProfile.inspectedSiteIds.map(mapId))).sort();
-
-      if (targetProfile.siteStatuses && typeof targetProfile.siteStatuses === "object") {
-        const nextStatuses = {};
-        for (const [k, v] of Object.entries(targetProfile.siteStatuses)) nextStatuses[mapId(k)] = v;
-        targetProfile.siteStatuses = nextStatuses;
-      }
-      if (targetProfile.siteVisits && typeof targetProfile.siteVisits === "object") {
-        const nextVisits = {};
-        for (const [k, visits] of Object.entries(targetProfile.siteVisits)) {
-          const mapped = mapId(k);
-          if (!Array.isArray(nextVisits[mapped])) nextVisits[mapped] = [];
-          if (Array.isArray(visits)) nextVisits[mapped].push(...visits);
-        }
-        targetProfile.siteVisits = nextVisits;
-      }
-      return changed;
+    function extractWhsNumberFromSiteId(id, context = "site id") {
+      const t = assertValidSiteId(id, context);
+      const whsMatch = t.match(WHS_ID_RE);
+      if (whsMatch) return whsMatch[1];
+      const mwhMatch = t.match(MWH_ID_RE);
+      if (mwhMatch) return mwhMatch[1];
+      throw new Error(`Cannot extract WHS number from ${context}: ${t}`);
     }
     function findFeatureBySiteId(siteId) {
       if (!whsData || !Array.isArray(whsData.features) || !siteId) return null;
-      const wanted = canonicalSiteId(siteId);
-      return whsData.features.find((f) => canonicalSiteId(f && f.properties && f.properties.site_id) === wanted) || null;
+      const wanted = assertValidSiteId(siteId, "lookup site id");
+      return whsData.features.find((f) => asText(f && f.properties && f.properties.site_id).trim() === wanted) || null;
     }
     function displayName(p) {
       const raw = rawDisplayName(p);
@@ -493,7 +448,23 @@
     }
     function defaultProfile() { return { schemaVersion: PROFILE_SCHEMA_VERSION, name: "", homeLat: null, homeLon: null, homeLabel: "", visitedSiteIds: [], siteStatuses: {}, siteVisits: {}, inspectedSiteIds: [], settings: { visitedOnly: false, dateFormat: "y-m-d", lengthUnits: "km", multipleThreshold: 5, usageSummaryEndpoint: "", usageSummaryToken: "" }, usage: { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 }, publishPreference: { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false }, magicCookie: randomCookie(), updatedAt: nowIso() }; }
     function incrementCensusUse() { let c = { schemaVersion: 1, useCount: 0, updatedAt: nowIso() }; try { c = JSON.parse(localStorage.getItem(CENSUS_KEY)) || c; } catch {} c.useCount = Number(c.useCount || 0) + 1; c.updatedAt = nowIso(); localStorage.setItem(CENSUS_KEY, JSON.stringify(c)); }
-    function verifyProfile(obj) { if (!obj || typeof obj !== "object") return { ok: false, reason: "Profile missing" }; if (obj.schemaVersion !== PROFILE_SCHEMA_VERSION) return { ok: false, reason: `Unsupported profile version ${obj.schemaVersion}` }; if (!Array.isArray(obj.visitedSiteIds) || !Array.isArray(obj.inspectedSiteIds)) return { ok: false, reason: "Invalid profile arrays" }; if (!obj.usage || typeof obj.usage !== "object") return { ok: false, reason: "Usage block missing" }; if (obj.siteStatuses != null && typeof obj.siteStatuses !== "object") return { ok: false, reason: "Invalid site status block" }; if (obj.siteVisits != null && typeof obj.siteVisits !== "object") return { ok: false, reason: "Invalid site visits block" }; return { ok: true }; }
+    function verifyProfile(obj) {
+      if (!obj || typeof obj !== "object") return { ok: false, reason: "Profile missing" };
+      if (obj.schemaVersion !== PROFILE_SCHEMA_VERSION) return { ok: false, reason: `Unsupported profile version ${obj.schemaVersion}` };
+      if (!Array.isArray(obj.visitedSiteIds) || !Array.isArray(obj.inspectedSiteIds)) return { ok: false, reason: "Invalid profile arrays" };
+      if (!obj.usage || typeof obj.usage !== "object") return { ok: false, reason: "Usage block missing" };
+      if (obj.siteStatuses != null && typeof obj.siteStatuses !== "object") return { ok: false, reason: "Invalid site status block" };
+      if (obj.siteVisits != null && typeof obj.siteVisits !== "object") return { ok: false, reason: "Invalid site visits block" };
+      try {
+        for (const id of obj.visitedSiteIds || []) assertValidSiteId(id, "visited site id");
+        for (const id of obj.inspectedSiteIds || []) assertValidSiteId(id, "inspected site id");
+        for (const k of Object.keys(obj.siteStatuses || {})) assertValidSiteId(k, "status site id");
+        for (const k of Object.keys(obj.siteVisits || {})) assertValidSiteId(k, "visit site id");
+      } catch (e) {
+        return { ok: false, reason: asText(e && e.message) || "Invalid site id format in profile" };
+      }
+      return { ok: true };
+    }
     function persistProfile() { if (!profile) return; profile.updatedAt = nowIso(); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
     function applyLegacyVisitBackfill() {
       if (!profile) return false;
@@ -548,16 +519,17 @@
     }
     function siteIdCaption(feature) {
       const p = feature && feature.properties ? feature.properties : {};
-      const id = asText(p.site_id) || "n/a";
+      const id = assertValidSiteId(p.site_id, "detail site id");
       const scope = asText(p.site_scope);
       const parent = asText(p.parent_site_id);
       if (scope === "component" && parent) {
+        if (!WHS_ID_RE.test(parent)) throw new Error(`Invalid component parent id in detail: ${parent}`);
         const rootFeature = findFeatureBySiteId(parent);
         const rootName = rootFeature ? displayName(rootFeature.properties || {}) : "";
         if (rootName) return `Site id ${id} (component of ${parent}: ${rootName})`;
         return `Site id ${id} (component of ${parent})`;
       }
-      if (/^WHS\s+\d+$/i.test(id)) return id;
+      if (WHS_ID_RE.test(id)) return id;
       return `Site id ${id}`;
     }
     function setVisitStatus(siteId, status) {
@@ -873,10 +845,10 @@
       }
     }
     function featureBySiteId(siteId) {
-      const marker = markersBySiteId.get(asText(siteId));
+      const wanted = assertValidSiteId(siteId, "feature lookup site id");
+      const marker = markersBySiteId.get(wanted);
       if (marker && marker.feature) return marker.feature;
-      if (!whsData || !Array.isArray(whsData.features)) return null;
-      return whsData.features.find((f) => asText(f && f.properties && f.properties.site_id) === asText(siteId)) || null;
+      return findFeatureBySiteId(wanted);
     }
     function collectVisitedReportRows() {
       if (!(connected && profile)) return [];
@@ -906,9 +878,7 @@
       return rows;
     }
     function formatReportSiteId(siteId) {
-      const raw = asText(siteId).trim();
-      if (!raw) return "";
-      return /^\d+$/.test(raw) ? `WHS ${raw}` : raw;
+      return assertValidSiteId(siteId, "report site id");
     }
     function reportSiteIdHtml(siteId) {
       return escapeHtml(formatReportSiteId(siteId)).replace(/-/g, "\u2011");
@@ -1580,7 +1550,6 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         if (!(Number(profile.settings.multipleThreshold) > 0)) profile.settings.multipleThreshold = 5;
         if (profile.settings.usageSummaryEndpoint == null) profile.settings.usageSummaryEndpoint = "";
         if (profile.settings.usageSummaryToken == null) profile.settings.usageSummaryToken = "";
-        const canonicalisedKeys = canonicalizeProfileSiteKeys(profile);
         for (const sid of (profile.visitedSiteIds || [])) if (!profile.siteStatuses[sid]) profile.siteStatuses[sid] = "visited";
         connected = true;
         manuallyDisconnected = false;
@@ -1589,7 +1558,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         profile.usage.lastUseAt = nowIso();
         const changedA = applyLegacyVisitBackfill();
         const changedB = migrateLegacyDateParseBug();
-        if (changedA || changedB || canonicalisedKeys) profile.usage.lastUseAt = nowIso();
+        if (changedA || changedB) profile.usage.lastUseAt = nowIso();
         persistProfile();
       } catch (e) {
         connected = false;
@@ -1631,64 +1600,13 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       reader.onload = () => {
         try {
           const obj = JSON.parse(asText(reader.result));
-          if (obj && obj.schemaVersion === PROFILE_SCHEMA_VERSION && obj.profile) {
-            const v = verifyProfile(obj.profile); if (!v.ok) throw new Error(v.reason);
-            localStorage.setItem(PROFILE_KEY, JSON.stringify(obj.profile));
-            connectSilently();
-            return;
-          }
-          const legacy = buildProfileFromLegacyVisits(obj);
-          if (!legacy) throw new Error("Unsupported or invalid import format");
-          localStorage.setItem(PROFILE_KEY, JSON.stringify(legacy));
+          if (!(obj && obj.schemaVersion === PROFILE_SCHEMA_VERSION && obj.profile)) throw new Error("Unsupported import format");
+          const v = verifyProfile(obj.profile); if (!v.ok) throw new Error(v.reason);
+          localStorage.setItem(PROFILE_KEY, JSON.stringify(obj.profile));
           connectSilently();
         } catch (e) { alert("Import failed: " + e.message); }
       };
       reader.readAsText(file);
-    }
-    function buildProfileFromLegacyVisits(obj) {
-      if (!obj || typeof obj !== "object") return null;
-      const features = [];
-      if (Array.isArray(obj.features)) {
-        for (const f of obj.features) features.push(f);
-      }
-      if (Array.isArray(obj.layers)) {
-        for (const layerObj of obj.layers) {
-          const layerFeatures = layerObj && layerObj.geojson && Array.isArray(layerObj.geojson.features) ? layerObj.geojson.features : [];
-          for (const f of layerFeatures) features.push(f);
-        }
-      }
-      if (!features.length) return null;
-      const p = defaultProfile();
-      p.name = "Imported";
-      for (const f of features) {
-        const pr = f && f.properties ? f.properties : {};
-        const rawSite = asText(pr.site_id).trim();
-        const whsFromRef = parseWhsNumericId(pr.ref_whc);
-        const siteId = canonicalSiteId(rawSite || (whsFromRef ? `WHS ${whsFromRef}` : ""));
-        if (!siteId) continue;
-        const status = asText(pr.status || "visited").trim().toLowerCase().replace(/\s+/g, "_");
-        const mappedStatus = ["visited", "pending", "wont_visit", "not_visited"].includes(status) ? status : "visited";
-        saveImportedVisit(p, siteId, {
-          id: crypto.randomUUID(),
-          date: normalizeDateOnly(pr.date) || nowIso().slice(0, 10),
-          status: mappedStatus,
-          note: asText(pr.note),
-          createdAt: nowIso(),
-          updatedAt: nowIso()
-        });
-      }
-      p.visitedSiteIds = Array.from(new Set(p.visitedSiteIds || [])).sort();
-      return p;
-    }
-    function saveImportedVisit(targetProfile, siteId, visit) {
-      targetProfile.siteVisits = targetProfile.siteVisits || {};
-      targetProfile.siteStatuses = targetProfile.siteStatuses || {};
-      targetProfile.visitedSiteIds = targetProfile.visitedSiteIds || [];
-      const list = Array.isArray(targetProfile.siteVisits[siteId]) ? targetProfile.siteVisits[siteId] : [];
-      list.push(visit);
-      targetProfile.siteVisits[siteId] = list;
-      targetProfile.siteStatuses[siteId] = visit.status;
-      if (visit.status === "visited" && !targetProfile.visitedSiteIds.includes(siteId)) targetProfile.visitedSiteIds.push(siteId);
     }
     function parseWhsKeyQuery(query) {
       const m = asText(query).trim().toLowerCase().match(/^(?:whs\s*)?(\d{1,6})$/);
@@ -1697,15 +1615,20 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       return normalized || "0";
     }
     function rootWhsIdForProps(p) {
-      const direct = parseWhsNumericId(p && p.site_id);
-      const parent = parseWhsNumericId(p && p.parent_site_id);
-      return direct || parent || "";
+      const id = asText(p && p.site_id).trim();
+      const parent = asText(p && p.parent_site_id).trim();
+      const whsDirect = id.match(WHS_ID_RE);
+      if (whsDirect) return whsDirect[1];
+      const mwhDirect = id.match(MWH_ID_RE);
+      if (mwhDirect) return mwhDirect[1];
+      const whsParent = parent.match(WHS_ID_RE);
+      if (whsParent) return whsParent[1];
+      throw new Error(`Invalid dataset id shape: site_id=${id || "<empty>"} parent_site_id=${parent || "<empty>"}`);
     }
     function buildWhsSearchResults(query) {
       const q = query.toLowerCase().trim();
       const whsKeyQuery = parseWhsKeyQuery(query);
       const rows = [];
-      const legacyAliasesBySiteId = { "915": "sterkfontein cradle of humankind" };
       for (const f of whsData.features || []) {
         const p = f.properties || {};
         const name = displayName(p);
@@ -1718,10 +1641,9 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         const nameEnglish = asText(p.name_en).toLowerCase();
         const aliasList = Array.isArray(p.aliases) ? p.aliases : [];
         const aliases = aliasList.join(" ").toLowerCase();
-        const legacyAliases = asText(legacyAliasesBySiteId[id] || "");
-        const haystack = `${name.toLowerCase()} ${nameNative} ${nameEnglish} ${id.toLowerCase()} ${country} ${aliases} ${legacyAliases} whs ${rootWhsId}`;
+        const haystack = `${name.toLowerCase()} ${nameNative} ${nameEnglish} ${id.toLowerCase()} ${country} ${aliases} whs ${rootWhsId}`;
         if (whsKeyQuery) {
-          if (!(rootWhsId === whsKeyQuery || asText(id).replace(/^0+/, "") === whsKeyQuery)) continue;
+          if (!(rootWhsId === whsKeyQuery)) continue;
         } else if (!haystack.includes(q)) continue;
 
         let score = 0;
@@ -1733,7 +1655,6 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         if (id === q) score += 90;
         if (rootWhsId && rootWhsId === q) score += 110;
         for (const a of aliasList) if (asText(a).toLowerCase().includes(q)) score += 50;
-        if (asText(legacyAliases).includes(q)) score += 40;
 
         let matchedPoint = null;
         const aliasPoints = Array.isArray(p.alias_points) ? p.alias_points : [];
@@ -2056,7 +1977,6 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         updateExtractStatus(statusData && statusData.metadata && statusData.metadata.extract_status);
       }).catch(() => {});
       fetch("../data/current/unesco_official_sites.geojson").then(r => r.json()).then(data => {
-        canonicalizeDatasetSiteIds(data);
         whsData = data;
         updateExtractStatus(data && data.metadata && data.metadata.extract_status);
         layer = L.geoJSON(data, {

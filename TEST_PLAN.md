@@ -112,4 +112,22 @@ For each new row, inspect:
 3. Frontend creates rows for all three event types.
 4. Workbook row values match expected fields and typing.
 
+## 8. Dataset refresh CI alert checks
+
+1. Configure repository secrets for refresh-failure email alerts:
+- `MWH_ALERT_SMTP_SERVER`
+- `MWH_ALERT_SMTP_PORT`
+- `MWH_ALERT_SMTP_USERNAME`
+- `MWH_ALERT_SMTP_PASSWORD`
+- `MWH_ALERT_MAIL_TO`
+- `MWH_ALERT_MAIL_FROM`
+2. Run workflow `Update UNESCO Data` manually with an intentionally invalid `source_url` (for example `https://example.invalid/whc.json`) to force fetch failure.
+3. Confirm outcomes:
+- workflow run is marked failed,
+- alert email is received with failed step list and run URL,
+- if extract-status update succeeded, repository commit may still occur for updated failure metadata.
+4. Re-run workflow with the correct source URL and confirm:
+- workflow succeeds,
+- no failure email is sent.
+
 

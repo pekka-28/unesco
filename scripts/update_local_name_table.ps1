@@ -221,8 +221,8 @@ $wikiBudget = [math]::Max(0, $MaxWikipediaRequests)
 foreach ($row in @($rows)) {
   if (-not $row) { continue }
   $siteId = Clean-Text -Value ([string]$row.id_no)
-  if ([string]::IsNullOrWhiteSpace($siteId)) { $siteId = Clean-Text -Value ([string]$row.number) }
-  if ([string]::IsNullOrWhiteSpace($siteId)) { continue }
+  if ([string]::IsNullOrWhiteSpace($siteId)) { throw "UNESCO source row missing required field id_no." }
+  if ($siteId -notmatch '^\d{1,6}$') { throw "UNESCO source row has invalid id_no: $siteId" }
   $englishName = Clean-Text -Value ([string]$row.name_en)
   if ([string]::IsNullOrWhiteSpace($englishName)) { $englishName = Clean-Text -Value ([string]$row.name_fr) }
   if ([string]::IsNullOrWhiteSpace($englishName)) { $englishName = Clean-Text -Value ([string]$row.name_es) }

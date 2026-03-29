@@ -73,6 +73,7 @@ Figure 1. My World Heritage data and application architecture.
 - Use default jurisdiction selector cap of 4 (not 3), based on observed material losses at cap 3 (including Switzerland and Fiji official-selector coverage).
 - Provide a separate update exercise/script that proposes mapping-table updates from UNESCO/Overpass sources, with optional Wikipedia fallback and strict confidence gating before apply.
 - Provide an on-demand CI workflow for local-name maintenance that runs the update/coverage scripts and can optionally apply only high-confidence mapping updates.
+- Send owner alert email when UNESCO refresh pipeline detects fetch/convert/validation failure so source drift is visible immediately.
 
 ### Mapping and interaction
 
