@@ -1,4 +1,5 @@
 // Code.gs 0.1.6
+
 const SHEET_NAME = 'submissions';
 const PROPS = PropertiesService.getScriptProperties();
 const FALLBACK_ALLOWED_SPREADSHEET_ID = '';
