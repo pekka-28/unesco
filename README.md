@@ -14,8 +14,7 @@ It exists to make site tracking practical without paywalls, advertising pressure
 ## Product position
 
 - Primary application: custom viewer in `site/index.html`.
-- uMap: optional interoperability path, not the primary runtime.
-- Overpass: retained only as legacy archive for traceability.
+- Historical and rejected design approaches are documented in [Requirements.md](Requirements.md).
 
 ## Entry points
 

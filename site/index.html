@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -90,6 +90,7 @@
         <button id="menu-settings" class="menu-item" type="button">Settings</button>
         <button id="menu-export" class="menu-item" type="button">Export</button>
         <button id="menu-import" class="menu-item" type="button">Import</button>
+        <button id="menu-submit" class="menu-item" type="button">Submit</button>
         <button id="menu-reset" class="menu-item" type="button">Reset</button>
         <button id="menu-logout" class="menu-item" type="button">Logout</button>
       </div>
@@ -168,8 +169,16 @@
           <label><input id="share-none" type="checkbox"> None</label>
         </div>
       </div>
+      <div class="row setting-line">
+        <label for="share-endpoint" class="setting-label">Usage summary endpoint URL</label>
+        <input id="share-endpoint" class="field" type="url" placeholder="https://...">
+      </div>
+      <div class="row setting-line">
+        <label for="share-token" class="setting-label">Usage summary token</label>
+        <input id="share-token" class="field" type="password" placeholder="Optional shared token">
+      </div>
       <div class="row">
-        <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonymised usage summary (duration, visited count, inspected count, magic cookie, date) so project maintainers can understand usage trends.</div>
+        <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonymised usage summary (date, use count since last publication, total site count, magic cookie) so project maintainers can understand usage trends. If an endpoint is configured, the summary is posted there; otherwise the app falls back to clipboard copy.</div>
       </div>
       <div class="row setting-line">
         <label for="date-format" class="setting-label">Date display format</label>
@@ -244,6 +253,7 @@
     const PROFILE_SCHEMA_VERSION = 1;
     const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
+    const DEFAULT_USAGE_SUMMARY_ENDPOINT = "https://script.google.com/macros/s/AKfycbz3q3-xb-0wm4QXnvnjt7I6uZy5M_JPcOsBfLQEy1Yks5e_4cjGFUOOyrhKpEHyag/exec";
     const CRITERIA_URL = "https://whc.unesco.org/en/criteria/";
     const criteriaTitles = { i: "Masterpiece of human creative genius", ii: "Interchange of human values", iii: "Exceptional testimony to a tradition or civilisation", iv: "Outstanding example illustrating stages in history", v: "Outstanding settlement, land-use, or sea-use example", vi: "Association with events, traditions, ideas, or beliefs", vii: "Exceptional natural beauty", viii: "Earth history and geomorphic processes", ix: "Ecological and biological processes", x: "In-situ biodiversity conservation" };
     const map = L.map("map").setView([20, 0], 2);
@@ -252,10 +262,10 @@
     const ui = {
       detailPane: document.getElementById("detail-pane"), searchInput: document.getElementById("search-input"), searchResults: document.getElementById("search-results"), loadingIndicator: document.getElementById("loading-indicator"),
       helpOverlay: document.getElementById("help-overlay"), settingsOverlay: document.getElementById("settings-overlay"), enrolOverlay: document.getElementById("enrol-overlay"), userMenuToggle: document.getElementById("user-menu-toggle"),
-      userMenu: document.getElementById("user-menu"), menuReset: document.getElementById("menu-reset"), importFile: document.getElementById("import-file"), userName: document.getElementById("user-name"),
+      userMenu: document.getElementById("user-menu"), menuSubmit: document.getElementById("menu-submit"), menuReset: document.getElementById("menu-reset"), importFile: document.getElementById("import-file"), userName: document.getElementById("user-name"),
       homeQuery: document.getElementById("home-query"), homeMatchSelect: document.getElementById("home-match-select"), homeSelected: document.getElementById("home-selected"),
       locStatus: document.getElementById("loc-status"), visitedOnlySetting: document.getElementById("visited-only-setting"),
-      shareEnabled: document.getElementById("share-enabled"), shareInterval: document.getElementById("share-interval"), shareNone: document.getElementById("share-none"),
+      shareEnabled: document.getElementById("share-enabled"), shareInterval: document.getElementById("share-interval"), shareNone: document.getElementById("share-none"), shareEndpoint: document.getElementById("share-endpoint"), shareToken: document.getElementById("share-token"),
       shareInfoLink: document.getElementById("share-info-link"), shareInfoBubble: document.getElementById("share-info-bubble"),
       enrolUserName: document.getElementById("enrol-user-name"), enrolHomeQuery: document.getElementById("enrol-home-query"), enrolHomeMatchSelect: document.getElementById("enrol-home-match-select"),
       enrolLocStatus: document.getElementById("enrol-loc-status"), enrolHomeSelected: document.getElementById("enrol-home-selected"), enrolNearbyList: document.getElementById("enrol-nearby-list"),
@@ -278,8 +288,9 @@
       if (sv != null) return /^(1|true|yes|on)$/i.test(asText(sv));
       return fallback;
     }
-    const flags = { resetEnabled: getBooleanFlag("reset", false) };
+    const flags = { submitEnabled: getBooleanFlag("submit", false), resetEnabled: getBooleanFlag("reset", false) };
     function applyFeatureFlags() {
+      if (ui.menuSubmit) ui.menuSubmit.style.display = flags.submitEnabled ? "block" : "none";
       if (ui.menuReset) ui.menuReset.style.display = flags.resetEnabled ? "block" : "none";
     }
     function rawDisplayName(p) {
@@ -346,7 +357,7 @@
         ui.loadingIndicator.style.display = "none";
       }
     }
-    function defaultProfile() { return { schemaVersion: PROFILE_SCHEMA_VERSION, name: "", homeLat: null, homeLon: null, homeLabel: "", visitedSiteIds: [], siteStatuses: {}, siteVisits: {}, inspectedSiteIds: [], settings: { visitedOnly: false, dateFormat: "y-m-d", lengthUnits: "km", multipleThreshold: 5 }, usage: { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 }, publishPreference: { enabled: false, intervalDays: 30, lastPromptAt: null, consentAskedAtStartup: false }, magicCookie: randomCookie(), updatedAt: nowIso() }; }
+    function defaultProfile() { return { schemaVersion: PROFILE_SCHEMA_VERSION, name: "", homeLat: null, homeLon: null, homeLabel: "", visitedSiteIds: [], siteStatuses: {}, siteVisits: {}, inspectedSiteIds: [], settings: { visitedOnly: false, dateFormat: "y-m-d", lengthUnits: "km", multipleThreshold: 5, usageSummaryEndpoint: "", usageSummaryToken: "" }, usage: { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 }, publishPreference: { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false }, magicCookie: randomCookie(), updatedAt: nowIso() }; }
     function incrementCensusUse() { let c = { schemaVersion: 1, useCount: 0, updatedAt: nowIso() }; try { c = JSON.parse(localStorage.getItem(CENSUS_KEY)) || c; } catch {} c.useCount = Number(c.useCount || 0) + 1; c.updatedAt = nowIso(); localStorage.setItem(CENSUS_KEY, JSON.stringify(c)); }
     function verifyProfile(obj) { if (!obj || typeof obj !== "object") return { ok: false, reason: "Profile missing" }; if (obj.schemaVersion !== PROFILE_SCHEMA_VERSION) return { ok: false, reason: `Unsupported profile version ${obj.schemaVersion}` }; if (!Array.isArray(obj.visitedSiteIds) || !Array.isArray(obj.inspectedSiteIds)) return { ok: false, reason: "Invalid profile arrays" }; if (!obj.usage || typeof obj.usage !== "object") return { ok: false, reason: "Usage block missing" }; if (obj.siteStatuses != null && typeof obj.siteStatuses !== "object") return { ok: false, reason: "Invalid site status block" }; if (obj.siteVisits != null && typeof obj.siteVisits !== "object") return { ok: false, reason: "Invalid site visits block" }; return { ok: true }; }
     function persistProfile() { if (!profile) return; profile.updatedAt = nowIso(); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
@@ -671,8 +682,8 @@
         const d = formatVisitDateForDisplay(latestVisitDate(sid));
         return `<div class="site-row-grid"><a href="#" class="plain-link site-pick" data-site-id="${sid}" dir="auto" title="${nm}"><span class="site-name-clip">${nm}</span></a><span class="meta" dir="ltr">${d || ""}</span></div>`;
       }).join("");
-      const nameDir = listSortBy === "name" ? (listSortDir === "asc" ? "↑" : "↓") : "";
-      const dateDir = listSortBy === "date" ? (listSortDir === "asc" ? "↑" : "↓") : "";
+      const nameDir = listSortBy === "name" ? (listSortDir === "asc" ? "â†‘" : "â†“") : "";
+      const dateDir = listSortBy === "date" ? (listSortDir === "asc" ? "â†‘" : "â†“") : "";
       ui.detailPane.innerHTML = `<div class="site-list-wrap"><div class="site-table-head"><a href="#" id="sort-name">Site (${features.length}) ${nameDir}</a><a href="#" id="sort-date">Visited ${dateDir}</a></div>${rows}</div>`;
       const sortName = document.getElementById("sort-name");
       const sortDate = document.getElementById("sort-date");
@@ -1033,16 +1044,102 @@
       enrolSelectedHome = null;
       enrolMatches = [];
     }
-    function openSettings(prefill = true) { ui.settingsOverlay.style.display = "flex"; if (prefill && profile) { ui.userName.value = asText(profile.name); if (Number.isFinite(profile.homeLat) && Number.isFinite(profile.homeLon)) setSelectedHome(profile.homeLat, profile.homeLon, asText(profile.homeLabel || "Saved home")); ui.visitedOnlySetting.checked = !!(profile.settings && profile.settings.visitedOnly); ui.dateFormat.value = asText(profile.settings && profile.settings.dateFormat) || "y-m-d"; ui.lengthUnits.value = asText(profile.settings && profile.settings.lengthUnits) || "km"; ui.multipleThreshold.value = String(Number(profile.settings && profile.settings.multipleThreshold) > 0 ? Number(profile.settings.multipleThreshold) : 5); ui.shareEnabled.checked = !!(profile.publishPreference && profile.publishPreference.enabled); ui.shareInterval.value = Number((profile.publishPreference && profile.publishPreference.intervalDays) || 30); ui.shareNone.checked = profile.publishPreference && profile.publishPreference.intervalDays == null; } }
+    function openSettings(prefill = true) {
+      ui.settingsOverlay.style.display = "flex";
+      if (!(prefill && profile)) return;
+      ui.userName.value = asText(profile.name);
+      if (Number.isFinite(profile.homeLat) && Number.isFinite(profile.homeLon)) setSelectedHome(profile.homeLat, profile.homeLon, asText(profile.homeLabel || "Saved home"));
+      ui.visitedOnlySetting.checked = !!(profile.settings && profile.settings.visitedOnly);
+      ui.dateFormat.value = asText(profile.settings && profile.settings.dateFormat) || "y-m-d";
+      ui.lengthUnits.value = asText(profile.settings && profile.settings.lengthUnits) || "km";
+      ui.multipleThreshold.value = String(Number(profile.settings && profile.settings.multipleThreshold) > 0 ? Number(profile.settings.multipleThreshold) : 5);
+      ui.shareEnabled.checked = !!(profile.publishPreference && profile.publishPreference.enabled);
+      ui.shareInterval.value = Number((profile.publishPreference && profile.publishPreference.intervalDays) || 7);
+      ui.shareNone.checked = profile.publishPreference && profile.publishPreference.intervalDays == null;
+      ui.shareEndpoint.value = asText(profile.settings && profile.settings.usageSummaryEndpoint);
+      ui.shareToken.value = asText(profile.settings && profile.settings.usageSummaryToken);
+    }
     function saveSettings() {
-      const name = asText(ui.userName.value).trim(); if (!name) return alert("Please provide a user name."); if (!selectedHome) return alert("Please select a home location."); if (!profile) profile = defaultProfile();
-      profile.schemaVersion = PROFILE_SCHEMA_VERSION; profile.name = name; profile.homeLat = selectedHome.lat; profile.homeLon = selectedHome.lon; profile.homeLabel = selectedHome.label; profile.visitedSiteIds = Array.from(new Set(profile.visitedSiteIds || [])).sort(); profile.siteStatuses = profile.siteStatuses || {}; profile.siteVisits = profile.siteVisits || {}; for (const sid of profile.visitedSiteIds) if (!profile.siteStatuses[sid]) profile.siteStatuses[sid] = "visited"; profile.inspectedSiteIds = Array.from(new Set(profile.inspectedSiteIds || [])).sort(); profile.settings = profile.settings || {}; profile.settings.visitedOnly = !!ui.visitedOnlySetting.checked; profile.settings.dateFormat = asText(ui.dateFormat.value) || "y-m-d"; profile.settings.lengthUnits = asText(ui.lengthUnits.value) || "km"; profile.settings.multipleThreshold = Math.max(1, Number(ui.multipleThreshold.value || 5)); profile.publishPreference = profile.publishPreference || {}; profile.publishPreference.enabled = !!ui.shareEnabled.checked; profile.publishPreference.intervalDays = ui.shareNone.checked ? null : Math.max(1, Number(ui.shareInterval.value || 30)); if (profile.publishPreference.consentAskedAtStartup == null) profile.publishPreference.consentAskedAtStartup = true; profile.magicCookie = profile.magicCookie || randomCookie(); profile.usage = profile.usage || { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 };
-      connected = true; manuallyDisconnected = false; persistProfile(); ui.settingsOverlay.style.display = "none"; updateUserUi(); rebuildComponentIndexes(); refreshMarkers(); renderSiteList(asText(ui.siteListMode.value)); applyScaleUnits();
+      const name = asText(ui.userName.value).trim();
+      if (!name) return alert("Please provide a user name.");
+      if (!selectedHome) return alert("Please select a home location.");
+      if (!profile) profile = defaultProfile();
+      profile.schemaVersion = PROFILE_SCHEMA_VERSION;
+      profile.name = name;
+      profile.homeLat = selectedHome.lat;
+      profile.homeLon = selectedHome.lon;
+      profile.homeLabel = selectedHome.label;
+      profile.visitedSiteIds = Array.from(new Set(profile.visitedSiteIds || [])).sort();
+      profile.siteStatuses = profile.siteStatuses || {};
+      profile.siteVisits = profile.siteVisits || {};
+      for (const sid of profile.visitedSiteIds) if (!profile.siteStatuses[sid]) profile.siteStatuses[sid] = "visited";
+      profile.inspectedSiteIds = Array.from(new Set(profile.inspectedSiteIds || [])).sort();
+      profile.settings = profile.settings || {};
+      profile.settings.visitedOnly = !!ui.visitedOnlySetting.checked;
+      profile.settings.dateFormat = asText(ui.dateFormat.value) || "y-m-d";
+      profile.settings.lengthUnits = asText(ui.lengthUnits.value) || "km";
+      profile.settings.multipleThreshold = Math.max(1, Number(ui.multipleThreshold.value || 5));
+      profile.settings.usageSummaryEndpoint = asText(ui.shareEndpoint.value).trim();
+      profile.settings.usageSummaryToken = asText(ui.shareToken.value).trim();
+      profile.publishPreference = profile.publishPreference || {};
+      profile.publishPreference.enabled = !!ui.shareEnabled.checked;
+      profile.publishPreference.intervalDays = ui.shareNone.checked ? null : Math.max(1, Number(ui.shareInterval.value || 7));
+      if (profile.publishPreference.consentAskedAtStartup == null) profile.publishPreference.consentAskedAtStartup = true;
+      profile.magicCookie = profile.magicCookie || randomCookie();
+      profile.usage = profile.usage || { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 };
+      connected = true;
+      manuallyDisconnected = false;
+      persistProfile();
+      ui.settingsOverlay.style.display = "none";
+      updateUserUi();
+      rebuildComponentIndexes();
+      refreshMarkers();
+      renderSiteList(asText(ui.siteListMode.value));
+      applyScaleUnits();
     }
     function connectSilently() {
-      const raw = localStorage.getItem(PROFILE_KEY); if (!raw) { connected = false; profile = null; updateUserUi(); openEnrolment(); return; }
-      try { const parsed = JSON.parse(raw); const v = verifyProfile(parsed); if (!v.ok) throw new Error(v.reason); profile = parsed; profile.siteStatuses = profile.siteStatuses || {}; profile.siteVisits = profile.siteVisits || {}; profile.settings = profile.settings || {}; if (!profile.settings.dateFormat) profile.settings.dateFormat = "y-m-d"; if (!profile.settings.lengthUnits) profile.settings.lengthUnits = "km"; if (!(Number(profile.settings.multipleThreshold) > 0)) profile.settings.multipleThreshold = 5; for (const sid of (profile.visitedSiteIds || [])) if (!profile.siteStatuses[sid]) profile.siteStatuses[sid] = "visited"; connected = true; manuallyDisconnected = false; profile.usage.useCount = Number(profile.usage.useCount || 0) + 1; profile.usage.publishedUseCount = Number(profile.usage.publishedUseCount || 0); profile.usage.lastUseAt = nowIso(); const changedA = applyLegacyVisitBackfill(); const changedB = migrateLegacyDateParseBug(); if (changedA || changedB) profile.usage.lastUseAt = nowIso(); persistProfile(); } catch (e) { connected = false; profile = null; alert("Stored profile is incompatible: " + e.message + ". Please import a compatible file or reset."); }
-      updateUserUi(); rebuildComponentIndexes(); refreshMarkers(); applyScaleUnits(); ensureStartupConsentPrompt(); maybePromptPublishSummary();
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (!raw) {
+        connected = false;
+        profile = null;
+        updateUserUi();
+        openEnrolment();
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        const v = verifyProfile(parsed);
+        if (!v.ok) throw new Error(v.reason);
+        profile = parsed;
+        profile.siteStatuses = profile.siteStatuses || {};
+        profile.siteVisits = profile.siteVisits || {};
+        profile.settings = profile.settings || {};
+        if (!profile.settings.dateFormat) profile.settings.dateFormat = "y-m-d";
+        if (!profile.settings.lengthUnits) profile.settings.lengthUnits = "km";
+        if (!(Number(profile.settings.multipleThreshold) > 0)) profile.settings.multipleThreshold = 5;
+        if (profile.settings.usageSummaryEndpoint == null) profile.settings.usageSummaryEndpoint = "";
+        if (profile.settings.usageSummaryToken == null) profile.settings.usageSummaryToken = "";
+        for (const sid of (profile.visitedSiteIds || [])) if (!profile.siteStatuses[sid]) profile.siteStatuses[sid] = "visited";
+        connected = true;
+        manuallyDisconnected = false;
+        profile.usage.useCount = Number(profile.usage.useCount || 0) + 1;
+        profile.usage.publishedUseCount = Number(profile.usage.publishedUseCount || 0);
+        profile.usage.lastUseAt = nowIso();
+        const changedA = applyLegacyVisitBackfill();
+        const changedB = migrateLegacyDateParseBug();
+        if (changedA || changedB) profile.usage.lastUseAt = nowIso();
+        persistProfile();
+      } catch (e) {
+        connected = false;
+        profile = null;
+        alert("Stored profile is incompatible: " + e.message + ". Please import a compatible file or reset.");
+      }
+      updateUserUi();
+      rebuildComponentIndexes();
+      refreshMarkers();
+      applyScaleUnits();
+      ensureStartupConsentPrompt();
+      maybePromptPublishSummary();
     }
     function disconnect() { connected = false; profile = null; manuallyDisconnected = true; updateUserUi(); refreshMarkers(); clearSelection(); }
     function exportProfile() {
@@ -1217,27 +1314,90 @@
         hideLoading();
       }
     }
-    function maybePromptPublishSummary() {
-      if (!connected || !profile || !(profile.publishPreference && profile.publishPreference.enabled)) return;
-      const intervalDays = profile.publishPreference.intervalDays; if (intervalDays == null) return;
+    function getUsageSummaryEndpoint() {
+      const fromProfile = asText(profile && profile.settings && profile.settings.usageSummaryEndpoint).trim();
+      if (fromProfile) return fromProfile;
+      const fromLocal = asText(localStorage.getItem("mwh_usage_summary_endpoint")).trim();
+      if (fromLocal) return fromLocal;
+      return DEFAULT_USAGE_SUMMARY_ENDPOINT;
+    }
+    function getUsageSummaryToken() {
+      const fromProfile = asText(profile && profile.settings && profile.settings.usageSummaryToken).trim();
+      if (fromProfile) return fromProfile;
+      return asText(localStorage.getItem("mwh_usage_summary_token")).trim();
+    }
+    async function submitUsageSummary(summary) {
+      const endpoint = getUsageSummaryEndpoint();
+      if (!endpoint) return { ok: false, reason: "No endpoint configured." };
+      try {
+        const token = getUsageSummaryToken();
+        const payload = {
+          ...summary,
+          source: "my-world-heritage",
+          user_agent: asText(navigator.userAgent).slice(0, 512)
+        };
+        if (token) payload.token = token;
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) return { ok: false, reason: `HTTP ${res.status}` };
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, reason: asText(e && e.message) || "Submission failed." };
+      }
+    }
+    async function copySummaryToClipboard(summary) {
+      if (!navigator.clipboard) return false;
+      await navigator.clipboard.writeText(JSON.stringify(summary, null, 2));
+      return true;
+    }
+    async function maybePromptPublishSummary(force = false) {
+      if (!connected || !profile) return;
+      if (!force && !(profile.publishPreference && profile.publishPreference.enabled)) return;
+      const intervalDays = profile.publishPreference.intervalDays;
+      if (!force && intervalDays == null) return;
       const last = profile.publishPreference.lastPromptAt ? new Date(profile.publishPreference.lastPromptAt).getTime() : 0;
-      if (last && (Date.now() - last) < intervalDays * 86400000) return;
-      const summary = { date: nowIso().slice(0, 10), magic_cookie: profile.magicCookie, use_count_since_last_push: Math.max(0, Number(profile.usage.useCount || 0) - Number(profile.usage.publishedUseCount || 0)), total_site_count: Array.isArray(whsData && whsData.features) ? whsData.features.length : 0 };
-      const ok = confirm("Would you like to publish a pseudonymised usage summary to the project repository?\n\n" + JSON.stringify(summary, null, 2));
-      profile.publishPreference.lastPromptAt = nowIso(); persistProfile();
-      if (ok && navigator.clipboard) navigator.clipboard.writeText(JSON.stringify(summary, null, 2)).then(() => {
+      if (!force && last && (Date.now() - last) < intervalDays * 86400000) return;
+      const summary = {
+        date: nowIso().slice(0, 10),
+        magic_cookie: profile.magicCookie,
+        use_count_since_last_push: Math.max(0, Number(profile.usage.useCount || 0) - Number(profile.usage.publishedUseCount || 0)),
+        total_site_count: Array.isArray(whsData && whsData.features) ? whsData.features.length : 0
+      };
+      const endpoint = getUsageSummaryEndpoint();
+      const destination = endpoint ? `Configured endpoint (${asText(endpoint)})` : "No endpoint configured (clipboard fallback)";
+      const prompt = [
+        "Send an anonymous usage summary?",
+        "",
+        `Date: ${summary.date}`,
+        `Uses since last summary: ${summary.use_count_since_last_push}`,
+        `Total site count: ${summary.total_site_count}`,
+        `Destination: ${destination}`
+      ].join("\n");
+      const ok = confirm(prompt);
+      profile.publishPreference.lastPromptAt = nowIso();
+      persistProfile();
+      if (!ok) return;
+      const submitted = await submitUsageSummary(summary);
+      let sent = !!submitted.ok;
+      if (!sent) {
+        try { sent = await copySummaryToClipboard(summary); } catch {}
+      }
+      if (sent) {
         profile.usage.publishedUseCount = Number(profile.usage.useCount || 0);
         persistProfile();
-        alert("Summary copied. Paste it into GitHub manually.");
-      });
+      }
     }
     function ensureStartupConsentPrompt() {
       if (!connected || !profile) return;
-      profile.publishPreference = profile.publishPreference || { enabled: false, intervalDays: 30, lastPromptAt: null, consentAskedAtStartup: false };
+      profile.publishPreference = profile.publishPreference || { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false };
       if (profile.publishPreference.consentAskedAtStartup) return;
-      const ok = confirm("Allow monthly prompts to publish a pseudonymised usage summary to the project repository?");
+      const ok = confirm("Allow weekly prompts to publish a pseudonymised usage summary to the project repository?");
       profile.publishPreference.enabled = ok;
-      if (profile.publishPreference.intervalDays == null) profile.publishPreference.intervalDays = 30;
+      if (profile.publishPreference.intervalDays == null) profile.publishPreference.intervalDays = 7;
+      profile.publishPreference.lastPromptAt = nowIso();
       profile.publishPreference.consentAskedAtStartup = true;
       persistProfile();
     }
@@ -1264,6 +1424,7 @@
       document.getElementById("menu-settings").addEventListener("click", () => { openSettings(true); ui.userMenu.style.display = "none"; });
       document.getElementById("menu-export").addEventListener("click", () => { exportProfile(); ui.userMenu.style.display = "none"; });
       document.getElementById("menu-import").addEventListener("click", () => { ui.importFile.click(); ui.userMenu.style.display = "none"; });
+      if (ui.menuSubmit && flags.submitEnabled) ui.menuSubmit.addEventListener("click", () => { maybePromptPublishSummary(true); ui.userMenu.style.display = "none"; });
       if (ui.menuReset && flags.resetEnabled) ui.menuReset.addEventListener("click", () => { if (!confirm("Reset local test data and reload?")) return; localStorage.removeItem(PROFILE_KEY); localStorage.removeItem(CENSUS_KEY); location.reload(); });
       document.getElementById("menu-logout").addEventListener("click", () => { disconnect(); ui.userMenu.style.display = "none"; });
       ui.importFile.addEventListener("change", () => { const f = ui.importFile.files && ui.importFile.files[0]; if (f) importProfileFile(f); ui.importFile.value = ""; });
@@ -1388,3 +1549,4 @@
   </script>
 </body>
 </html>
+

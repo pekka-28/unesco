@@ -26,7 +26,7 @@ flowchart LR
   C1[CI workflow]
   C2[Fetch pipeline]
   C3[WHS extractor]
-  C4[uMap seed generator]
+  C4[uMap template/export path]
   C5[My World Heritage web app]
   C6[uMap user map]
 
@@ -139,12 +139,16 @@ flowchart LR
 ### Usage summary and census (pending integration)
 
 - Request startup consent for periodic pseudonymised summary prompt.
-- Default reminder interval: 30 days; user can change interval or set none.
+- Default reminder interval: 7 days; user can change interval or set none.
+- Allow submission without requiring each user to have a GitHub account.
 - Summary includes:
 - date,
 - use count since last summary publication,
 - total site count in catalogue,
 - dataset magic cookie.
+- Support an optional anonymous form/endpoint URL in Settings for direct summary submission.
+- Keep clipboard/manual fallback when endpoint submission is unavailable.
+- Provide a periodic owner digest email path from collected summaries.
 - Record coarse per-load census counter without detailed telemetry.
 - Note that counts are approximate due to abandoned sessions, multi-device use, and repeated use.
 - Distance display in nearby-site suggestions is deferred until locale-sensitive formatting/unit strategy is defined.
@@ -174,7 +178,7 @@ flowchart LR
 - Use the custom My World Heritage viewer as the primary operational application.
 - Keep uMap as an optional seed/export interoperability path, not the primary runtime.
 - Enable users to keep private data privately and optionally share selected fragments.
-- Provide a reproducible local script workflow for refresh, extraction, validation, and seed generation.
+- Provide a reproducible local workflow for refresh, extraction, validation, and optional uMap template interoperability.
 
 ## Designs considered but not selected
 
