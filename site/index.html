@@ -465,6 +465,41 @@
       }
       return { ok: true };
     }
+    function normalizeProfileSiteIdForMigration(raw, context = "profile site id") {
+      const t = asText(raw).trim();
+      if (!t) throw new Error(`Invalid ${context}: <empty>`);
+      const whs = t.match(/^WHS\s+(\d{1,6})$/i);
+      if (whs) return `WHS ${String(Number(whs[1]))}`;
+      const mwh = t.match(/^MWH\s+(\d{1,6})-(\d{1,6})$/i);
+      if (mwh) return `MWH ${String(Number(mwh[1]))}-${String(Number(mwh[2])).padStart(3, "0")}`;
+      if (/^\d{1,6}$/.test(t)) return `WHS ${String(Number(t))}`;
+      throw new Error(`Invalid ${context}: ${t}`);
+    }
+    function migrateProfileSiteIdsInPlace(targetProfile) {
+      if (!targetProfile || typeof targetProfile !== "object") return false;
+      let changed = false;
+      const mapId = (raw, context) => {
+        const next = normalizeProfileSiteIdForMigration(raw, context);
+        if (asText(raw).trim() !== next) changed = true;
+        return next;
+      };
+
+      targetProfile.visitedSiteIds = Array.from(new Set((targetProfile.visitedSiteIds || []).map((id) => mapId(id, "visited site id")))).sort();
+      targetProfile.inspectedSiteIds = Array.from(new Set((targetProfile.inspectedSiteIds || []).map((id) => mapId(id, "inspected site id")))).sort();
+
+      const nextStatuses = {};
+      for (const [k, v] of Object.entries(targetProfile.siteStatuses || {})) nextStatuses[mapId(k, "status site id")] = v;
+      targetProfile.siteStatuses = nextStatuses;
+
+      const nextVisits = {};
+      for (const [k, visits] of Object.entries(targetProfile.siteVisits || {})) {
+        const mapped = mapId(k, "visit site id");
+        if (!Array.isArray(nextVisits[mapped])) nextVisits[mapped] = [];
+        if (Array.isArray(visits)) nextVisits[mapped].push(...visits);
+      }
+      targetProfile.siteVisits = nextVisits;
+      return changed;
+    }
     function persistProfile() { if (!profile) return; profile.updatedAt = nowIso(); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
     function applyLegacyVisitBackfill() {
       if (!profile) return false;
@@ -1539,6 +1574,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       }
       try {
         const parsed = JSON.parse(raw);
+        const changedProfileIds = migrateProfileSiteIdsInPlace(parsed);
         const v = verifyProfile(parsed);
         if (!v.ok) throw new Error(v.reason);
         profile = parsed;
@@ -1558,7 +1594,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         profile.usage.lastUseAt = nowIso();
         const changedA = applyLegacyVisitBackfill();
         const changedB = migrateLegacyDateParseBug();
-        if (changedA || changedB) profile.usage.lastUseAt = nowIso();
+        if (changedA || changedB || changedProfileIds) profile.usage.lastUseAt = nowIso();
         persistProfile();
       } catch (e) {
         connected = false;
@@ -1601,6 +1637,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         try {
           const obj = JSON.parse(asText(reader.result));
           if (!(obj && obj.schemaVersion === PROFILE_SCHEMA_VERSION && obj.profile)) throw new Error("Unsupported import format");
+          migrateProfileSiteIdsInPlace(obj.profile);
           const v = verifyProfile(obj.profile); if (!v.ok) throw new Error(v.reason);
           localStorage.setItem(PROFILE_KEY, JSON.stringify(obj.profile));
           connectSilently();
