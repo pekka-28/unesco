@@ -1,7 +1,19 @@
-﻿<!-- RELEASE_NOTES.md 0.1.11 -->
+﻿<!-- RELEASE_NOTES.md 0.2.0 -->
 # Release notes
 
 This file tracks published updates with version numbers.
+
+## Version 0.2.0 (2026-03-29)
+
+- Removed `siteStatuses` and `visitedSiteIds` as active runtime state; visit status is now derived from visit-log entries.
+- Removed legacy migration helpers tied to status backfill and date-parse repair from the active SPA path.
+- Updated enrolment seeding to create visit-log entries directly (status `visited`, no date) so seeded sites appear consistently.
+- Updated visited-list filtering and usage-summary visited-site counting to use visit-log-derived status.
+- Corrected user-facing wording from `pseudonomous` to `pseudonymous`.
+- Added explicit Summary report description to requirements documentation.
+- Added explicit Settings control coverage in requirements, including periodic opt-in checkbox and related controls.
+- Added Product backlog section in requirements to track discussed extensions and deferred treatment.
+- Bumped app version to `0.2.0`.
 
 ## Version 0.1.11 (2026-03-29)
 
@@ -138,7 +150,7 @@ This file tracks published updates with version numbers.
 - Treat endpoint response as success only when payload returns `ok: true`.
 - Record and show last submission status in settings.
 - Added clearer submit/fallback outcome alerts.
-- Updated usage summary UX wording to `periodic` and `pseudonomous`.
+- Updated usage summary UX wording to `periodic` and `pseudonymous`.
 - Removed `Copy current list`.
 - Replaced photorealistic-style search/snapshot icons with standard web-style line icons.
 - Switched summary payload from total site count to visited site count.
@@ -148,6 +160,5 @@ This file tracks published updates with version numbers.
 ## Earlier work
 
 Before versioned notes were introduced, changes were tracked in commit history and issue discussion.
-
 
 

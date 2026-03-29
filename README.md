@@ -1,11 +1,11 @@
-<!-- README.md 0.1.8 -->
+<!-- README.md 0.2.0 -->
 # My World Heritage
 
 My World Heritage is a public, user-controlled map companion for UNESCO World Heritage sites.
 
 It exists to make site tracking practical without paywalls, advertising pressure, or forced social publishing.
 
-Current version: `0.1.8`
+Current version: `0.2.0`
 
 ## What it does
 
@@ -13,6 +13,12 @@ Current version: `0.1.8`
 - Lets users record personal visits and travel notes locally.
 - Keeps personal data under user control (export/import supported).
 - Preserves historical continuity (retired sites are marked, not deleted).
+
+## File types
+
+- User profile export/import: `.profile` (JSON payload with My World Heritage profile schema).
+- Canonical UNESCO dataset: `.json` (`data/current/unesco_official_sites.json`).
+- Map dataset for viewer: `.geojson` (`data/current/unesco_official_sites.geojson`).
 
 ## Product position
 

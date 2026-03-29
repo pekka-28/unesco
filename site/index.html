@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- index.html 0.1.25 -->
+<!-- index.html 0.2.0 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -223,7 +223,7 @@
         <input id="share-token" class="field" type="password" placeholder="Optional shared token">
       </div>
       <div class="row">
-        <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonomous usage summary (date, use count since last publication, visited site count, magic cookie) so project maintainers can understand usage trends. If an endpoint is configured, the summary is posted there; otherwise the app falls back to clipboard copy.</div>
+        <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonymous usage summary (date, use count since last publication, visited site count, magic cookie) so project maintainers can understand usage trends. If an endpoint is configured, the summary is posted there; otherwise the app falls back to clipboard copy.</div>
       </div>
       <div class="row">
         <div id="share-submit-status" class="meta"></div>
@@ -269,7 +269,7 @@
     <div class="modal" style="max-width:560px;">
       <h3 style="margin-top:0;">My World Heritage</h3>
       <p class="meta">Version <span id="app-version">-</span></p>
-      <p>Track World heritage visits and travel with a maintained UNESCO site catalogue, while keeping personal data under your control. A periodic opt-in statistical submission can be enabled to track usage interest; no personally identifiable information is submitted, and a pseudonomous identity links submissions from the same client.</p>
+      <p>Track World heritage visits and travel with a maintained UNESCO site catalogue, while keeping personal data under your control. A periodic opt-in statistical submission can be enabled to track usage interest; no personally identifiable information is submitted, and a pseudonymous identity links submissions from the same client.</p>
       <h4 style="margin-bottom:6px;">Where data is stored</h4>
       <ul>
         <li>Site catalogue in use: <code>data/current/unesco_official_sites.geojson</code>.</li>
@@ -287,7 +287,7 @@
         <div><strong>Most recent attempt</strong></div><div id="extract-status-attempt-at">-</div>
         <div><strong>Retry interval</strong></div><div id="extract-status-retry">-</div>
       </div>
-      <p><strong>Export</strong> downloads your local profile JSON. <strong>Import</strong> loads a compatible profile JSON, so you can migrate data between systems without backend support.</p>
+      <p><strong>Export</strong> downloads your local profile <code>.profile</code> file. <strong>Import</strong> loads a compatible <code>.profile</code> file, so you can migrate data between systems without backend support.</p>
       <p>Sites with very large UNESCO component counts are grouped under <strong>Multiple sites</strong> and not shown to reduce map and list clutter; visited, searched, or explicitly selected sites are shown.</p>
       <h4 style="margin-bottom:6px;">Tooling used</h4>
       <ul>
@@ -301,7 +301,7 @@
     </div>
   </div>
 
-  <input id="import-file" type="file" accept="application/json,.json" style="display:none;">
+  <input id="import-file" type="file" accept=".profile" style="display:none;">
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -312,12 +312,11 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.1.25";
+    const APP_VERSION = "0.2.0";
     const APP_NAME = "My World Heritage";
     const APP_TITLE_SEPARATOR = " \u2013 ";
     const REPORT_TILE_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}";
     const PROFILE_SCHEMA_VERSION = 1;
-    const LEGACY_DATE_PARSE_BUG_CUTOFF = "2026-03-28T00:00:00Z";
     const FEATURE_FLAG_PREFIX = "mwh_flag_";
     const CRITERIA_URL = "https://whc.unesco.org/en/criteria/";
     const criteriaTitles = { i: "Masterpiece of human creative genius", ii: "Interchange of human values", iii: "Exceptional testimony to a tradition or civilisation", iv: "Outstanding example illustrating stages in history", v: "Outstanding settlement, land-use, or sea-use example", vi: "Association with events, traditions, ideas, or beliefs", vii: "Exceptional natural beauty", viii: "Earth history and geomorphic processes", ix: "Ecological and biological processes", x: "In-situ biodiversity conservation" };
@@ -347,7 +346,7 @@
     };
     let whsData = null, layer = null, markersBySiteId = new Map(), profile = null, connected = false, manuallyDisconnected = false, selectedHome = null, homeMatches = [], enrolSelectedHome = null, enrolMatches = [], lastSearchedSiteIds = [], searchFocusBySiteId = new Map(), ignoreMapClickUntil = 0, selectedSiteId = null, listSortBy = "name", listSortDir = "asc", selectionContext = "";
     let homeMatchIndexByLabel = new Map(), enrolMatchIndexByLabel = new Map();
-    let summaryReminderTimer = null, startupSummaryChecked = false, pendingSummaryDialog = null, submissionInProgress = false;
+    let summaryReminderTimer = null, pendingSummaryDialog = null, submissionInProgress = false;
     let componentCountByRootId = new Map(), highVolumeComponentSiteIds = new Set(), explicitVisibleSiteIds = new Set();
     const asText = (v) => v == null ? "" : String(v);
     const nowIso = () => new Date().toISOString();
@@ -478,112 +477,23 @@
         ui.loadingIndicator.style.display = "none";
       }
     }
-    function defaultProfile() { return { schemaVersion: PROFILE_SCHEMA_VERSION, name: "", homeLat: null, homeLon: null, homeLabel: "", visitedSiteIds: [], siteStatuses: {}, siteVisits: {}, inspectedSiteIds: [], settings: { visitedOnly: false, dateFormat: "y-m-d", lengthUnits: "km", multipleThreshold: 5, usageSummaryEndpoint: "", usageSummaryToken: "" }, usage: { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 }, publishPreference: { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false }, magicCookie: randomCookie(), updatedAt: nowIso() }; }
+    function defaultProfile() { return { schemaVersion: PROFILE_SCHEMA_VERSION, name: "", homeLat: null, homeLon: null, homeLabel: "", siteVisits: {}, inspectedSiteIds: [], settings: { visitedOnly: false, dateFormat: "y-m-d", lengthUnits: "km", multipleThreshold: 5, usageSummaryEndpoint: "", usageSummaryToken: "" }, usage: { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 }, publishPreference: { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false }, magicCookie: randomCookie(), updatedAt: nowIso() }; }
     function incrementCensusUse() { let c = { schemaVersion: 1, useCount: 0, updatedAt: nowIso() }; try { c = JSON.parse(localStorage.getItem(CENSUS_KEY)) || c; } catch {} c.useCount = Number(c.useCount || 0) + 1; c.updatedAt = nowIso(); localStorage.setItem(CENSUS_KEY, JSON.stringify(c)); }
     function verifyProfile(obj) {
       if (!obj || typeof obj !== "object") return { ok: false, reason: "Profile missing" };
       if (obj.schemaVersion !== PROFILE_SCHEMA_VERSION) return { ok: false, reason: `Unsupported profile version ${obj.schemaVersion}` };
-      if (!Array.isArray(obj.visitedSiteIds) || !Array.isArray(obj.inspectedSiteIds)) return { ok: false, reason: "Invalid profile arrays" };
+      if (!Array.isArray(obj.inspectedSiteIds)) return { ok: false, reason: "Invalid profile arrays" };
       if (!obj.usage || typeof obj.usage !== "object") return { ok: false, reason: "Usage block missing" };
-      if (obj.siteStatuses != null && typeof obj.siteStatuses !== "object") return { ok: false, reason: "Invalid site status block" };
       if (obj.siteVisits != null && typeof obj.siteVisits !== "object") return { ok: false, reason: "Invalid site visits block" };
       try {
-        for (const id of obj.visitedSiteIds || []) assertValidSiteId(id, "visited site id");
         for (const id of obj.inspectedSiteIds || []) assertValidSiteId(id, "inspected site id");
-        for (const k of Object.keys(obj.siteStatuses || {})) assertValidSiteId(k, "status site id");
         for (const k of Object.keys(obj.siteVisits || {})) assertValidSiteId(k, "visit site id");
       } catch (e) {
         return { ok: false, reason: asText(e && e.message) || "Invalid site id format in profile" };
       }
       return { ok: true };
     }
-    function normalizeProfileSiteIdForMigration(raw, context = "profile site id") {
-      const t = asText(raw).trim();
-      if (!t) throw new Error(`Invalid ${context}: <empty>`);
-      const whs = t.match(/^WHS\s+(\d{1,6})$/i);
-      if (whs) return `WHS ${String(Number(whs[1]))}`;
-      const mwh = t.match(/^MWH\s+(\d{1,6})-(\d{1,6})$/i);
-      if (mwh) return `MWH ${String(Number(mwh[1]))}-${String(Number(mwh[2])).padStart(3, "0")}`;
-      if (/^\d{1,6}$/.test(t)) return `WHS ${String(Number(t))}`;
-      throw new Error(`Invalid ${context}: ${t}`);
-    }
-    function migrateProfileSiteIdsInPlace(targetProfile) {
-      if (!targetProfile || typeof targetProfile !== "object") return false;
-      let changed = false;
-      const mapId = (raw, context) => {
-        const next = normalizeProfileSiteIdForMigration(raw, context);
-        if (asText(raw).trim() !== next) changed = true;
-        return next;
-      };
-
-      targetProfile.visitedSiteIds = Array.from(new Set((targetProfile.visitedSiteIds || []).map((id) => mapId(id, "visited site id")))).sort();
-      targetProfile.inspectedSiteIds = Array.from(new Set((targetProfile.inspectedSiteIds || []).map((id) => mapId(id, "inspected site id")))).sort();
-
-      const nextStatuses = {};
-      for (const [k, v] of Object.entries(targetProfile.siteStatuses || {})) nextStatuses[mapId(k, "status site id")] = v;
-      targetProfile.siteStatuses = nextStatuses;
-
-      const nextVisits = {};
-      for (const [k, visits] of Object.entries(targetProfile.siteVisits || {})) {
-        const mapped = mapId(k, "visit site id");
-        if (!Array.isArray(nextVisits[mapped])) nextVisits[mapped] = [];
-        if (Array.isArray(visits)) nextVisits[mapped].push(...visits);
-      }
-      targetProfile.siteVisits = nextVisits;
-      return changed;
-    }
     function persistProfile() { if (!profile) return; profile.updatedAt = nowIso(); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
-    function applyLegacyVisitBackfill() {
-      if (!profile) return false;
-      profile.migrations = profile.migrations || {};
-      if (profile.migrations.status_to_visit_v1) return false;
-      profile.siteStatuses = profile.siteStatuses || {};
-      profile.siteVisits = profile.siteVisits || {};
-      let changed = false;
-      for (const [siteId, statusRaw] of Object.entries(profile.siteStatuses)) {
-        const status = asText(statusRaw) || "not_visited";
-        if (status === "not_visited") continue;
-        const visits = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
-        if (visits.length) continue;
-        profile.siteVisits[siteId] = [{
-          id: crypto.randomUUID(),
-          date: "",
-          status,
-          note: "",
-          createdAt: nowIso(),
-          updatedAt: nowIso()
-        }];
-        changed = true;
-      }
-      profile.migrations.status_to_visit_v1 = nowIso();
-      return changed;
-    }
-    function migrateLegacyDateParseBug() {
-      if (!profile) return false;
-      profile.migrations = profile.migrations || {};
-      if (profile.migrations.date_parse_v2_fixed) return false;
-      profile.siteVisits = profile.siteVisits || {};
-      let changed = false;
-      const cutoffMs = Date.parse(LEGACY_DATE_PARSE_BUG_CUTOFF);
-      for (const siteId of Object.keys(profile.siteVisits)) {
-        const visits = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
-        for (const v of visits) {
-          if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(asText(v.date))) continue;
-          const createdMs = Date.parse(asText(v.createdAt || ""));
-          if (!Number.isFinite(createdMs) || createdMs < cutoffMs) continue;
-          const parts = asText(v.date).split("-").map(Number);
-          const dt = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
-          if (Number.isNaN(dt.getTime())) continue;
-          const next = new Date(dt.getTime() + 86400000);
-          if (next.getUTCDate() !== 1 || parts[2] < 28) continue;
-          v.date = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}`;
-          v.updatedAt = nowIso();
-          changed = true;
-        }
-      }
-      profile.migrations.date_parse_v2_fixed = nowIso();
-      return changed;
-    }
     function siteIdCaption(feature) {
       const p = feature && feature.properties ? feature.properties : {};
       const id = assertValidSiteId(p.site_id, "detail site id");
@@ -601,17 +511,27 @@
     }
     function setVisitStatus(siteId, status) {
       if (!(connected && profile) || !siteId) return;
-      profile.siteStatuses = profile.siteStatuses || {};
-      profile.siteStatuses[siteId] = status;
-      const visited = new Set(profile.visitedSiteIds || []);
-      if (status === "visited") visited.add(siteId);
-      else visited.delete(siteId);
-      profile.visitedSiteIds = Array.from(visited).sort();
+      ensureVisitStructures();
+      const list = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
+      const latest = getLatestVisitEntry(siteId);
+      const now = nowIso();
+      if (!latest) {
+        if (status !== "not_visited") {
+          list.push({ id: crypto.randomUUID(), date: "", status, note: "", createdAt: now, updatedAt: now });
+          profile.siteVisits[siteId] = list;
+        }
+      } else {
+        const idx = list.findIndex((x) => asText(x.id) === asText(latest.id));
+        if (idx >= 0) {
+          list[idx].status = status;
+          list[idx].updatedAt = now;
+          profile.siteVisits[siteId] = list;
+        }
+      }
       persistProfile();
     }
     function ensureVisitStructures() {
       if (!profile) return;
-      profile.siteStatuses = profile.siteStatuses || {};
       profile.siteVisits = profile.siteVisits || {};
     }
     function normalizeDateOnly(value) {
@@ -735,12 +655,9 @@
         return asText(b.updatedAt || b.createdAt).localeCompare(asText(a.updatedAt || a.createdAt));
       });
     }
-    function syncSiteStatusFromVisits(siteId) {
+    function getLatestVisitEntry(siteId) {
       const visits = getSiteVisits(siteId);
-      if (!visits.length) return;
-      const latest = visits[0];
-      const status = asText(latest.status) || "not_visited";
-      setVisitStatus(siteId, status);
+      return visits.length ? visits[0] : null;
     }
     function saveSiteVisit(siteId, visit) {
       if (!(connected && profile) || !siteId) return;
@@ -758,7 +675,6 @@
       if (idx >= 0) list[idx] = clean;
       else list.push(clean);
       profile.siteVisits[siteId] = list;
-      syncSiteStatusFromVisits(siteId);
       persistProfile();
     }
     function deleteSiteVisit(siteId, visitId) {
@@ -766,9 +682,7 @@
       ensureVisitStructures();
       const list = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
       profile.siteVisits[siteId] = list.filter((x) => asText(x.id) !== asText(visitId));
-      const remaining = getSiteVisits(siteId);
-      if (remaining.length) syncSiteStatusFromVisits(siteId);
-      else setVisitStatus(siteId, "not_visited");
+      if (!profile.siteVisits[siteId].length) delete profile.siteVisits[siteId];
       persistProfile();
     }
     function setTitle() {
@@ -791,10 +705,8 @@
     function criteriaHtml(raw) { const tokens = parseCriteriaTokens(raw); if (!tokens.length) return "n/a"; return tokens.map(t => `<a href="${CRITERIA_URL}" target="_blank" rel="noopener" title="${asText(criteriaTitles[t] || "UNESCO criterion")}">(${t})</a>`).join(" "); }
     function getVisitStatus(siteId) {
       if (!(connected && profile)) return "not_visited";
-      profile.siteStatuses = profile.siteStatuses || {};
-      if (profile.siteStatuses[siteId]) return profile.siteStatuses[siteId];
-      if ((profile.visitedSiteIds || []).includes(siteId)) return "visited";
-      return "not_visited";
+      const latest = getLatestVisitEntry(siteId);
+      return latest ? (asText(latest.status) || "not_visited") : "not_visited";
     }
     const isVisited = (siteId) => getVisitStatus(siteId) === "visited";
     function getMultipleThreshold() {
@@ -869,7 +781,12 @@
       }
       let features = [];
       if (mode === "visited") {
-        const ids = new Set(connected && profile ? Object.keys(profile.siteStatuses || {}).filter((k) => profile.siteStatuses[k] === "visited") : []);
+        const ids = new Set();
+        if (connected && profile) {
+          for (const k of Object.keys(profile.siteVisits || {})) {
+            if (getVisitStatus(k) === "visited") ids.add(k);
+          }
+        }
         features = whsData.features.filter((f) => ids.has(asText(f.properties && f.properties.site_id)));
       } else if (mode === "multiple") {
         features = whsData.features.filter((f) => isHighVolumeComponent(asText(f.properties && f.properties.site_id)));
@@ -962,7 +879,7 @@
       if (!(connected && profile)) return [];
       const rows = [];
       const seen = new Set();
-      const candidateIds = new Set([...(profile.visitedSiteIds || []), ...Object.keys(profile.siteStatuses || {})]);
+      const candidateIds = new Set(Object.keys(profile.siteVisits || {}));
       for (const siteId of candidateIds) {
         if (getVisitStatus(siteId) !== "visited") continue;
         const feature = featureBySiteId(siteId);
@@ -1606,10 +1523,17 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         const id = asText(c.getAttribute("data-site-id"));
         if (id) seeded.push(id);
       });
-      profile.visitedSiteIds = Array.from(new Set(seeded)).sort();
-      profile.siteStatuses = profile.siteStatuses || {};
       profile.siteVisits = profile.siteVisits || {};
-      for (const sid of profile.visitedSiteIds) profile.siteStatuses[sid] = "visited";
+      for (const sid of Array.from(new Set(seeded)).sort()) {
+        profile.siteVisits[sid] = [{
+          id: crypto.randomUUID(),
+          date: "",
+          status: "visited",
+          note: "",
+          createdAt: nowIso(),
+          updatedAt: nowIso()
+        }];
+      }
       connected = true;
       manuallyDisconnected = false;
       persistProfile();
@@ -1679,7 +1603,10 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       renderSubmitStatus();
     }
     function buildUsageSummary(eventType = "manual") {
-      const visitedSiteCount = Object.values((profile && profile.siteStatuses) || {}).filter((s) => asText(s) === "visited").length;
+      let visitedSiteCount = 0;
+      if (profile && profile.siteVisits) {
+        for (const siteId of Object.keys(profile.siteVisits)) if (getVisitStatus(siteId) === "visited") visitedSiteCount += 1;
+      }
       return {
         submitted_at_utc: nowIso(),
         magic_cookie: asText(profile && profile.magicCookie),
@@ -1825,10 +1752,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       profile.homeLat = selectedHome.lat;
       profile.homeLon = selectedHome.lon;
       profile.homeLabel = selectedHome.label;
-      profile.visitedSiteIds = Array.from(new Set(profile.visitedSiteIds || [])).sort();
-      profile.siteStatuses = profile.siteStatuses || {};
       profile.siteVisits = profile.siteVisits || {};
-      for (const sid of profile.visitedSiteIds) if (!profile.siteStatuses[sid]) profile.siteStatuses[sid] = "visited";
       profile.inspectedSiteIds = Array.from(new Set(profile.inspectedSiteIds || [])).sort();
       profile.settings = profile.settings || {};
       profile.settings.visitedOnly = !!ui.visitedOnlySetting.checked;
@@ -1858,7 +1782,6 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       if (!raw) {
         connected = false;
         profile = null;
-        startupSummaryChecked = false;
         stopSummaryReminderWatch();
         updateUserUi();
         openEnrolment();
@@ -1866,27 +1789,23 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       }
       try {
         const parsed = JSON.parse(raw);
-        const changedProfileIds = migrateProfileSiteIdsInPlace(parsed);
         const v = verifyProfile(parsed);
         if (!v.ok) throw new Error(v.reason);
         profile = parsed;
-        profile.siteStatuses = profile.siteStatuses || {};
         profile.siteVisits = profile.siteVisits || {};
+        delete profile.visitedSiteIds;
+        delete profile.siteStatuses;
         profile.settings = profile.settings || {};
         if (!profile.settings.dateFormat) profile.settings.dateFormat = "y-m-d";
         if (!profile.settings.lengthUnits) profile.settings.lengthUnits = "km";
         if (!(Number(profile.settings.multipleThreshold) > 0)) profile.settings.multipleThreshold = 5;
         if (profile.settings.usageSummaryEndpoint == null) profile.settings.usageSummaryEndpoint = "";
         if (profile.settings.usageSummaryToken == null) profile.settings.usageSummaryToken = "";
-        for (const sid of (profile.visitedSiteIds || [])) if (!profile.siteStatuses[sid]) profile.siteStatuses[sid] = "visited";
         connected = true;
         manuallyDisconnected = false;
         profile.usage.useCount = Number(profile.usage.useCount || 0) + 1;
         profile.usage.publishedUseCount = Number(profile.usage.publishedUseCount || 0);
         profile.usage.lastUseAt = nowIso();
-        const changedA = applyLegacyVisitBackfill();
-        const changedB = migrateLegacyDateParseBug();
-        if (changedA || changedB || changedProfileIds) profile.usage.lastUseAt = nowIso();
         persistProfile();
       } catch (e) {
         connected = false;
@@ -1901,13 +1820,11 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       updateSummaryReminderUi();
       startSummaryReminderWatch();
       void maybePromptPublishSummary(false);
-      startupSummaryChecked = true;
     }
     function disconnect() {
       connected = false;
       profile = null;
       manuallyDisconnected = true;
-      startupSummaryChecked = false;
       stopSummaryReminderWatch();
       updateUserUi();
       refreshMarkers();
@@ -1926,7 +1843,6 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         try {
           const obj = JSON.parse(asText(reader.result));
           if (!(obj && obj.schemaVersion === PROFILE_SCHEMA_VERSION && obj.profile)) throw new Error("Unsupported import format");
-          migrateProfileSiteIdsInPlace(obj.profile);
           const v = verifyProfile(obj.profile); if (!v.ok) throw new Error(v.reason);
           localStorage.setItem(PROFILE_KEY, JSON.stringify(obj.profile));
           connectSilently();

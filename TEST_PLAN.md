@@ -1,7 +1,7 @@
-<!-- TEST_PLAN.md 0.1.8 -->
+<!-- TEST_PLAN.md 0.2.0 -->
 # Integration test plan
 
-Version scope: `0.1.8`
+Version scope: `0.2.0`
 
 This plan validates backend ingest, frontend submit flow, and workbook outputs for all supported `event_type` values.
 
@@ -29,9 +29,9 @@ This plan validates backend ingest, frontend submit flow, and workbook outputs f
 - `MWH_REPORT_DAYS` is set, and `MWH_STATS_WINDOW_DAYS` is approximately `2 x MWH_REPORT_DAYS`.
 3. In the workbook, confirm target sheet is `submissions`.
 4. Version checks:
-- Site help dialog version equals current release version (`0.1.5`).
-- Site help dialog version equals current release version (`0.1.6`).
-- `site/index.html` and backend `Code.gs` header comments carry the same release version tag.
+- Site help dialog version equals the current release version.
+- `site/index.html` version marker and release notes current version are aligned.
+- Backend `Code.gs` header version is recorded and matches deployed backend script version.
 
 ## 2. Backend self-test (editor only)
 

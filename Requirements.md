@@ -1,366 +1,363 @@
-<!-- Requirements.md 0.1.8 -->
+<!-- Requirements.md 0.2.0 -->
 # UNESCO World heritage GIS requirements
 
-## Product intent
+## Product summary
 
-Build a public, reusable UNESCO World heritage dataset and viewer workflow that:
+My World Heritage is a public, user-controlled companion for UNESCO World heritage travel tracking.
 
-- keeps map hosting on OSM infrastructure with optional uMap interoperability,
-- keeps personal visit/travel data under user control,
-- avoids paywalls/ad-driven lock-in,
-- preserves retired sites rather than deleting them.
+The product uses OSM-based mapping, keeps the UNESCO site catalogue current through periodic refresh, keeps personal visit data under user control, avoids paywalls and ad-driven lock-in, and preserves retired sites by marking status rather than deleting records.
+
+The product supports long-term personal use through profile export/import for archive and migration between machines, plus a static visited-sites report export.
+
+A separate pseudonymous usage-summary path tracks adoption and broad usage interest without collecting personally identifiable information.
 
 ## Overarching goal
 
-Provide a practical, user-controlled World heritage companion that keeps UNESCO site data current and transparent, while keeping personal visit data private by default.
+Provide a practical, transparent World heritage companion that maintains currency of official site data while preserving user privacy by default.
 
 ## Architecture
 
-Figure 1 shows the end-to-end data and application flow used by the project.
+Figure 1 shows runtime and data flow. Process components are rectangles and data artifacts are rounded nodes.
 
 ```mermaid
-flowchart LR
-  D1((UNESCO source data))
-  D2((Archived Overpass legacy data))
-  D3((Canonical current dataset))
-  D4((Extracted WHS dataset))
-  D5((User-local profile and visits))
+flowchart TD
+  A1(UNESCO source dataset)
+  A2(Canonical UNESCO dataset)
+  A3(Extracted WHS map dataset)
+  A4(User profile and visits)
+  A5(Submission statistics)
 
-  C1[CI workflow]
-  C2[Fetch pipeline]
-  C3[WHS extractor]
-  C4[uMap template/export path]
-  C5[My World Heritage web app]
-  C6[uMap user map]
+  P1[CI refresh workflow]
+  P2[Conversion and validation tooling]
+  P3[My World Heritage web app]
+  P4[Statistics portal]
 
-  D1 --> C1
-  D2 --> C2
-  C1 --> C2
-  C2 --> D3
-  D3 --> C3
-  C3 --> D4
-  D4 --> C4
-  C4 --> C6
-  D4 --> C5
-  D5 --> C5
-  D5 --> C6
+  A1 --> P1
+  P1 --> P2
+  P2 --> A2
+  P2 --> A3
+  A3 --> P3
+  A4 --> P3
+  P3 --> P4
+  P4 --> A5
 ```
 
 Figure 1. My World Heritage data and application architecture.
 
 ## Functional requirements
 
-### Dataset and update
+### Dataset currency and quality
 
+The dataset pipeline must keep a stable, auditable, periodically refreshed catalogue with clear provenance:
 - Maintain canonical UNESCO official site dataset with periodic automated refresh.
-- Split refresh into staged source load and local conversion steps so conversion always operates on a local file copy.
-- Maintain extracted one-record-per-root-WHS dataset for map consumption.
+- Split refresh into staged source load and local conversion so conversion always operates on a local file copy.
+- Maintain extracted one-record-per-root-WHS output for map consumption.
 - Use canonical root site identifiers in `WHS <id>` form in converted datasets.
-- Maintain generated component-level synthetic sites (`MWH <WHS id>-<nnn>`) for UNESCO multi-location properties while preserving original UNESCO WHS entries unchanged.
-- Do not generate synthetic component sites when only one component point exists; keep that case on the root WHS record only.
-- Preserve retired/delisted sites with explicit `status`.
-- Keep historical snapshots and auditable diffs.
-- Keep stable `current` dataset filenames and retain timestamped previous versions in a history store.
-- Validate extracted WHS dataset before publication.
-- Treat prior Overpass-derived dataset as historical archive only; do not wire it into live application data loading.
-- Include extract-status metadata and a note fragment in canonical JSON showing source, count, sizes, most recent data timestamp, most recent attempt timestamp, and retry interval.
-- Maintain a reusable local-name mapping table (`data/mappings/local_name_table.json`) keyed by WHS id with `english_name` and curated `local_name`.
-- Inject mapped local-name values into published canonical JSON/GeoJSON during every extract conversion.
-- Maintain a coverage report (`data/mappings/local_name_coverage.json`) showing proportion of WHS roots with mapped local names.
-- Maintain a jurisdiction language policy table (`data/mappings/jurisdiction_language_policy.json`) keyed by jurisdiction ISO code with capped language-script selectors.
-- Maintain a jurisdiction-language anomaly report (`data/mappings/jurisdiction_language_policy_anomalies.json`) for review of over-cap official-language sets.
-- Include input-source fingerprints in jurisdiction policy outputs so deterministic runs can be verified for fixed inputs.
-- Use default jurisdiction selector cap of 4 (not 3), based on observed material losses at cap 3 (including Switzerland and Fiji official-selector coverage).
-- Provide a separate update exercise/script that proposes mapping-table updates from UNESCO/Overpass sources, with optional Wikipedia fallback and strict confidence gating before apply.
-- Provide an on-demand CI workflow for local-name maintenance that runs the update/coverage scripts and can optionally apply only high-confidence mapping updates.
-- Send owner alert email when UNESCO refresh pipeline detects fetch/convert/validation failure so source drift is visible immediately.
+- Maintain generated component-level synthetic sites in `MWH <WHS id>-<nnn>` form for UNESCO multi-location properties while preserving original WHS entries unchanged.
+- Do not generate synthetic component sites when only one component point exists.
+- Preserve retired or delisted sites with explicit `status`.
+- Keep stable `current` filenames and retain timestamped previous versions in history storage.
+- Validate extracted WHS output before publication.
+- Include extract-status metadata in canonical JSON with source, counts, sizes, most recent data timestamp, most recent attempt timestamp, and retry interval.
+- Send owner alert email when refresh, conversion, or validation fails.
+
+The site-name dictionary remains in scope because it improves readability and is measurable via coverage:
+- Maintain curated local-name mapping in `data/mappings/local_name_table.json`, keyed by WHS id with `english_name` and curated `local_name`.
+- Inject mapped local names into published canonical JSON and GeoJSON during conversion.
+- Maintain coverage report `data/mappings/local_name_coverage.json` for mapped fraction of WHS roots.
+- Maintain jurisdiction language policy in `data/mappings/jurisdiction_language_policy.json` with capped language-script selectors.
+- Maintain anomaly report `data/mappings/jurisdiction_language_policy_anomalies.json` for review of over-cap language sets.
+- Keep selector-cap default at 4.
+- Run a separate update exercise for dictionary enrichment from UNESCO/public references, with optional Wikipedia fallback and strict confidence gating before apply.
 
 ### Mapping and interaction
 
+The map experience must stay responsive and predictable while supporting both root WHS and component-level recording:
 - Show UNESCO sites from local dataset with stable identifiers.
-- Show both root WHS entries and component synthetic entries, and allow users to use either grouped (root) or per-location (component) recording.
-- Group high-volume component synthetic entries into a dedicated `Multiple sites` list mode using a configurable threshold.
-- Exclude high-volume component synthetic entries from the default `All sites` list so they do not dominate standard browsing.
-- Hide high-volume component markers by default on map redraw, and reveal them when visited, searched, or explicitly selected.
-- Show site detail on selection; hide detail when nothing is selected.
-- Clicking map background clears current selection.
-- Site title links to UNESCO page for narrative text.
-- Criteria are shown as linked tokens with tooltips.
-- Hover tooltip shows site name.
-- For synthetic component sites, use the component/sub-site name as the primary display name (avoid repeating the root-site summary in the title).
-- Use curated local-name mapping values as supplementary native-script text in tooltip/detail.
-- Do not auto-display UNESCO translation columns as local-script names unless they are explicitly curated into the mapping table.
-- Visit status is constrained to: not visited, visited, pending, won't visit.
-- Visited sites render in distinct colour from non-visited sites.
-- Double-click on a site toggles visited and not visited.
-- Site detail supports a per-site visit log with date, status, and note entries.
-- Component visits and root WHS visits are recorded separately by site identifier.
-- Users can create, edit, and delete multiple dated visit entries for the same site.
-- Root WHS detail indicates when the WHS contains multiple individual component sites.
-- Site list presents `Site` and `Visited` columns with header-driven sorting.
-- Site-list mode includes an explicit blank/no-list option so users can hide the list pane without changing selection state.
-- Site tooltip supports multiline display for long component names, with a clear component separator glyph.
-- Initial load fits WHS bounds; subsequent loads restore prior viewport.
-- Site identifier (WHS id) is shown only in the detail pane in de-emphasised form.
-- Snapshot action captures a map image for sharing (clipboard image copy when supported, otherwise file download).
-- Summary action exports a static HTML report with a world-map image of visited sites and a visited-sites table.
-- Show a visible loading indicator during data load and other long-running user actions.
+- Show both root WHS entries and component synthetic entries, and allow grouped or per-location recording.
+- Group high-volume component entries into `Multiple sites` mode using configurable threshold.
+- Exclude high-volume component entries from default `All sites` list to reduce clutter.
+- Hide high-volume component markers by default, and reveal them when visited, searched, or selected.
+- Show site detail on selection and hide detail when no site is selected.
+- Clear current selection when map background is selected.
+- Link site title to UNESCO narrative page.
+- Show criteria as linked tokens with tooltips.
+- Show site name on hover tooltip.
+- Use component name as the primary display for synthetic component records.
+- Use curated local-name values as supplementary native-script text in tooltip and detail.
+- Keep visit status constrained to `not visited`, `visited`, `pending`, `won't visit`.
+- Render visited sites in a distinct style.
+- Toggle visited and not visited by double-clicking a site marker.
+- Support per-site visit log entries with date, status, and note.
+- Derive current site status from the most recent visit-log entry for that site.
+- Record component visits separately from root WHS visits by site identifier.
+- Support create, edit, and delete for multiple visit entries per site.
+- Indicate in root WHS detail when the site has multiple component locations.
+- Keep site-list columns sortable and keep header visible while scrolling.
+- Include blank list mode to hide the right-side list without changing selection context.
+- Fit initial load to WHS bounds, then restore saved viewport on later sessions.
+- Show WHS identifier only in detail pane in de-emphasised form.
+- Support snapshot image capture.
+- Support static HTML summary export containing world map and visited-sites table.
+- Show loading indicator during data load and long-running actions.
 
 ### Search
 
-- Unified search supports both:
-- WHS site search by id/name.
-- Geographic place search via geocoding.
-- Search renders selectable result list entries.
-- Search runs on explicit user request from search control.
-- Home-location search presents selectable list results with canonical place naming.
-- Search updates the right-side site list immediately when requested.
-- Changing site-list mode immediately refreshes the right-side list.
-- If web geocoding is unavailable, local WHS metadata text matching still returns site results.
-- If WHS direct text matching is empty but geocoding resolves a region, sites in the resolved bounding box are listed.
+Search must support site and place lookup with explicit user action:
+- Support WHS search by id or name.
+- Support geographic place search via geocoding.
+- Run search on explicit action (search button or Enter), not on every keystroke.
+- Show selectable search results.
+- Recenter map on single WHS match.
+- Support home-location search with selectable canonical place names.
+- Update right-side list on search execution.
+- Update right-side list when list mode changes.
+- Fall back to local WHS metadata text match when geocoding is unavailable.
+- If direct WHS text match is empty but geocoding resolves a region, list sites in resolved bounds.
 
-### Profile and session
+### Profile and settings lifecycle
 
-- First-run enrolment is distinct from Settings and initializes user identity/home location.
-- Use local profile only (no backend dependency).
-- Include schema version in profile and verify on load/import.
-- Include import/export for migration between systems.
-- Include visit-log data in import/export payloads.
-- Support import mapping from legacy personal-layer data carrying `date`, `note`, `status`, and `ref_whc`.
-- Logout disconnects current page session from local profile.
-- Connect performs current silent reconnect from local store.
+Profiles are local-first and portable:
+- Keep enrolment separate from Settings.
+- Use local profile only, with no required backend dependency.
+- Include profile schema version and verify on load/import.
+- Support export/import for migration between machines.
+- Include visit-log data in export/import payload.
+- Use `.profile` as the user-facing import/export extension.
+- Disconnect current page session from profile on logout.
+- Support silent reconnect from local storage on next load.
 
-### Settings
+Settings are one-line controls and include:
+- User name.
+- Home location search, selection, and `Use my location`.
+- `Visited only` filter.
+- Date display format selector (`y-m-d`, `d-m-y`, `m-d-y`) while stored entry values remain canonical.
+- Length units selector (`kilometres` or `miles`).
+- Multiple-sites threshold.
+- `Opt in to periodic usage summary` checkbox.
+- Usage-summary info bubble triggered by the `(i)` control.
+- Reminder interval numeric input (`days`) with `None` checkbox override.
+- Optional usage-summary endpoint URL.
+- Optional usage-summary token.
+- Last-submission status line.
 
-- Settings includes:
-- user name,
-- home location search + select + use-my-location,
-- separate from enrolment flow,
-- visited-only filter,
-- usage-summary reminder controls (`interval days` or `none`).
-- date display format selector (`y-m-d`, `d-m-y`, `m-d-y`) while stored entry values remain `YYYY-MM-DD` or `YYYY-MM`,
-- length units selector (`kilometres` or `miles`).
-- multiple-sites threshold setting (default `5`) controlling when component entries move into `Multiple sites`.
-- Home location search uses selectable list (combo-style), not button-per-result.
-- If one canonical match is selected, subsequent search confirms that selection.
+### Usage and adoption tracking
 
-### Interface localisation (pending)
-
-- Add an interface-language setting in Settings (default `English`).
-- Keep UNESCO canonical dataset structure unchanged; localisation targets interface text and formatting, not source dataset identity keys.
-- Prefer curated local-script site labels when available for the selected interface language/script, while retaining English as the universal fallback handle.
-- Support locale-aware date and number rendering in UI while preserving canonical stored date forms.
-- Treat localisation delivery as optional resource bundles that can be extended by contributors.
-
-### Usage summary and census (pending integration)
-
-- Request startup consent for periodic pseudonymised summary prompt.
-- Default reminder interval: 7 days; user can change interval or set none.
-- Allow submission without requiring each user to have a GitHub account.
-- Summary includes:
-- date,
-- use count since last summary publication,
-- visited site count,
-- dataset magic cookie.
-- Support an optional anonymous form/endpoint URL in Settings for direct summary submission.
+Usage telemetry is optional, pseudonymous, and aggregate-only:
+- Request startup consent once per profile for periodic pseudonymous summary prompts.
+- Use default reminder interval of 7 days; allow user-defined interval or none.
+- Support endpoint submission without requiring user GitHub account.
+- Submit summary with date, use count since last summary, visited site count, and dataset magic cookie.
 - Keep clipboard/manual fallback when endpoint submission is unavailable.
-- Provide a periodic owner digest email path from collected summaries.
-- Backend encouragement message reports active users and average visited sites in the configured window.
-- Record coarse per-load census counter without detailed telemetry.
-- Note that counts are approximate due to abandoned sessions, multi-device use, and repeated use.
-- Distance display in nearby-site suggestions is deferred until locale-sensitive formatting/unit strategy is defined.
+- Provide backend encouragement message with active users and average visited sites.
+- Record coarse per-load census counters without detailed behavioural telemetry.
+- Treat counts as approximate due to abandoned sessions, multi-device use, and repeated use.
+- Keep nearby-site distance display locale-sensitive and configurable (pending strategy finalisation).
 
-## Data storage requirements
+## Data formats and storage
 
-- Site catalog data is stored in a canonical repository JSON file, with GeoJSON generated as a derived map-consumption artifact.
-- User profile and usage counters are stored in browser localStorage.
-- Logout state is in-memory for the current page only; no separate browser session-storage key is used.
+Table 1. Data artifacts and file types.
+
+| Artifact | Format | Purpose | Location |
+| --- | --- | --- | --- |
+| Canonical UNESCO dataset | `.json` | Authoritative project dataset | `data/current/unesco_official_sites.json` |
+| WHS map dataset | `.geojson` | Map-layer consumption by SPA | `data/current/unesco_official_sites.geojson` |
+| User profile export/import | `.profile` (JSON payload) | Archive and machine transfer of user data | User-managed files |
+| Dataset history snapshots | `.json` and `.geojson` | Audit and rollback history | `data/history/` |
+| Usage-summary payload contract | `.json` schema | Backend payload contract | `backend/usage_summary_backend/usage_summary.schema.json` |
+
+Storage behaviour is:
+- User profile, visits, and usage counters are stored in browser `localStorage`.
+- Logout state is in-memory for the active page session.
 - Personal/private artifacts must remain excluded from commits.
 
-## Source and licensing requirements
+## Source, licensing, and OSM support
 
-- UNESCO pages are authoritative for official listing/narrative references.
-- OSM/Wikidata may provide geometry/linkage.
-- Narrative text should be linked, not republished wholesale, unless license permits.
+Source and licensing requirements are:
+- UNESCO pages are authoritative for official listing and narrative references.
+- OSM and Wikidata may provide geometry and linkage.
+- Report map tile provider attribution must be included in documentation and exported artifacts where required.
+- Narrative text is linked, not republished wholesale, unless licensing permits.
 - Attribution must be present for all data sources.
 
-## OSM support requirements
-
+OSM support requirements are:
 - Provide tooling/docs to identify missing or ambiguous OSM linkage (`ref:whc`).
 - Generate review lists to support optional human OSM improvements.
 
 ## Publication requirements
 
-- Publish artifacts and docs via GitHub/GitHub Pages.
+Publication requirements are:
+- Publish artifacts and documentation via GitHub and GitHub Pages.
 - Use the custom My World Heritage viewer as the primary operational application.
-- Keep uMap as an optional seed/export interoperability path, not the primary runtime.
-- Enable users to keep private data privately and optionally share selected fragments.
-- Provide a reproducible local workflow for refresh, extraction, validation, and optional uMap template interoperability.
+- Enable users to keep private data private and optionally share selected fragments.
+- Provide reproducible local workflow for refresh, extraction, and validation.
+
+## Application design and components
+
+The application is a static single-page web app with local-first profile state and optional statistics submission.
+
+Table 2. Application components and imported services.
+
+| Component | Type | Purpose | Runtime role |
+| --- | --- | --- | --- |
+| `site/index.html` | SPA entry file | Main application shell and behaviour | Primary user interface |
+| Leaflet (`leaflet.css`, `leaflet.js`) | External library | Map rendering and interaction | Core map engine |
+| OpenStreetMap tiles | External data service | Basemap imagery | Map background tiles |
+| ArcGIS World Physical Map tiles | External data service | Summary report world-map tile source | Report-map rendering path |
+| Nominatim | External data service | Place geocoding for search/home location | Geographic search provider |
+| `html2canvas` | External library | Snapshot/report rendering support | Client-side capture helper |
+| Google Apps Script endpoint | External application | Usage-summary ingest and aggregate stats | Statistics portal |
+| GitHub Pages | Hosting platform | Public static site delivery | Production hosting |
+| UNESCO dataset artifacts | Repository data | Current and historical WHS records | Application data source |
+
+## Site specification
+
+Table 3. User interface elements and purpose.
+
+| User interface element | Purpose |
+| --- | --- |
+| Brand mark button | Shows tooltip clarifying the symbol is custom and not UNESCO, World Heritage Emblem, or Hague Blue Shield. |
+| Application title button | Opens help and dataset-status dialog. |
+| Search control | Executes explicit site/place search and updates results. |
+| Search results list | Selects matched site or place result. |
+| Snapshot button | Captures and copies/downloads current map image. |
+| Site list mode selector | Switches list mode (`All`, `Multiple`, `Visited`, `Searched`, blank). |
+| Loading indicator | Signals active load and long-running actions. |
+| Usage summary inbox icon | Appears when periodic summary is due. |
+| User menu | Opens settings, export, import, summary, submit, reset, and logout actions. |
+| Site list pane | Displays current list-mode results with sortable columns. |
+| Site detail pane | Displays selected site metadata and visit-log controls. |
+| Visit log editor | Adds, edits, and deletes dated visit entries. |
+| Enrolment dialog | First-run setup for user identity and home location. |
+| Settings dialog | Edits profile, filters, formatting, thresholds, and submission settings. |
+| Usage summary dialog | Shows payload, submit state, and backend response. |
+
+Key interaction behaviour is:
+- Search executes only on explicit action (magnifier or Enter).
+- Site and date columns in lists are sortable and remain aligned on narrow screens.
+- Date entry accepts `YYYY`, `YYYY-MM`, or `YYYY-MM-DD` canonical forms.
+- Summary export creates a static HTML report suitable for archival and sharing.
+- Export/import uses `.profile` extension for user-facing portability.
+
+### Summary report export
+
+The exported Summary report is a self-contained HTML artifact designed for sharing and archival:
+- Report title format is `My World Heritage - <User>`.
+- Header includes generated local timestamp, visited-site count, and `Prepared with My World Heritage` link plus URL.
+- Report includes a world-map image with visited-site markers.
+- Report table columns are `Site`, `Name`, `Visited`, `Status`, and `Country`.
+- `Site` uses the application identifier (`WHS` root id or `MWH` component id).
+- `Name` links to UNESCO narrative URL when available.
+- Report ends with a column guide describing each table field.
+
+## Backend script specification
+
+The Apps Script backend at `backend/usage_summary_backend/google_apps_script/Code.gs` supports ingest, aggregate statistics, and digest support.
+
+Public web-callable interfaces are only `doGet` and `doPost`. Self-test and helper functions are callable from Apps Script editor/runtime context, not from public web requests.
+
+Table 4. Backend interfaces and invocation context.
+
+| Interface | Web callable | Purpose |
+| --- | --- | --- |
+| `doGet` | Yes | Health and aggregate stats response (`?stats=1`). |
+| `doPost` | Yes | Validate payload and append usage summary row. |
+| `buildRecentStats_` | No | Compute active users and average visited sites. |
+| `sendPeriodicDigest` | No | Send owner digest email from workbook rows. |
+| `backendSelfTestDryRun` | No | Validate workbook and token wiring without row insert. |
+| `backendSelfTestAppend` | No | Insert controlled backend self-test row. |
+| `installDailyDigestTrigger` | No | Create daily digest trigger. |
+| `enforceWorkbookBinding_` | No | Restrict writes to configured workbook id/name. |
+
+Table 5. Backend settings guidance.
+
+| Setting | Default | Recommended | Range | Description |
+| --- | --- | --- | --- | --- |
+| `MWH_ALLOWED_SPREADSHEET_ID` | none | required | exact id | Bound workbook id allow-list. |
+| `MWH_ALLOWED_SPREADSHEET_NAME` | empty | set in production | exact name or empty | Optional strict workbook name check. |
+| `MWH_INGEST_TOKEN` | empty | set for shared/public endpoint | non-empty string or empty | Optional shared token gate for ingest. |
+| `MWH_REPORT_EMAIL` | none | required for digest | valid email | Digest recipient address. |
+| `MWH_REPORT_DAYS` | `7` | `7` or `14` | integer >= 1 | Digest lookback window in days. |
+| `MWH_STATS_WINDOW_DAYS` | `14` | about `2 x MWH_REPORT_DAYS` | integer >= 1 | Encouragement/aggregate stats window. |
+| `MWH_MIN_INTERVAL_SECONDS` | `30` | `30` to `120` | `1` to `3600` | Minimum gap per cookie between accepted submissions. |
+| `MWH_MAX_SUBMISSIONS_PER_COOKIE_PER_HOUR` | `12` | `12` production, higher for test | `1` to `1000` | Hourly cap per cookie for burst damping. |
+| `MWH_DUPLICATE_TTL_SECONDS` | `3600` | >= min interval | `60` to `86400` | Duplicate suppression window. |
+| `MWH_MAX_PAYLOAD_BYTES` | `4096` | `4096` | `512` to `65536` | Payload size guardrail. |
+| `MWH_LAST_DIGEST_AT` | script-managed | do not set manually | ISO timestamp | Last digest send marker. |
+
+### Backend settings guidance details
+
+#### `MWH_ALLOWED_SPREADSHEET_ID` and `MWH_ALLOWED_SPREADSHEET_NAME`
+
+Use id binding as a hard requirement. Name binding is optional but recommended in production as an additional guard against accidental re-binding.
+
+#### `MWH_STATS_WINDOW_DAYS` and `MWH_REPORT_DAYS`
+
+Set stats window longer than digest window so user-facing encouragement stays stable while owner digests stay frequent enough for operations.
+
+#### `MWH_MIN_INTERVAL_SECONDS`, `MWH_MAX_SUBMISSIONS_PER_COOKIE_PER_HOUR`, and `MWH_DUPLICATE_TTL_SECONDS`
+
+Treat these as coordinated controls: minimum interval limits immediate repeats, hourly cap dampens scripted bursts, and duplicate TTL suppresses near-identical replays.
+
+## History (retired paths)
+
+Legacy interoperability and bootstrap approaches are retired from active product intent and runtime architecture.
+
+Historical artifacts may remain in `archive/` for traceability only. They are not part of live data load paths or current CI update paths.
 
 ## Designs considered but not selected
 
-- Legacy Overpass-derived WHS ingestion as live source:
-- reason not selected: region-partitioned live Overpass queries were operationally fragile and caused incomplete or delayed map loads.
-- reason not selected: partitioning introduced overlap/gap risk and required manual tuning of region boundaries.
-- reason not selected: coverage and authority were insufficient for canonical UNESCO maintenance.
-- selected replacement: UNESCO official-source ingestion with deterministic local conversion and validation.
-- historical note: only the packaged legacy snapshot and scripts are retained in `archive/overpass_legacy/` for traceability.
-- Manual per-site status as primary source of truth:
-- reason not selected: superseded by visit-log-first model where status is derived from recorded visits.
-- Search-on-typing as primary interaction:
-- reason not selected: replaced with explicit search-trigger behaviour for predictable updates.
-- Detailed usage-summary payload (visited/inspected counts and duration):
-- reason not selected: replaced by minimal usage-interest summary (`use count since last push`, `visited site count`, date, magic cookie).
+The following decisions are retained for traceability:
+- Manual per-site status as primary source of truth; replaced by visit-log-first model where status is derived from visits.
+- Search-on-typing as primary interaction; replaced by explicit search trigger for predictable updates.
+- Detailed usage-summary payload with extended behavioural metrics; replaced by minimal adoption-focused payload.
 
 ## Non-goals and deferred items
 
+The following items are intentionally deferred or excluded:
 - Advertising support.
 - Mandatory-auth hosted platform for public core dataset.
 - Public social review features.
 - Full transport-network route reconstruction.
-- Locale-sensitive distance display strategy for nearby-site labels.
+- Locale-sensitive nearby-distance presentation strategy.
 - Direct automated push of usage summaries to GitHub without explicit user action.
-- UNESCO official-list scraper integration replacing Overpass bootstrap source (pending legal/licensing/format review).
 - Manual local-file import fallback for UNESCO extract refresh.
-- Comprehensive locationation support.
+- Comprehensive location support.
 
-## Specifications
+## Product backlog
 
-This section provides concrete implementation specifications for the site and backend script. Table 1 anchors the user-facing controls used in the site.
+The following backlog items capture material extensions discussed but not yet implemented:
 
-### Site specification
+| Backlog item | Current state | Treatment |
+| --- | --- | --- |
+| Travel sequence lines (straight or great-circle) | Not implemented | Add local-only travel-segment layer and report rendering support. |
+| Interface localisation setting and bundles | Partially designed | Implement i18n bundle loading and runtime language switch in SPA. |
+| Local-name update source hardening | Partially implemented | Remove Overpass-cache dependency from local-name update scripts and use UNESCO/public-reference plus curated mapping workflow only. |
+| Version coherence automation | Manual | Add CI check to enforce version consistency across app, README, test plan, and release notes. |
+| Report map source policy | Mixed sources | Define one explicit basemap policy for interactive map and summary report, including attribution language in docs. |
 
-- Runtime: single-page HTML application in `site/index.html`, served as a static GitHub Pages site.
-- Map stack: Leaflet + OpenStreetMap tiles.
-- Search stack: local WHS text match plus optional Nominatim geographic search.
-- Persistence model: browser `localStorage` for profile/visits/settings/counters; in-memory logout state for current page.
-- Dataset load: `data/current/unesco_official_sites.geojson` (map), with extract metadata from `data/current/unesco_official_sites.json`.
-- Submission flow: manual and periodic usage summary submission dialog with endpoint POST and clipboard fallback.
+## Localisation requirements and implementation notes (pending)
 
-Table 1. User interface elements and purpose.
+Localisation remains a pending extension.
 
-| User interface element | Purpose |
-| --- | --- |
-| Application title (`My World Heritage`) | Opens the help and dataset status dialog. |
-| Search box + magnifier | Runs explicit site/place search and updates result list. |
-| Search results list | Lets the user choose a matched site or place result. |
-| Snapshot button | Captures and copies/downloads current map image. |
-| Site list selector | Switches right-side list mode (`All`, `Multiple`, `Visited`, `Searched`, blank). |
-| Map markers | Show WHS/site points with visited-aware styling and selection. |
-| Site detail pane | Shows selected site details and visit log editor. |
-| Visit log editor | Adds/edits/deletes dated visit entries with status and note. |
-| User menu | Accesses connect/settings/export/import/summary/submit/reset/logout actions. |
-| Settings dialog | Edits profile, filters, formatting, thresholds, and submission settings. |
-| Enrolment dialog | First-run setup for user identity and home location. |
-| Usage summary inbox icon | Appears when periodic submission is due. |
-| Usage summary dialog | Shows payload summary, submit state, and backend encouragement message. |
-| Loading indicator | Signals active load/long-running map operations. |
+The pending requirements are:
+- Add interface-language setting in Settings.
+- Keep canonical dataset keys unchanged while localising interface text and formatting.
+- Use curated local-script site labels as supplementary display where available.
+- Preserve canonical stored visit-date values while localising display format.
 
-#### Search control
-
-- Search runs on explicit action (magnifier or Enter), not on every keystroke.
-- A single WHS match recentres the map to that site and updates `Searched sites`.
-- Geographic matches are selectable and can seed WHS matches by bounding box.
-
-#### Site list and detail panes
-
-- The right pane hosts either list mode output or selected-site detail.
-- List header sorting is in-place (`Site`, `Visited`) and remains visible during scroll.
-- Selecting map background clears site detail and keeps list state consistent with current list mode.
-
-#### Visit log editor
-
-- Date entry accepts `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`.
-- Status values are constrained to `visited`, `pending`, `won't visit`, `not visited`.
-- Double-clicking a marker toggles visited/not visited without opening the editor.
-
-#### Usage summary flow
-
-- Startup prompt asks for opt-in once per profile.
-- During active use, due reminders show a mailbox icon instead of interrupting map flow.
-- Submission dialog handles success, duplicate, deferred confirmation, and clipboard fallback states.
-
-### Backend script specification
-
-The Apps Script backend in `backend/usage_summary_backend/google_apps_script/Code.gs` provides ingest, aggregate stats, and owner digest support. Table 2 anchors callable interfaces.
-
-Table 2. Backend interfaces and purpose.
-
-| Interface | Purpose |
-| --- | --- |
-| `doGet` | Health response and aggregate stats response (`?stats=1`). |
-| `doPost` | Validates payload and appends usage summary rows. |
-| `buildRecentStats_` | Computes windowed active users and average visited sites. |
-| `sendPeriodicDigest` | Sends owner digest email from recent workbook rows. |
-| `backendSelfTestDryRun` | Validates workbook/token wiring without row insert. |
-| `backendSelfTestAppend` | Inserts one controlled test row for verification. |
-| `installDailyDigestTrigger` | Creates daily trigger for digest function. |
-| `enforceWorkbookBinding_` | Restricts writes to configured workbook id/name. |
-
-#### Backend aggregate metrics
-
-- Active users: unique `magic_cookie` values in the configured stats window.
-- Average visited sites: average of each active user’s latest `visited_site_count` in that window.
-- Encouragement text is backend-generated so wording/window policy is centrally controlled.
-
-#### Backend settings guidance (soft dependencies)
-
-- Set `MWH_STATS_WINDOW_DAYS` to approximately `2 x MWH_REPORT_DAYS` so in-app encouragement reflects a broader window than owner digest cadence.
-- Keep `MWH_DUPLICATE_TTL_SECONDS` greater than or equal to `MWH_MIN_INTERVAL_SECONDS` to avoid duplicate suppression gaps.
-- Keep `MWH_MAX_SUBMISSIONS_PER_COOKIE_PER_HOUR` above expected legitimate retry volume but low enough to damp scripted burst traffic.
-
-## Localisation implementation details (pending exercise)
-
-This section records the investigation outcome and a practical contribution path for an interested contributor.
-
-### Scope and complexity summary
-
-- Estimated effort for a first practical cut: medium (roughly 2 to 4 focused days).
-- Primary complexity is UI text extraction, runtime language switching, and preserving existing behaviour across dialogs and map/list flows.
-- UNESCO dataset ingestion does not need to be localised for phase 1.
-
-### Recommended implementation approach
-
-1. Introduce resource bundles:
-- Add `site/i18n/en.json` as baseline.
-- Add one additional bundle (for example `fr.json`) to validate structure and fallbacks.
-
-2. Add runtime i18n service in SPA:
-- Add `t(key, params)` helper with fallback to English.
-- Add `setLanguage(langCode)` and persist selected language in profile settings.
-
-3. Externalise user-facing strings:
-- Move menu labels, dialog labels, button text, validation messages, status messages, and tooltips into bundle keys.
-- Keep telemetry payload keys and dataset field names unchanged.
-
-4. Localise formatting:
-- Use `Intl.DateTimeFormat` and `Intl.NumberFormat` for display-only rendering by selected language.
-- Keep stored visit-date values canonical (`YYYY`, `YYYY-MM`, `YYYY-MM-DD`).
-
-5. Site-name display strategy:
-- Keep English site name as primary handle.
-- Show curated local-script name as supplemental line when it matches selected language/script policy.
-- Avoid duplicate render where local and English forms are equivalent.
-
-6. Testing and acceptance:
-- Verify language switch across enrolment, settings, detail pane, help, and usage-summary dialog.
-- Verify no regression in search, visits, export/import, or usage-summary submission.
-
-### Suggested pull request exercise
-
-- Suggested PR title: `Add interface localisation framework and language setting`.
-- Suggested PR scope:
-- add i18n bundles (`site/i18n/en.json`, one additional language),
-- add i18n runtime helper and language setting wiring,
-- migrate high-visibility UI strings first (menus, settings, help, submit dialog),
-- document contributor workflow for adding a new language bundle.
+A practical implementation path is:
+- Add `site/i18n/en.json` baseline bundle and one additional bundle.
+- Add runtime helpers `t(key, params)` and `setLanguage(langCode)` with profile persistence.
+- Move UI labels, messages, and tooltips into bundles in staged passes.
+- Use `Intl.DateTimeFormat` and `Intl.NumberFormat` for display formatting.
+- Validate no regression in search, visits, export/import, and usage-summary submission.
 
 ## Acceptance criteria
 
-- Data refresh pipeline remains reproducible and reliable.
-- WHS layer loads without frequent remote runtime failures.
-- Personal data is not committed by default.
-- Settings and profile lifecycle functions work without backend support.
-- Requirements stay synchronized with implemented feature set.
-
-
+Release readiness requires:
+- Reproducible and reliable data refresh pipeline.
+- Stable WHS layer load with deterministic identifiers.
+- Personal data not committed by default.
+- Working profile lifecycle without mandatory backend dependency.
+- Synchronised requirements and implemented feature set.
