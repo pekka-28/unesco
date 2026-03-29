@@ -1,3 +1,4 @@
+# check_local_name_coverage.ps1 0.1.4
 param(
   [string]$InputFile = "data/staging/unesco_source_raw.txt",
   [string]$LocalNameTableFile = "data/mappings/local_name_table.json",
@@ -67,3 +68,5 @@ $report = [ordered]@{
 $report | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $OutputFile -Encoding utf8
 Write-Host ("Coverage: {0}/{1} ({2}%)" -f $withLocal, $total, $coveragePct)
 Write-Host "Wrote $OutputFile"
+
+

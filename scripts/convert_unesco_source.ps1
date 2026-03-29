@@ -1,4 +1,5 @@
-﻿param(
+# convert_unesco_source.ps1 0.1.4
+param(
   [string]$InputFile = "data/staging/unesco_source_raw.txt",
   [string]$SourceUrl = "https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json",
   [string]$LocalNameTableFile = "data/mappings/local_name_table.json",
@@ -425,3 +426,5 @@ Prune-Archive -HistoryDir $ArchiveDir -KeepCount $KeepVersions
 
 Write-Host "Wrote $OutputJsonFile with $($canonical.sites.Count) sites."
 Write-Host "Wrote $OutputFile with $($geojson.features.Count) features."
+
+

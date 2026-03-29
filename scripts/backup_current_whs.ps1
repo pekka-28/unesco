@@ -1,3 +1,4 @@
+# backup_current_whs.ps1 0.1.4
 param(
   [string]$InputFile = "data/current/whs_sites_used.geojson",
   [string]$SnapshotRoot = "data/snapshots"
@@ -17,3 +18,5 @@ $targetFile = Join-Path $targetDir "whs_sites_used.geojson"
 Copy-Item -LiteralPath $InputFile -Destination $targetFile -Force
 
 Write-Host "Snapshot written to $targetFile"
+
+

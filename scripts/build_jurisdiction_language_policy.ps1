@@ -1,3 +1,4 @@
+# build_jurisdiction_language_policy.ps1 0.1.4
 param(
   [string]$UnescoInputFile = "data/staging/unesco_source_raw.txt",
   [string]$CldrTerritoryLanguageFile = "data/staging/cldr_language_territory_information.txt",
@@ -370,3 +371,5 @@ $anomalyDoc | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $AnomalyOutput
 
 Write-Host ("Wrote {0} ({1} jurisdictions)" -f $OutputFile, $jurisdictions.Count)
 Write-Host ("Wrote {0} ({1} anomalies)" -f $AnomalyOutputFile, $anomalies.Count)
+
+

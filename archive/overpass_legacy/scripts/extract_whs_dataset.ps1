@@ -1,3 +1,4 @@
+# extract_whs_dataset.ps1 0.1.4
 param(
   [string]$InputFile = "data/current/sites.geojson",
   [string]$OutputFile = "data/current/whs_sites_used.geojson",
@@ -102,3 +103,5 @@ $out = [ordered]@{
 
 $out | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $OutputFile -Encoding utf8
 Write-Host "Wrote $OutputFile with $($features.Count) features."
+
+

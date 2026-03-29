@@ -1,3 +1,4 @@
+<!-- README.md 0.1.4 -->
 # Overpass legacy archive
 
 ## Why this exists
@@ -17,3 +18,5 @@ Design-rejection rationale is maintained in `Requirements.md` under `Designs con
 - `data/overpass-legacy-20260328-073941.zip`: Snapshot of former `data/current` Overpass-derived files.
 
 The previously extracted cache and candidate files were removed from this archive because they are reproducible from scripts/snapshot and were not intended to persist as active project artifacts.
+
+

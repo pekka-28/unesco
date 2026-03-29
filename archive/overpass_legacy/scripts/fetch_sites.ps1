@@ -1,3 +1,4 @@
+# fetch_sites.ps1 0.1.4
 param(
   [string]$OutputFile = "data/staging/sites_candidate.geojson",
   [string]$CacheDir = "data/staging/cache",
@@ -186,3 +187,5 @@ $collection = [ordered]@{
 
 $collection | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $OutputFile -Encoding utf8
 Write-Host "Wrote $OutputFile with $($features.Count) features."
+
+

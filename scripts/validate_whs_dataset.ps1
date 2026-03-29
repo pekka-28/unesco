@@ -1,3 +1,4 @@
+# validate_whs_dataset.ps1 0.1.4
 param(
   [string]$InputFile = "data/current/unesco_official_sites.json"
 )
@@ -47,3 +48,5 @@ foreach ($s in $sites) {
 }
 
 Write-Host "Validated $($sites.Count) WHS records in $InputFile"
+
+

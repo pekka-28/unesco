@@ -1,4 +1,5 @@
-﻿param(
+# build_native_name_map.ps1 0.1.4
+param(
   [string]$InputFile = "data/staging/unesco_source_raw.txt",
   [string]$OverpassCacheDir = "archive/overpass_legacy/data/cache",
   [string]$OutputFile = "data/mappings/native_name_map.json"
@@ -38,7 +39,7 @@ function Has-StrongScript {
 function Is-Mojibake {
   param([string]$Value)
   if ([string]::IsNullOrWhiteSpace($Value)) { return $false }
-  return $Value.Contains("ï¿½")
+  return $Value.Contains("�")
 }
 
 function Add-PreferredLocalName {
@@ -136,4 +137,6 @@ $doc = [ordered]@{
 
 $doc | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $OutputFile -Encoding utf8
 Write-Host "Wrote $OutputFile with $($names.Count) mapped WHS ids."
+
+
 

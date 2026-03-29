@@ -1,3 +1,4 @@
+<!-- RELEASE_NOTES.md 0.1.4 -->
 # Release notes
 
 This file tracks published updates with version numbers.
@@ -9,6 +10,7 @@ This file tracks published updates with version numbers.
 - Backend now returns an `encouragement` message in stats payload; frontend displays backend-provided wording.
 - Documented all script properties, including script-managed `MWH_LAST_DIGEST_AT`.
 - Simplified periodic-event integration test to use fractional reminder interval from Settings (no localStorage edits).
+- Added file header comments (`File: <path>`) across comment-capable source/docs/scripts, with version tags on key operational files.
 - Bumped app version to `0.1.4`.
 
 ## Version 0.1.3 (2026-03-29)
@@ -56,3 +58,5 @@ This file tracks published updates with version numbers.
 ## Earlier work
 
 Before versioned notes were introduced, changes were tracked in commit history and issue discussion.
+
+

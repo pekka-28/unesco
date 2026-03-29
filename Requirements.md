@@ -1,3 +1,4 @@
+<!-- Requirements.md 0.1.4 -->
 # UNESCO World heritage GIS requirements
 
 ## Product intent
@@ -214,3 +215,5 @@ flowchart LR
 - Personal data is not committed by default.
 - Settings and profile lifecycle functions work without backend support.
 - Requirements stay synchronized with implemented feature set.
+
+

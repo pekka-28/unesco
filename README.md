@@ -1,3 +1,4 @@
+<!-- README.md 0.1.4 -->
 # My World Heritage
 
 My World Heritage is a public, user-controlled map companion for UNESCO World Heritage sites.
@@ -29,3 +30,5 @@ Current version: `0.1.4`
 ## Project detail
 
 Product intent, requirements, architecture, and design decisions are maintained in [Requirements.md](Requirements.md).
+
+

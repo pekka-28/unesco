@@ -1,3 +1,4 @@
+// Code.gs 0.1.4
 const SHEET_NAME = 'submissions';
 const PROPS = PropertiesService.getScriptProperties();
 const FALLBACK_ALLOWED_SPREADSHEET_ID = '';
@@ -329,3 +330,5 @@ function enforceWorkbookBinding_() {
     if (activeName !== allowedName) throw new Error('Workbook name mismatch.');
   }
 }
+
+

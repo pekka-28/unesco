@@ -1,4 +1,5 @@
-﻿param(
+# update_local_name_table.ps1 0.1.4
+param(
   [string]$InputFile = "data/staging/unesco_source_raw.txt",
   [string]$SourceUrl = "https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json",
   [string]$OverpassCacheDir = "archive/overpass_legacy/data/cache",
@@ -34,7 +35,7 @@ function Has-StrongScript {
 function Is-Mojibake {
   param([string]$Value)
   if ([string]::IsNullOrWhiteSpace($Value)) { return $false }
-  return $Value.Contains("ï¿½") -or $Value.Contains("Ã¯Â¿Â½")
+  return $Value.Contains("�") -or $Value.Contains("ï¿½")
 }
 
 function Supports-UnescoArabicFallback {
@@ -321,4 +322,6 @@ $applyCount = @($suggestions | Where-Object { $_.action -eq "apply" }).Count
 Write-Host ("Suggestions: {0} (auto-eligible at threshold: {1})" -f $suggestions.Count, $applyCount)
 Write-Host "Wrote $SuggestionsOutputFile"
 Write-Host "Wrote $OutputTableFile"
+
+
 

@@ -1,4 +1,5 @@
-﻿param(
+# update_extract_status.ps1 0.1.4
+param(
   [string]$InputJsonFile = "data/current/unesco_official_sites.json",
   [int]$RetryIntervalDays = 30,
   [string]$SourceUrl = "",
@@ -37,3 +38,5 @@ $data.metadata.extract_status.note_fragment = "WHS extract status: failed. Sourc
 
 $data | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $InputJsonFile -Encoding utf8
 Write-Host "Updated extract status in $InputJsonFile"
+
+

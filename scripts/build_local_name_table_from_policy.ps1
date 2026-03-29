@@ -1,4 +1,5 @@
-﻿param(
+# build_local_name_table_from_policy.ps1 0.1.4
+param(
   [string]$InputFile = "data/staging/unesco_source_raw.txt",
   [string]$OverpassCacheDir = "archive/overpass_legacy/data/cache",
   [string]$JurisdictionPolicyFile = "data/mappings/jurisdiction_language_policy.json",
@@ -30,7 +31,7 @@ function Has-StrongScript {
 function Is-Mojibake {
   param([string]$Value)
   if ([string]::IsNullOrWhiteSpace($Value)) { return $false }
-  return $Value.Contains("Ã¯Â¿Â½") -or $Value.Contains("ÃƒÂ¯Ã‚Â¿Ã‚Â½")
+  return $Value.Contains("ï¿½") -or $Value.Contains("Ã¯Â¿Â½")
 }
 
 function Normalize-LangTag {
@@ -373,4 +374,6 @@ $reportDoc | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $ReportOutputFi
 
 Write-Host ("Wrote {0} with {1} entries (created {2}, updated {3}, retained {4}, removed {5})" -f $OutputTableFile, $entries.Count, $createdCount, $updatedCount, $retainedCount, $removedCount)
 Write-Host ("Wrote {0} (unresolved {1})" -f $ReportOutputFile, $unresolved.Count)
+
+
 

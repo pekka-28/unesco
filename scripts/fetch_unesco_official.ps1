@@ -1,4 +1,5 @@
-﻿param(
+# fetch_unesco_official.ps1 0.1.4
+param(
   [string]$SourceUrl = "https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json",
   [string]$RawOutputFile = "data/staging/unesco_source_raw.txt"
 )
@@ -32,3 +33,5 @@ if (-not ($trim.StartsWith("[") -or $trim.StartsWith("{") -or $trim.StartsWith("
 
 $raw | Set-Content -LiteralPath $RawOutputFile -Encoding utf8
 Write-Host "Wrote staged source $RawOutputFile (chars: $($raw.Length))."
+
+

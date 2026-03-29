@@ -1,4 +1,5 @@
-﻿<!doctype html>
+<!doctype html>
+<!-- index.html 0.1.4 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -697,8 +698,8 @@
         const d = formatVisitDateForDisplay(latestVisitDate(sid));
         return `<div class="site-row-grid"><a href="#" class="plain-link site-pick" data-site-id="${sid}" dir="auto" title="${nm}"><span class="site-name-clip">${nm}</span></a><span class="meta" dir="ltr">${d || ""}</span></div>`;
       }).join("");
-      const nameDir = listSortBy === "name" ? (listSortDir === "asc" ? "â†‘" : "â†“") : "";
-      const dateDir = listSortBy === "date" ? (listSortDir === "asc" ? "â†‘" : "â†“") : "";
+      const nameDir = listSortBy === "name" ? (listSortDir === "asc" ? "↑" : "↓") : "";
+      const dateDir = listSortBy === "date" ? (listSortDir === "asc" ? "↑" : "↓") : "";
       ui.detailPane.innerHTML = `<div class="site-list-wrap"><div class="site-table-head"><a href="#" id="sort-name">Site (${features.length}) ${nameDir}</a><a href="#" id="sort-date">Visited ${dateDir}</a></div>${rows}</div>`;
       const sortName = document.getElementById("sort-name");
       const sortDate = document.getElementById("sort-date");
@@ -1703,4 +1704,6 @@
   </script>
 </body>
 </html>
+
+
 

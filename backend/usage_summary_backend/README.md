@@ -1,3 +1,4 @@
+<!-- README.md 0.1.4 -->
 # Usage summary backend
 
 This backend accepts pseudonymised usage summaries from the web app and sends periodic email digests.
@@ -100,3 +101,5 @@ Use these before frontend tests to confirm backend readiness.
 
 - `yes`: request included a token field.
 - `no`: request did not include a token field.
+
+

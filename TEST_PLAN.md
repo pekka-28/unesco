@@ -1,8 +1,22 @@
+<!-- TEST_PLAN.md 0.1.4 -->
 # Integration test plan
 
-Version scope: `0.1.3`
+Version scope: `0.1.4`
 
 This plan validates backend ingest, frontend submit flow, and workbook outputs for all supported `event_type` values.
+
+## 0. Deployment update steps
+
+1. Open the bound Apps Script project from workbook `My World Heritage usage`.
+2. Replace `Code.gs` with the current repository version.
+3. Save script changes.
+4. Deploy a new web app version:
+- Deploy -> Manage deployments -> Edit deployment.
+- Select `New version`.
+- Execute as: `Me`.
+- Who has access: `Anyone`.
+5. Copy the `/exec` URL and confirm it matches app settings endpoint.
+6. Open the `/exec` URL in normal and private windows to confirm JSON health response.
 
 ## 1. Configuration checks
 
@@ -90,3 +104,5 @@ For each new row, inspect:
 2. Backend append test inserts row.
 3. Frontend creates rows for all three event types.
 4. Workbook row values match expected fields and typing.
+
+

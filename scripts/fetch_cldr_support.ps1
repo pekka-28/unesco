@@ -1,3 +1,4 @@
+# fetch_cldr_support.ps1 0.1.4
 param(
   [string]$CldrChartVersion = "48",
   [string]$TerritoryLanguageOutputFile = "data/staging/cldr_language_territory_information.txt",
@@ -28,3 +29,5 @@ $likelyBytes = (Get-Item -LiteralPath $LikelySubtagsOutputFile).Length
 
 Write-Host ("Wrote {0} ({1} bytes) from {2}" -f $TerritoryLanguageOutputFile, $territoryBytes, $territoryUrl)
 Write-Host ("Wrote {0} ({1} bytes) from {2}" -f $LikelySubtagsOutputFile, $likelyBytes, $LikelySubtagsUrl)
+
+
