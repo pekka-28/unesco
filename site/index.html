@@ -488,8 +488,8 @@
       if (scope === "component" && parent) {
         const rootFeature = findFeatureBySiteId(parent);
         const rootName = rootFeature ? displayName(rootFeature.properties || {}) : "";
-        if (rootName) return `Component site of WHS ${parent}: ${rootName}`;
-        return `Component site of WHS ${parent}`;
+        if (rootName) return `Site id ${id} (component of WHS ${parent}: ${rootName})`;
+        return `Site id ${id} (component of WHS ${parent})`;
       }
       if (/^\d+$/.test(id)) return `WHS ${id}`;
       return `Site id ${id}`;
@@ -1464,29 +1464,56 @@
       targetProfile.siteStatuses[siteId] = visit.status;
       if (visit.status === "visited" && !targetProfile.visitedSiteIds.includes(siteId)) targetProfile.visitedSiteIds.push(siteId);
     }
+    function parseWhsKeyQuery(query) {
+      const m = asText(query).trim().toLowerCase().match(/^(?:whs\s*)?(\d{1,6})$/);
+      if (!m) return "";
+      const normalized = m[1].replace(/^0+/, "");
+      return normalized || "0";
+    }
+    function rootWhsIdForProps(p) {
+      const id = asText(p && p.site_id).trim();
+      if (/^\d+$/.test(id)) {
+        const normalized = id.replace(/^0+/, "");
+        return normalized || "0";
+      }
+      const parent = asText(p && p.parent_site_id).trim();
+      if (/^\d+$/.test(parent)) {
+        const normalized = parent.replace(/^0+/, "");
+        return normalized || "0";
+      }
+      return "";
+    }
     function buildWhsSearchResults(query) {
       const q = query.toLowerCase().trim();
+      const whsKeyQuery = parseWhsKeyQuery(query);
       const rows = [];
       const legacyAliasesBySiteId = { "915": "sterkfontein cradle of humankind" };
       for (const f of whsData.features || []) {
         const p = f.properties || {};
         const name = displayName(p);
         const id = asText(p.site_id);
+        const scope = asText(p.site_scope);
+        const parentId = asText(p.parent_site_id);
+        const rootWhsId = rootWhsIdForProps(p);
         const country = asText(p.country).toLowerCase();
         const nameNative = asText(p.name).toLowerCase();
         const nameEnglish = asText(p.name_en).toLowerCase();
         const aliasList = Array.isArray(p.aliases) ? p.aliases : [];
         const aliases = aliasList.join(" ").toLowerCase();
         const legacyAliases = asText(legacyAliasesBySiteId[id] || "");
-        const haystack = `${name.toLowerCase()} ${nameNative} ${nameEnglish} ${id.toLowerCase()} ${country} ${aliases} ${legacyAliases}`;
-        if (!haystack.includes(q)) continue;
+        const haystack = `${name.toLowerCase()} ${nameNative} ${nameEnglish} ${id.toLowerCase()} ${country} ${aliases} ${legacyAliases} whs ${rootWhsId}`;
+        if (whsKeyQuery) {
+          if (!(rootWhsId === whsKeyQuery || asText(id).replace(/^0+/, "") === whsKeyQuery)) continue;
+        } else if (!haystack.includes(q)) continue;
 
         let score = 0;
+        if (whsKeyQuery) score += rootWhsId === whsKeyQuery ? 300 : 0;
         if (nameEnglish === q || nameNative === q) score += 100;
         else if (nameEnglish.includes(q) || nameNative.includes(q)) score += 60;
         if (country === q) score += 30;
         else if (country.includes(q)) score += 15;
         if (id === q) score += 90;
+        if (rootWhsId && rootWhsId === q) score += 110;
         for (const a of aliasList) if (asText(a).toLowerCase().includes(q)) score += 50;
         if (asText(legacyAliases).includes(q)) score += 40;
 
@@ -1499,7 +1526,8 @@
           if (Number.isFinite(lat) && Number.isFinite(lon)) { matchedPoint = { lat, lon }; break; }
         }
 
-        rows.push({ type: "whs", feature: f, title: name || "Unnamed site", subtitle: "World heritage site", score, matchedPoint });
+        const subtitle = scope === "component" && parentId ? `Component ${id} of WHS ${parentId}` : `WHS ${id}`;
+        rows.push({ type: "whs", feature: f, title: name || "Unnamed site", subtitle, score, matchedPoint });
       }
       rows.sort((a, b) => b.score - a.score || asText(a.title).localeCompare(asText(b.title)));
       return rows;
