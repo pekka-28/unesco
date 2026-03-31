@@ -33,7 +33,7 @@ jobs:
       WIKI_FALLBACK: ${{ github.event.inputs.enable_wikipedia_fallback || 'false' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Fetch UNESCO official dataset
         shell: pwsh
