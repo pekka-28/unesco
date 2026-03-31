@@ -17,6 +17,10 @@ Provide a practical, transparent World heritage companion that maintains currenc
 
 ## Architecture
 
+Project origin and baseline architecture:
+- Project start date: 2025-12-21 (from the initial `OpenStreetMap vibe coding` kickoff message).
+- Initial mapping architecture baseline: hosted uMap prototype on the OpenStreetMap uMap platform.
+
 Figure 1 shows runtime and data flow. Process components are rectangles and data artifacts are rounded nodes.
 
 ```mermaid
