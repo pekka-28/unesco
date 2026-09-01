@@ -3,18 +3,18 @@
   "metadata": {
     "generator": "scripts/convert_unesco_source.ps1",
     "source_url": "https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json",
-    "generated_at": "2026-08-01T06:08:51Z",
+    "generated_at": "2026-09-01T08:39:35Z",
     "site_count": 6673,
     "extract_status": {
       "result": "success",
       "source": "https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json",
       "count": 6673,
-      "input_bytes": 23974265,
-      "dataset_bytes": 12111432,
-      "most_recent_data": "2026-08-01T06:08:51Z",
-      "most_recent_attempt": "2026-08-01T06:08:51Z",
+      "input_bytes": 23976620,
+      "dataset_bytes": 12113740,
+      "most_recent_data": "2026-09-01T08:39:35Z",
+      "most_recent_attempt": "2026-09-01T08:39:35Z",
       "retry_interval_days": 30,
-      "note_fragment": "WHS extract status: success. Source: https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json. Count: 6673. Input size: 23974265 bytes. Dataset size: 12111432 bytes. Most recent data: 2026-08-01T06:08:51Z. Most recent attempt: 2026-08-01T06:08:51Z. Retry interval: every 30 days."
+      "note_fragment": "WHS extract status: success. Source: https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json. Count: 6673. Input size: 23976620 bytes. Dataset size: 12113740 bytes. Most recent data: 2026-09-01T08:39:35Z. Most recent attempt: 2026-09-01T08:39:35Z. Retry interval: every 30 days."
     }
   },
   "sites": [
@@ -5150,229 +5150,6 @@
       "lat": 39.9072222222
     },
     {
-      "site_id": "WHS 13",
-      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia",
-      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/13/",
-      "country": "Ethiopia",
-      "inscription_date": "2024",
-      "category": "Cultural",
-      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
-      "aliases": [
-        "Wofi",
-        "Kella",
-        "Simbiro",
-        "Balchit",
-        "Atebella",
-        "Gombore Garaba"
-      ],
-      "alias_points": [
-        {
-          "name": "Wofi",
-          "ref": "13rev-005",
-          "lat": 8.7211666667,
-          "lon": 38.5758888889
-        },
-        {
-          "name": "Kella",
-          "ref": "13rev-004",
-          "lat": 8.7167777778,
-          "lon": 38.6133333333
-        },
-        {
-          "name": "Simbiro",
-          "ref": "13rev-002",
-          "lat": 8.7070833333,
-          "lon": 38.5666666667
-        },
-        {
-          "name": "Balchit",
-          "ref": "13rev-003",
-          "lat": 8.7591666667,
-          "lon": 38.6194166667
-        },
-        {
-          "name": "Atebella",
-          "ref": "13rev-006",
-          "lat": 8.7376944444,
-          "lon": 38.5765277778
-        },
-        {
-          "name": "Gombore Garaba",
-          "ref": "13rev-001",
-          "lat": 8.7034722222,
-          "lon": 38.5990833333
-        }
-      ],
-      "component_count": 6,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 38.5990833333,
-      "lat": 8.7034722222
-    },
-    {
-      "site_id": "MWH 13-001",
-      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Wofi",
-      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Wofi",
-      "parent_site_id": "WHS 13",
-      "component_ref": "13rev-005",
-      "component_index": 1,
-      "site_scope": "component",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/13/",
-      "country": "Ethiopia",
-      "inscription_date": "2024",
-      "category": "Cultural",
-      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
-      "aliases": [
-        "Wofi",
-        "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia"
-      ],
-      "alias_points": [],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official_component",
-      "lon": 38.5758888889,
-      "lat": 8.7211666667
-    },
-    {
-      "site_id": "MWH 13-002",
-      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Kella",
-      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Kella",
-      "parent_site_id": "WHS 13",
-      "component_ref": "13rev-004",
-      "component_index": 2,
-      "site_scope": "component",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/13/",
-      "country": "Ethiopia",
-      "inscription_date": "2024",
-      "category": "Cultural",
-      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
-      "aliases": [
-        "Kella",
-        "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia"
-      ],
-      "alias_points": [],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official_component",
-      "lon": 38.6133333333,
-      "lat": 8.7167777778
-    },
-    {
-      "site_id": "MWH 13-003",
-      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Simbiro",
-      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Simbiro",
-      "parent_site_id": "WHS 13",
-      "component_ref": "13rev-002",
-      "component_index": 3,
-      "site_scope": "component",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/13/",
-      "country": "Ethiopia",
-      "inscription_date": "2024",
-      "category": "Cultural",
-      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
-      "aliases": [
-        "Simbiro",
-        "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia"
-      ],
-      "alias_points": [],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official_component",
-      "lon": 38.5666666667,
-      "lat": 8.7070833333
-    },
-    {
-      "site_id": "MWH 13-004",
-      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Balchit",
-      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Balchit",
-      "parent_site_id": "WHS 13",
-      "component_ref": "13rev-003",
-      "component_index": 4,
-      "site_scope": "component",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/13/",
-      "country": "Ethiopia",
-      "inscription_date": "2024",
-      "category": "Cultural",
-      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
-      "aliases": [
-        "Balchit",
-        "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia"
-      ],
-      "alias_points": [],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official_component",
-      "lon": 38.6194166667,
-      "lat": 8.7591666667
-    },
-    {
-      "site_id": "MWH 13-005",
-      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Atebella",
-      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Atebella",
-      "parent_site_id": "WHS 13",
-      "component_ref": "13rev-006",
-      "component_index": 5,
-      "site_scope": "component",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/13/",
-      "country": "Ethiopia",
-      "inscription_date": "2024",
-      "category": "Cultural",
-      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
-      "aliases": [
-        "Atebella",
-        "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia"
-      ],
-      "alias_points": [],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official_component",
-      "lon": 38.5765277778,
-      "lat": 8.7376944444
-    },
-    {
-      "site_id": "MWH 13-006",
-      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Gombore Garaba",
-      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Gombore Garaba",
-      "parent_site_id": "WHS 13",
-      "component_ref": "13rev-001",
-      "component_index": 6,
-      "site_scope": "component",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/13/",
-      "country": "Ethiopia",
-      "inscription_date": "2024",
-      "category": "Cultural",
-      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
-      "aliases": [
-        "Gombore Garaba",
-        "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia"
-      ],
-      "alias_points": [],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official_component",
-      "lon": 38.5990833333,
-      "lat": 8.7034722222
-    },
-    {
       "site_id": "WHS 1707",
       "name": "Te Henua Enata – The Marquesas Islands",
       "name_en": "Te Henua Enata – The Marquesas Islands",
@@ -5627,6 +5404,229 @@
       "source": "unesco_official_component",
       "lon": -139.015733889,
       "lat": -9.8329416667
+    },
+    {
+      "site_id": "WHS 13",
+      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia",
+      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/13/",
+      "country": "Ethiopia",
+      "inscription_date": "2024",
+      "category": "Cultural",
+      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
+      "aliases": [
+        "Wofi",
+        "Kella",
+        "Simbiro",
+        "Balchit",
+        "Atebella",
+        "Gombore Garaba"
+      ],
+      "alias_points": [
+        {
+          "name": "Wofi",
+          "ref": "13rev-005",
+          "lat": 8.7211666667,
+          "lon": 38.5758888889
+        },
+        {
+          "name": "Kella",
+          "ref": "13rev-004",
+          "lat": 8.7167777778,
+          "lon": 38.6133333333
+        },
+        {
+          "name": "Simbiro",
+          "ref": "13rev-002",
+          "lat": 8.7070833333,
+          "lon": 38.5666666667
+        },
+        {
+          "name": "Balchit",
+          "ref": "13rev-003",
+          "lat": 8.7591666667,
+          "lon": 38.6194166667
+        },
+        {
+          "name": "Atebella",
+          "ref": "13rev-006",
+          "lat": 8.7376944444,
+          "lon": 38.5765277778
+        },
+        {
+          "name": "Gombore Garaba",
+          "ref": "13rev-001",
+          "lat": 8.7034722222,
+          "lon": 38.5990833333
+        }
+      ],
+      "component_count": 6,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 38.5990833333,
+      "lat": 8.7034722222
+    },
+    {
+      "site_id": "MWH 13-001",
+      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Wofi",
+      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Wofi",
+      "parent_site_id": "WHS 13",
+      "component_ref": "13rev-005",
+      "component_index": 1,
+      "site_scope": "component",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/13/",
+      "country": "Ethiopia",
+      "inscription_date": "2024",
+      "category": "Cultural",
+      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
+      "aliases": [
+        "Wofi",
+        "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia"
+      ],
+      "alias_points": [],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official_component",
+      "lon": 38.5758888889,
+      "lat": 8.7211666667
+    },
+    {
+      "site_id": "MWH 13-002",
+      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Kella",
+      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Kella",
+      "parent_site_id": "WHS 13",
+      "component_ref": "13rev-004",
+      "component_index": 2,
+      "site_scope": "component",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/13/",
+      "country": "Ethiopia",
+      "inscription_date": "2024",
+      "category": "Cultural",
+      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
+      "aliases": [
+        "Kella",
+        "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia"
+      ],
+      "alias_points": [],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official_component",
+      "lon": 38.6133333333,
+      "lat": 8.7167777778
+    },
+    {
+      "site_id": "MWH 13-003",
+      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Simbiro",
+      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Simbiro",
+      "parent_site_id": "WHS 13",
+      "component_ref": "13rev-002",
+      "component_index": 3,
+      "site_scope": "component",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/13/",
+      "country": "Ethiopia",
+      "inscription_date": "2024",
+      "category": "Cultural",
+      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
+      "aliases": [
+        "Simbiro",
+        "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia"
+      ],
+      "alias_points": [],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official_component",
+      "lon": 38.5666666667,
+      "lat": 8.7070833333
+    },
+    {
+      "site_id": "MWH 13-004",
+      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Balchit",
+      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Balchit",
+      "parent_site_id": "WHS 13",
+      "component_ref": "13rev-003",
+      "component_index": 4,
+      "site_scope": "component",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/13/",
+      "country": "Ethiopia",
+      "inscription_date": "2024",
+      "category": "Cultural",
+      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
+      "aliases": [
+        "Balchit",
+        "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia"
+      ],
+      "alias_points": [],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official_component",
+      "lon": 38.6194166667,
+      "lat": 8.7591666667
+    },
+    {
+      "site_id": "MWH 13-005",
+      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Atebella",
+      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Atebella",
+      "parent_site_id": "WHS 13",
+      "component_ref": "13rev-006",
+      "component_index": 5,
+      "site_scope": "component",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/13/",
+      "country": "Ethiopia",
+      "inscription_date": "2024",
+      "category": "Cultural",
+      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
+      "aliases": [
+        "Atebella",
+        "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia"
+      ],
+      "alias_points": [],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official_component",
+      "lon": 38.5765277778,
+      "lat": 8.7376944444
+    },
+    {
+      "site_id": "MWH 13-006",
+      "name": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Gombore Garaba",
+      "name_en": "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia - Gombore Garaba",
+      "parent_site_id": "WHS 13",
+      "component_ref": "13rev-001",
+      "component_index": 6,
+      "site_scope": "component",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/13/",
+      "country": "Ethiopia",
+      "inscription_date": "2024",
+      "category": "Cultural",
+      "note": "Located in the Upper Awash Valley in Ethiopia, the serial property is a cluster of prehistoric sites that preserve archaeological and palaeontological records – including footprints – that testify to the area’s occupation by the hominin groups from two million years ago. The sites, situated about 2,000 to 2,200 metres above sea level, yielded Homo erectus, Homo heidelbergensis and archaic Homo sapiens fossils, documented in well-dated strata in association with various tools made from volcanic rocks. The cultural sequence includes four consecutive phases of the Oldowan, Acheulean, Middle Stone Age and Late Stone Age techno-complexes. Fragments of palaeo-landscapes, preserved buried under volcanic and sedimentary deposits with fossil fauna and flora, allow reconstruction of the high-mountain ecosystem of the Ethiopian Highlands during the Pleistocene. Conclusions can thus be drawn on the adaptation of hominin groups to the challenges and climatic conditions of high altitudes.",
+      "aliases": [
+        "Gombore Garaba",
+        "Melka Kunture and Balchit: Archaeological and Palaeontological Sites in the Highland Area of Ethiopia"
+      ],
+      "alias_points": [],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official_component",
+      "lon": 38.5990833333,
+      "lat": 8.7034722222
     },
     {
       "site_id": "WHS 1711",
@@ -17092,6 +17092,97 @@
       "lat": 44.2380555555
     },
     {
+      "site_id": "WHS 1680",
+      "name": "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery",
+      "name_en": "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/1680/",
+      "country": "Suriname",
+      "inscription_date": "2023",
+      "category": "Cultural",
+      "note": "Located on high ground on the densely forested banks of the Suriname River, the Jodensavanne Archaeological Site in northern Suriname is a serial property that illustrates early Jewish colonization attempts in the New World. The Jodensavanne Settlement, founded in the 1680s, includes the ruins of what is believed to be the earliest synagogue of architectural significance in the Americas, along with cemeteries, boat landing areas, and a military post. The Cassipora Creek Cemetery is the remnant of an older settlement founded in the 1650s. Located amidst Indigenous territory, the settlements were inhabited, owned, and governed by Jews who lived there together with free and enslaved persons of African and Indigenous descent. The settlements had the most extensive arrangement of privileges and immunities known in the early modern Jewish world.",
+      "aliases": [
+        "Jodensavanne Settlement",
+        "Cassipora Creek Cemetery"
+      ],
+      "alias_points": [
+        {
+          "name": "Jodensavanne Settlement",
+          "ref": "1680-001",
+          "lat": 5.4311111111,
+          "lon": -54.9826666667
+        },
+        {
+          "name": "Cassipora Creek Cemetery",
+          "ref": "1680-002",
+          "lat": 5.411,
+          "lon": -54.9787222223
+        }
+      ],
+      "component_count": 2,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": -54.9826666667,
+      "lat": 5.4311111111
+    },
+    {
+      "site_id": "MWH 1680-001",
+      "name": "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery - Jodensavanne Settlement",
+      "name_en": "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery - Jodensavanne Settlement",
+      "parent_site_id": "WHS 1680",
+      "component_ref": "1680-001",
+      "component_index": 1,
+      "site_scope": "component",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/1680/",
+      "country": "Suriname",
+      "inscription_date": "2023",
+      "category": "Cultural",
+      "note": "Located on high ground on the densely forested banks of the Suriname River, the Jodensavanne Archaeological Site in northern Suriname is a serial property that illustrates early Jewish colonization attempts in the New World. The Jodensavanne Settlement, founded in the 1680s, includes the ruins of what is believed to be the earliest synagogue of architectural significance in the Americas, along with cemeteries, boat landing areas, and a military post. The Cassipora Creek Cemetery is the remnant of an older settlement founded in the 1650s. Located amidst Indigenous territory, the settlements were inhabited, owned, and governed by Jews who lived there together with free and enslaved persons of African and Indigenous descent. The settlements had the most extensive arrangement of privileges and immunities known in the early modern Jewish world.",
+      "aliases": [
+        "Jodensavanne Settlement",
+        "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery"
+      ],
+      "alias_points": [],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official_component",
+      "lon": -54.9826666667,
+      "lat": 5.4311111111
+    },
+    {
+      "site_id": "MWH 1680-002",
+      "name": "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery - Cassipora Creek Cemetery",
+      "name_en": "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery - Cassipora Creek Cemetery",
+      "parent_site_id": "WHS 1680",
+      "component_ref": "1680-002",
+      "component_index": 2,
+      "site_scope": "component",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/1680/",
+      "country": "Suriname",
+      "inscription_date": "2023",
+      "category": "Cultural",
+      "note": "Located on high ground on the densely forested banks of the Suriname River, the Jodensavanne Archaeological Site in northern Suriname is a serial property that illustrates early Jewish colonization attempts in the New World. The Jodensavanne Settlement, founded in the 1680s, includes the ruins of what is believed to be the earliest synagogue of architectural significance in the Americas, along with cemeteries, boat landing areas, and a military post. The Cassipora Creek Cemetery is the remnant of an older settlement founded in the 1650s. Located amidst Indigenous territory, the settlements were inhabited, owned, and governed by Jews who lived there together with free and enslaved persons of African and Indigenous descent. The settlements had the most extensive arrangement of privileges and immunities known in the early modern Jewish world.",
+      "aliases": [
+        "Cassipora Creek Cemetery",
+        "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery"
+      ],
+      "alias_points": [],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official_component",
+      "lon": -54.9787222223,
+      "lat": 5.411
+    },
+    {
       "site_id": "WHS 1621",
       "name": "Deer Stone Monuments and Related Bronze Age Sites",
       "name_en": "Deer Stone Monuments and Related Bronze Age Sites",
@@ -17247,97 +17338,6 @@
       "source": "unesco_official_component",
       "lon": 99.9283333334,
       "lat": 49.6553611111
-    },
-    {
-      "site_id": "WHS 1680",
-      "name": "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery",
-      "name_en": "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/1680/",
-      "country": "Suriname",
-      "inscription_date": "2023",
-      "category": "Cultural",
-      "note": "Located on high ground on the densely forested banks of the Suriname River, the Jodensavanne Archaeological Site in northern Suriname is a serial property that illustrates early Jewish colonization attempts in the New World. The Jodensavanne Settlement, founded in the 1680s, includes the ruins of what is believed to be the earliest synagogue of architectural significance in the Americas, along with cemeteries, boat landing areas, and a military post. The Cassipora Creek Cemetery is the remnant of an older settlement founded in the 1650s. Located amidst Indigenous territory, the settlements were inhabited, owned, and governed by Jews who lived there together with free and enslaved persons of African and Indigenous descent. The settlements had the most extensive arrangement of privileges and immunities known in the early modern Jewish world.",
-      "aliases": [
-        "Jodensavanne Settlement",
-        "Cassipora Creek Cemetery"
-      ],
-      "alias_points": [
-        {
-          "name": "Jodensavanne Settlement",
-          "ref": "1680-001",
-          "lat": 5.4311111111,
-          "lon": -54.9826666667
-        },
-        {
-          "name": "Cassipora Creek Cemetery",
-          "ref": "1680-002",
-          "lat": 5.411,
-          "lon": -54.9787222223
-        }
-      ],
-      "component_count": 2,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": -54.9826666667,
-      "lat": 5.4311111111
-    },
-    {
-      "site_id": "MWH 1680-001",
-      "name": "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery - Jodensavanne Settlement",
-      "name_en": "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery - Jodensavanne Settlement",
-      "parent_site_id": "WHS 1680",
-      "component_ref": "1680-001",
-      "component_index": 1,
-      "site_scope": "component",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/1680/",
-      "country": "Suriname",
-      "inscription_date": "2023",
-      "category": "Cultural",
-      "note": "Located on high ground on the densely forested banks of the Suriname River, the Jodensavanne Archaeological Site in northern Suriname is a serial property that illustrates early Jewish colonization attempts in the New World. The Jodensavanne Settlement, founded in the 1680s, includes the ruins of what is believed to be the earliest synagogue of architectural significance in the Americas, along with cemeteries, boat landing areas, and a military post. The Cassipora Creek Cemetery is the remnant of an older settlement founded in the 1650s. Located amidst Indigenous territory, the settlements were inhabited, owned, and governed by Jews who lived there together with free and enslaved persons of African and Indigenous descent. The settlements had the most extensive arrangement of privileges and immunities known in the early modern Jewish world.",
-      "aliases": [
-        "Jodensavanne Settlement",
-        "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery"
-      ],
-      "alias_points": [],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official_component",
-      "lon": -54.9826666667,
-      "lat": 5.4311111111
-    },
-    {
-      "site_id": "MWH 1680-002",
-      "name": "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery - Cassipora Creek Cemetery",
-      "name_en": "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery - Cassipora Creek Cemetery",
-      "parent_site_id": "WHS 1680",
-      "component_ref": "1680-002",
-      "component_index": 2,
-      "site_scope": "component",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/1680/",
-      "country": "Suriname",
-      "inscription_date": "2023",
-      "category": "Cultural",
-      "note": "Located on high ground on the densely forested banks of the Suriname River, the Jodensavanne Archaeological Site in northern Suriname is a serial property that illustrates early Jewish colonization attempts in the New World. The Jodensavanne Settlement, founded in the 1680s, includes the ruins of what is believed to be the earliest synagogue of architectural significance in the Americas, along with cemeteries, boat landing areas, and a military post. The Cassipora Creek Cemetery is the remnant of an older settlement founded in the 1650s. Located amidst Indigenous territory, the settlements were inhabited, owned, and governed by Jews who lived there together with free and enslaved persons of African and Indigenous descent. The settlements had the most extensive arrangement of privileges and immunities known in the early modern Jewish world.",
-      "aliases": [
-        "Cassipora Creek Cemetery",
-        "Jodensavanne Archaeological Site: Jodensavanne Settlement and Cassipora Creek Cemetery"
-      ],
-      "alias_points": [],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official_component",
-      "lon": -54.9787222223,
-      "lat": 5.411
     },
     {
       "site_id": "WHS 1675",
@@ -19352,38 +19352,6 @@
       "lat": 6.7977777778
     },
     {
-      "site_id": "WHS 1375",
-      "name": "Santiniketan",
-      "name_en": "Santiniketan",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/1375/",
-      "country": "India",
-      "inscription_date": "2023",
-      "category": "Cultural",
-      "note": "Established in rural West Bengal in 1901 by the renowned poet and philosopher Rabindranath Tagore, Santiniketan was a residential school and centre for art based on ancient Indian traditions and a vision of the unity of humanity transcending religious and cultural boundaries. A ‘world university’ was established at Santiniketan in 1921, recognizing the unity of humanity or “Visva Bharati”. Distinct from the prevailing British colonial architectural orientations of the early 20th century and of European modernism, Santiniketan represents approaches toward a pan-Asian modernity, drawing on ancient, medieval and folk traditions from across the region.",
-      "aliases": [
-        "Santiniketan"
-      ],
-      "alias_points": [
-        {
-          "name": "Santiniketan",
-          "ref": "1375",
-          "lat": 23.6802777778,
-          "lon": 87.6849722222
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 87.6849722222,
-      "lat": 23.6802777778
-    },
-    {
       "site_id": "WHS 1670",
       "name": "Sacred Ensembles of the Hoysalas",
       "name_en": "Sacred Ensembles of the Hoysalas",
@@ -19506,6 +19474,38 @@
       "source": "unesco_official_component",
       "lon": 75.8604055556,
       "lat": 13.1628472222
+    },
+    {
+      "site_id": "WHS 1375",
+      "name": "Santiniketan",
+      "name_en": "Santiniketan",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/1375/",
+      "country": "India",
+      "inscription_date": "2023",
+      "category": "Cultural",
+      "note": "Established in rural West Bengal in 1901 by the renowned poet and philosopher Rabindranath Tagore, Santiniketan was a residential school and centre for art based on ancient Indian traditions and a vision of the unity of humanity transcending religious and cultural boundaries. A ‘world university’ was established at Santiniketan in 1921, recognizing the unity of humanity or “Visva Bharati”. Distinct from the prevailing British colonial architectural orientations of the early 20th century and of European modernism, Santiniketan represents approaches toward a pan-Asian modernity, drawing on ancient, medieval and folk traditions from across the region.",
+      "aliases": [
+        "Santiniketan"
+      ],
+      "alias_points": [
+        {
+          "name": "Santiniketan",
+          "ref": "1375",
+          "lat": 23.6802777778,
+          "lon": 87.6849722222
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 87.6849722222,
+      "lat": 23.6802777778
     },
     {
       "site_id": "WHS 1671",
@@ -39173,7 +39173,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "Migratory Bird Habitat at Nandagang wetland",
         "Erdaogou",
@@ -39285,7 +39285,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "Migratory Bird Habitat at Nandagang wetland, Cangzou, Hebei, Province",
         "Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China"
@@ -39314,7 +39314,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "Erdaogou",
         "Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China"
@@ -39343,7 +39343,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "Dawenliu",
         "Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China"
@@ -39372,7 +39372,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "Jiutou Hill",
         "Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China"
@@ -39401,7 +39401,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "Dayang River",
         "Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China"
@@ -39430,7 +39430,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "Snake lsland",
         "Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China"
@@ -39459,7 +39459,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "Old Course of Yellow River Estuary",
         "Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China"
@@ -39488,7 +39488,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "North Part of the Yellow River Estuary",
         "Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China"
@@ -39517,7 +39517,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "South Part of the Yellow River Estuary",
         "Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China"
@@ -39546,7 +39546,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "Migratory Bird Habitat at Chongming Dongtan, Shanghai",
         "Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China"
@@ -39575,7 +39575,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "Migratory Bird Habitat in the South of Yancheng, Jiangsu",
         "Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China"
@@ -39604,7 +39604,7 @@
       "country": "China",
       "inscription_date": "2019",
       "category": "Natural",
-      "note": "The Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China is a serial extension of the property of the same name already inscribed on the World Heritage List. As part of the world’s largest intertidal wetland system, this area within the Yellow Sea Ecoregion supports crucial habitats for birds migrating on the East Asian-Australasian Flyway which spans some 25 countries from the Arctic to South-East Asia and Australasia. The wetlands serve a unique ecological function as indispensable stopover sites for many millions of waterbirds and represent a significant example of the shared natural heritage embodied in migratory birds.",
+      "note": "Inscribed through Phase I (2019) and Phase II (2024) of a phased nomination process, the twelve component parts of the property are situated in the largest intertidal wetland system in the world and one of the most biologically diverse. The property supports more than 400 species of birds. It is located in the Yellow Sea Ecoregion, and is an irreplaceable hub for birds migrating along the East Asian-Australasian Flyway, its wetlands serving a unique ecological function as an indispensable stopover and staging sites during northward/southward migration. The Yellow Sea and the Gulf of Bohai are a bottleneck for many millions of migratory waterbirds – more than 10% of the total migration along the East Asian-Australasian Flyway. This property is a globally significant example of the shared natural heritage embodied in migratory birds.",
       "aliases": [
         "Migratory Bird Habitat in the Nouth of Yancheng, Jiangsu",
         "Migratory Bird Sanctuaries along the Coast of Yellow Sea-Bohai Gulf of China"
@@ -54404,38 +54404,38 @@
         {
           "name": "Fort Chabrol",
           "ref": "1465-013",
-          "lat": 49.05,
-          "lon": 3.9333333333
+          "lat": 49.052,
+          "lon": 3.949
         },
         {
           "name": "Coteaux d’Aÿ",
           "ref": "1465-004",
-          "lat": 49.05,
-          "lon": 4.0
+          "lat": 49.056,
+          "lon": 4.003
         },
         {
           "name": "Avenue de Champagne",
           "ref": "1465-012",
-          "lat": 49.0333333333,
-          "lon": 3.95
+          "lat": 49.043,
+          "lon": 3.961
         },
         {
           "name": "Colline Saint-Nicaise",
           "ref": "1465-008",
-          "lat": 49.2333333333,
+          "lat": 49.241,
           "lon": 4.05
         },
         {
           "name": "Coteaux d’Hautvillers",
           "ref": "1465-001",
-          "lat": 49.0666666667,
-          "lon": 3.9333333333
+          "lat": 49.083,
+          "lon": 3.944
         },
         {
           "name": "Cave Thomas - Underground",
           "ref": "1465-003",
-          "lat": 49.0766666667,
-          "lon": 3.9363888889
+          "lat": 49.077,
+          "lon": 3.936
         },
         {
           "name": "Cave d’Aÿ - Underground",
@@ -54452,14 +54452,14 @@
         {
           "name": "Caves Taittinger - Underground",
           "ref": "1465-010",
-          "lat": 49.2333333333,
-          "lon": 4.0333333333
+          "lat": 49.2446654881,
+          "lon": 4.0461879615
         },
         {
           "name": "Coteaux de Mareuil-sur- d’Aÿ",
           "ref": "1465-006",
-          "lat": 49.0333333333,
-          "lon": 4.0333333333
+          "lat": 49.046,
+          "lon": 4.036
         },
         {
           "name": "Cave de Mareuil-sur- d’Aÿ - Underground",
@@ -54476,8 +54476,8 @@
         {
           "name": "Caves coopératives d’Hautvillers - Underground",
           "ref": "1465-002",
-          "lat": 49.0666666667,
-          "lon": 3.95
+          "lat": 49.078,
+          "lon": 3.951
         }
       ],
       "component_count": 14,
@@ -54536,8 +54536,8 @@
       "native_names": {},
       "native_display": "",
       "source": "unesco_official_component",
-      "lon": 3.9333333333,
-      "lat": 49.05
+      "lon": 3.949,
+      "lat": 49.052
     },
     {
       "site_id": "MWH 1465-003",
@@ -54562,8 +54562,8 @@
       "native_names": {},
       "native_display": "",
       "source": "unesco_official_component",
-      "lon": 4.0,
-      "lat": 49.05
+      "lon": 4.003,
+      "lat": 49.056
     },
     {
       "site_id": "MWH 1465-004",
@@ -54588,8 +54588,8 @@
       "native_names": {},
       "native_display": "",
       "source": "unesco_official_component",
-      "lon": 3.95,
-      "lat": 49.0333333333
+      "lon": 3.961,
+      "lat": 49.043
     },
     {
       "site_id": "MWH 1465-005",
@@ -54615,7 +54615,7 @@
       "native_display": "",
       "source": "unesco_official_component",
       "lon": 4.05,
-      "lat": 49.2333333333
+      "lat": 49.241
     },
     {
       "site_id": "MWH 1465-006",
@@ -54640,8 +54640,8 @@
       "native_names": {},
       "native_display": "",
       "source": "unesco_official_component",
-      "lon": 3.9333333333,
-      "lat": 49.0666666667
+      "lon": 3.944,
+      "lat": 49.083
     },
     {
       "site_id": "MWH 1465-007",
@@ -54666,8 +54666,8 @@
       "native_names": {},
       "native_display": "",
       "source": "unesco_official_component",
-      "lon": 3.9363888889,
-      "lat": 49.0766666667
+      "lon": 3.936,
+      "lat": 49.077
     },
     {
       "site_id": "MWH 1465-008",
@@ -54744,8 +54744,8 @@
       "native_names": {},
       "native_display": "",
       "source": "unesco_official_component",
-      "lon": 4.0333333333,
-      "lat": 49.2333333333
+      "lon": 4.0461879615,
+      "lat": 49.2446654881
     },
     {
       "site_id": "MWH 1465-011",
@@ -54770,8 +54770,8 @@
       "native_names": {},
       "native_display": "",
       "source": "unesco_official_component",
-      "lon": 4.0333333333,
-      "lat": 49.0333333333
+      "lon": 4.036,
+      "lat": 49.046
     },
     {
       "site_id": "MWH 1465-012",
@@ -54848,8 +54848,8 @@
       "native_names": {},
       "native_display": "",
       "source": "unesco_official_component",
-      "lon": 3.95,
-      "lat": 49.0666666667
+      "lon": 3.951,
+      "lat": 49.078
     },
     {
       "site_id": "WHS 1471",
@@ -66102,41 +66102,6 @@
       "lat": -24.8852777778
     },
     {
-      "site_id": "WHS 1402",
-      "name": "Al Zubarah Archaeological Site",
-      "name_en": "Al Zubarah Archaeological Site",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/1402/",
-      "country": "Qatar",
-      "inscription_date": "2013",
-      "category": "Cultural",
-      "note": "The walled coastal town of Al Zubarah in the Persian Gulf flourished as a pearling and trading centre in the late 18th century and early 19th centuries, before it was destroyed in 1811 and abandoned in the early 1900s. Founded by merchants from Kuwait, Al Zubarah had trading links across the Indian Ocean, Arabia and Western Asia. A layer of sand blown from the desert has protected the remains of the site’s palaces, mosques, streets, courtyard houses, and fishermen’s huts; its harbour and double defensive walls, a canal, walls, and cemeteries. Excavation has only taken place over a small part of the site, which offers an outstanding testimony to an urban trading and pearl-diving tradition which sustained the region’s major coastal towns and led to the development of small independent states that flourished outside the control of the Ottoman, European, and Persian empires and eventually led to the emergence of modern day Gulf States.",
-      "aliases": [
-        "Al Zubarah Archaeological Site"
-      ],
-      "alias_points": [
-        {
-          "name": "Al Zubarah Archaeological Site",
-          "ref": "1402rev",
-          "lat": 25.9780555556,
-          "lon": 51.0297222222
-        }
-      ],
-      "component_count": 1,
-      "native_names": {
-        "name_ar": "الزبارة",
-        "name_local": "الزبارة"
-      },
-      "native_display": "الزبارة",
-      "source": "unesco_official",
-      "lon": 51.0297222222,
-      "lat": 25.9780555556
-    },
-    {
       "site_id": "WHS 1411",
       "name": "Ancient City of Tauric Chersonese and its Chora",
       "name_en": "Ancient City of Tauric Chersonese and its Chora",
@@ -66451,6 +66416,41 @@
       "source": "unesco_official_component",
       "lon": 33.4097222222,
       "lat": 44.5622222222
+    },
+    {
+      "site_id": "WHS 1402",
+      "name": "Al Zubarah Archaeological Site",
+      "name_en": "Al Zubarah Archaeological Site",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/1402/",
+      "country": "Qatar",
+      "inscription_date": "2013",
+      "category": "Cultural",
+      "note": "The walled coastal town of Al Zubarah in the Persian Gulf flourished as a pearling and trading centre in the late 18th century and early 19th centuries, before it was destroyed in 1811 and abandoned in the early 1900s. Founded by merchants from Kuwait, Al Zubarah had trading links across the Indian Ocean, Arabia and Western Asia. A layer of sand blown from the desert has protected the remains of the site’s palaces, mosques, streets, courtyard houses, and fishermen’s huts; its harbour and double defensive walls, a canal, walls, and cemeteries. Excavation has only taken place over a small part of the site, which offers an outstanding testimony to an urban trading and pearl-diving tradition which sustained the region’s major coastal towns and led to the development of small independent states that flourished outside the control of the Ottoman, European, and Persian empires and eventually led to the emergence of modern day Gulf States.",
+      "aliases": [
+        "Al Zubarah Archaeological Site"
+      ],
+      "alias_points": [
+        {
+          "name": "Al Zubarah Archaeological Site",
+          "ref": "1402rev",
+          "lat": 25.9780555556,
+          "lon": 51.0297222222
+        }
+      ],
+      "component_count": 1,
+      "native_names": {
+        "name_ar": "الزبارة",
+        "name_local": "الزبارة"
+      },
+      "native_display": "الزبارة",
+      "source": "unesco_official",
+      "lon": 51.0297222222,
+      "lat": 25.9780555556
     },
     {
       "site_id": "WHS 1111",
@@ -77105,6 +77105,41 @@
       "lat": 39.7308333333
     },
     {
+      "site_id": "WHS 1330",
+      "name": "Residence of Bukovinian and Dalmatian Metropolitans",
+      "name_en": "Residence of Bukovinian and Dalmatian Metropolitans",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/1330/",
+      "country": "Ukraine",
+      "inscription_date": "2011",
+      "category": "Cultural",
+      "note": "The Residence of Bukovinian and Dalmatian Metropolitans represents a masterful synergy of architectural styles built by Czech architect Josef Hlavka from 1864 to 1882. The property, an outstanding example of 19th-century historicist architecture, also includes a seminary and monastery and is dominated by the domed, cruciform Seminary Church with a garden and park. The complex expresses architectural and cultural influences from the Byzantine period onward and embodies the powerful presence of the Orthodox Church during Habsburg rule, reflecting the Austro-Hungarian Empire policy of religious tolerance.",
+      "aliases": [
+        "Residence of Bukovinian and Dalmatian Metropolitans"
+      ],
+      "alias_points": [
+        {
+          "name": "Residence of Bukovinian and Dalmatian Metropolitans",
+          "ref": "1330",
+          "lat": 48.2966666667,
+          "lon": 25.9247222222
+        }
+      ],
+      "component_count": 1,
+      "native_names": {
+        "name_ar": "Резиденция митрополитов Православной церкви Буковины и Далмации",
+        "name_local": "Резиденция митрополитов Православной церкви Буковины и Далмации"
+      },
+      "native_display": "Резиденция митрополитов Православной церкви Буковины и Далмации",
+      "source": "unesco_official",
+      "lon": 25.9247222222,
+      "lat": 48.2966666667
+    },
+    {
       "site_id": "WHS 1343",
       "name": "Cultural Sites of Al Ain (Hafit, Hili, Bidaa Bint Saud and Oases Areas)",
       "name_en": "Cultural Sites of Al Ain (Hafit, Hili, Bidaa Bint Saud and Oases Areas)",
@@ -77743,41 +77778,6 @@
       "source": "unesco_official_component",
       "lon": 55.749695,
       "lat": 24.179098
-    },
-    {
-      "site_id": "WHS 1330",
-      "name": "Residence of Bukovinian and Dalmatian Metropolitans",
-      "name_en": "Residence of Bukovinian and Dalmatian Metropolitans",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/1330/",
-      "country": "Ukraine",
-      "inscription_date": "2011",
-      "category": "Cultural",
-      "note": "The Residence of Bukovinian and Dalmatian Metropolitans represents a masterful synergy of architectural styles built by Czech architect Josef Hlavka from 1864 to 1882. The property, an outstanding example of 19th-century historicist architecture, also includes a seminary and monastery and is dominated by the domed, cruciform Seminary Church with a garden and park. The complex expresses architectural and cultural influences from the Byzantine period onward and embodies the powerful presence of the Orthodox Church during Habsburg rule, reflecting the Austro-Hungarian Empire policy of religious tolerance.",
-      "aliases": [
-        "Residence of Bukovinian and Dalmatian Metropolitans"
-      ],
-      "alias_points": [
-        {
-          "name": "Residence of Bukovinian and Dalmatian Metropolitans",
-          "ref": "1330",
-          "lat": 48.2966666667,
-          "lon": 25.9247222222
-        }
-      ],
-      "component_count": 1,
-      "native_names": {
-        "name_ar": "Резиденция митрополитов Православной церкви Буковины и Далмации",
-        "name_local": "Резиденция митрополитов Православной церкви Буковины и Далмации"
-      },
-      "native_display": "Резиденция митрополитов Православной церкви Буковины и Далмации",
-      "source": "unesco_official",
-      "lon": 25.9247222222,
-      "lat": 48.2966666667
     },
     {
       "site_id": "WHS 1369",
@@ -83776,38 +83776,6 @@
       "lat": 46.0941666667
     },
     {
-      "site_id": "WHS 1295",
-      "name": "Fort Jesus, Mombasa",
-      "name_en": "Fort Jesus, Mombasa",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/1295/",
-      "country": "Kenya",
-      "inscription_date": "2011",
-      "category": "Cultural",
-      "note": "The Fort, built by the Portuguese in 1593-1596 to the designs of Giovanni Battista Cairati to protect the port of Mombasa, is one of the most outstanding and well preserved examples of 16th Portuguese military fortification and a landmark in the history of this type of construction. The Fort's layout and form reflected the Renaissance ideal that perfect proportions and geometric harmony are to be found in the human body. The property covers an area of 2.36 hectares and includes the fort's moat and immediate surroundings.",
-      "aliases": [
-        "Fort Jesus"
-      ],
-      "alias_points": [
-        {
-          "name": "Fort Jesus, Mombasa",
-          "ref": "1295rev",
-          "lat": -4.0627777778,
-          "lon": 39.6794444444
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 39.6794444444,
-      "lat": -4.0627777778
-    },
-    {
       "site_id": "WHS 1377",
       "name": "Wadi Rum Protected Area",
       "name_en": "Wadi Rum Protected Area",
@@ -83965,6 +83933,38 @@
       "source": "unesco_official_component",
       "lon": 36.24,
       "lat": -0.4425
+    },
+    {
+      "site_id": "WHS 1295",
+      "name": "Fort Jesus, Mombasa",
+      "name_en": "Fort Jesus, Mombasa",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/1295/",
+      "country": "Kenya",
+      "inscription_date": "2011",
+      "category": "Cultural",
+      "note": "The Fort, built by the Portuguese in 1593-1596 to the designs of Giovanni Battista Cairati to protect the port of Mombasa, is one of the most outstanding and well preserved examples of 16th Portuguese military fortification and a landmark in the history of this type of construction. The Fort's layout and form reflected the Renaissance ideal that perfect proportions and geometric harmony are to be found in the human body. The property covers an area of 2.36 hectares and includes the fort's moat and immediate surroundings.",
+      "aliases": [
+        "Fort Jesus"
+      ],
+      "alias_points": [
+        {
+          "name": "Fort Jesus, Mombasa",
+          "ref": "1295rev",
+          "lat": -4.0627777778,
+          "lon": 39.6794444444
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 39.6794444444,
+      "lat": -4.0627777778
     },
     {
       "site_id": "WHS 1236",
@@ -90657,38 +90657,6 @@
       "lat": 32.8223722223
     },
     {
-      "site_id": "WHS 1276",
-      "name": "Rhaetian Railway in the Albula / Bernina Landscapes",
-      "name_en": "Rhaetian Railway in the Albula / Bernina Landscapes",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/1276/",
-      "country": "Italy, Switzerland",
-      "inscription_date": "2008",
-      "category": "Cultural",
-      "note": "Rhaetian Railway in the Albula / Bernina Landscapes, brings together two historic railway lines that cross the Swiss Alps through two passes. Opened in 1904, the Albula line in the north western part of the property is 67 km long. It features an impressive set of structures including 42 tunnels and covered galleries and 144 viaducts and bridges. The 61 km Bernina pass line features 13 tunnels and galleries and 52 viaducts and bridges. The property is exemplary of the use of the railway to overcome the isolation of settlements in the Central Alps early in the 20th century, with a major and lasting socio-economic impact on life in the mountains. It constitutes an outstanding technical, architectural and environmental ensemble and embodies architectural and civil engineering achievements, in harmony with the landscapes through which they pass.",
-      "aliases": [
-        "Rhaetian Railway in the Albula / Bernina Landscapes"
-      ],
-      "alias_points": [
-        {
-          "name": "Rhaetian Railway in the Albula / Bernina Landscapes",
-          "ref": "1276",
-          "lat": 46.4983333333,
-          "lon": 9.8463888889
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 9.8463888889,
-      "lat": 46.4983333333
-    },
-    {
       "site_id": "WHS 1102",
       "name": "Saryarka – Steppe and Lakes of Northern Kazakhstan",
       "name_en": "Saryarka – Steppe and Lakes of Northern Kazakhstan",
@@ -90895,6 +90863,38 @@
       "source": "unesco_official_component",
       "lon": 63.8263888889,
       "lat": 51.7925
+    },
+    {
+      "site_id": "WHS 1276",
+      "name": "Rhaetian Railway in the Albula / Bernina Landscapes",
+      "name_en": "Rhaetian Railway in the Albula / Bernina Landscapes",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/1276/",
+      "country": "Italy, Switzerland",
+      "inscription_date": "2008",
+      "category": "Cultural",
+      "note": "Rhaetian Railway in the Albula / Bernina Landscapes, brings together two historic railway lines that cross the Swiss Alps through two passes. Opened in 1904, the Albula line in the north western part of the property is 67 km long. It features an impressive set of structures including 42 tunnels and covered galleries and 144 viaducts and bridges. The 61 km Bernina pass line features 13 tunnels and galleries and 52 viaducts and bridges. The property is exemplary of the use of the railway to overcome the isolation of settlements in the Central Alps early in the 20th century, with a major and lasting socio-economic impact on life in the mountains. It constitutes an outstanding technical, architectural and environmental ensemble and embodies architectural and civil engineering achievements, in harmony with the landscapes through which they pass.",
+      "aliases": [
+        "Rhaetian Railway in the Albula / Bernina Landscapes"
+      ],
+      "alias_points": [
+        {
+          "name": "Rhaetian Railway in the Albula / Bernina Landscapes",
+          "ref": "1276",
+          "lat": 46.4983333333,
+          "lon": 9.8463888889
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 9.8463888889,
+      "lat": 46.4983333333
     },
     {
       "site_id": "WHS 1231",
@@ -93947,6 +93947,38 @@
       "lat": 38.9788888889
     },
     {
+      "site_id": "WHS 887",
+      "name": "Kuk Early Agricultural Site",
+      "name_en": "Kuk Early Agricultural Site",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/887/",
+      "country": "Papua New Guinea",
+      "inscription_date": "2008",
+      "category": "Cultural",
+      "note": "Kuk Early Agricultural Site consists of 116 ha of swamps in the western highlands of New Guinea 1,500 metres above sea-level. Archaeological excavation has revealed the landscape to be one of wetland reclamation worked almost continuously for 7,000, and possibly for 10,000 years. It contains well-preserved archaeological remains demonstrating the technological leap which transformed plant exploitation to agriculture around 6,500 years ago. It is an excellent example of transformation of agricultural practices over time, from cultivation mounds to draining the wetlands through the digging of ditches with wooden tools. Kuk is one of the few places in the world where archaeological evidence suggests independent agricultural development and changes in agricultural practice over such a long period of time.",
+      "aliases": [
+        "Kuk Early Agricultural Site"
+      ],
+      "alias_points": [
+        {
+          "name": "Kuk Early Agricultural Site",
+          "ref": "887",
+          "lat": -5.7837111111,
+          "lon": 144.3317222222
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 144.3317222222,
+      "lat": -5.7837111111
+    },
+    {
       "site_id": "WHS 1259",
       "name": "Le Morne Cultural Landscape",
       "name_en": "Le Morne Cultural Landscape",
@@ -94101,38 +94133,6 @@
       "source": "unesco_official_component",
       "lon": -100.25,
       "lat": 19.606
-    },
-    {
-      "site_id": "WHS 887",
-      "name": "Kuk Early Agricultural Site",
-      "name_en": "Kuk Early Agricultural Site",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/887/",
-      "country": "Papua New Guinea",
-      "inscription_date": "2008",
-      "category": "Cultural",
-      "note": "Kuk Early Agricultural Site consists of 116 ha of swamps in the western highlands of New Guinea 1,500 metres above sea-level. Archaeological excavation has revealed the landscape to be one of wetland reclamation worked almost continuously for 7,000, and possibly for 10,000 years. It contains well-preserved archaeological remains demonstrating the technological leap which transformed plant exploitation to agriculture around 6,500 years ago. It is an excellent example of transformation of agricultural practices over time, from cultivation mounds to draining the wetlands through the digging of ditches with wooden tools. Kuk is one of the few places in the world where archaeological evidence suggests independent agricultural development and changes in agricultural practice over such a long period of time.",
-      "aliases": [
-        "Kuk Early Agricultural Site"
-      ],
-      "alias_points": [
-        {
-          "name": "Kuk Early Agricultural Site",
-          "ref": "887",
-          "lat": -5.7837111111,
-          "lon": 144.3317222222
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 144.3317222222,
-      "lat": -5.7837111111
     },
     {
       "site_id": "WHS 1293",
@@ -114956,38 +114956,6 @@
       "lat": 53.45108333
     },
     {
-      "site_id": "WHS 1009",
-      "name": "Notre-Dame Cathedral in Tournai",
-      "name_en": "Notre-Dame Cathedral in Tournai",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/1009/",
-      "country": "Belgium",
-      "inscription_date": "2000",
-      "category": "Cultural",
-      "note": "The Cathedral of Notre-Dame in Tournai was built in the first half of the 12th century. It is especially distinguished by a Romanesque nave of extraordinary dimensions, a wealth of sculpture on its capitals and a transept topped by five towers, all precursors of the Gothic style. The choir, rebuilt in the 13th century, is in the pure Gothic style.",
-      "aliases": [
-        "Notre-Dame Cathedral in Tournai"
-      ],
-      "alias_points": [
-        {
-          "name": "Notre-Dame Cathedral in Tournai",
-          "ref": "1009",
-          "lat": 50.60603,
-          "lon": 3.38926
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 3.38926,
-      "lat": 50.60603
-    },
-    {
       "site_id": "WHS 1005",
       "name": "Major Town Houses of the Architect Victor Horta (Brussels)",
       "name_en": "Major Town Houses of the Architect Victor Horta (Brussels)",
@@ -115143,6 +115111,38 @@
       "source": "unesco_official_component",
       "lon": 4.3556666667,
       "lat": 50.8242222222
+    },
+    {
+      "site_id": "WHS 1009",
+      "name": "Notre-Dame Cathedral in Tournai",
+      "name_en": "Notre-Dame Cathedral in Tournai",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/1009/",
+      "country": "Belgium",
+      "inscription_date": "2000",
+      "category": "Cultural",
+      "note": "The Cathedral of Notre-Dame in Tournai was built in the first half of the 12th century. It is especially distinguished by a Romanesque nave of extraordinary dimensions, a wealth of sculpture on its capitals and a transept topped by five towers, all precursors of the Gothic style. The choir, rebuilt in the 13th century, is in the pure Gothic style.",
+      "aliases": [
+        "Notre-Dame Cathedral in Tournai"
+      ],
+      "alias_points": [
+        {
+          "name": "Notre-Dame Cathedral in Tournai",
+          "ref": "1009",
+          "lat": 50.60603,
+          "lon": 3.38926
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 3.38926,
+      "lat": 50.60603
     },
     {
       "site_id": "WHS 967",
@@ -127574,6 +127574,38 @@
       "lat": 52.54888889
     },
     {
+      "site_id": "WHS 902",
+      "name": "Historic Centre of Sighişoara",
+      "name_en": "Historic Centre of Sighişoara",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/902/",
+      "country": "Romania",
+      "inscription_date": "1999",
+      "category": "Cultural",
+      "note": "Founded by German craftsmen and merchants known as the Saxons of Transylvania, Sighişoara is a fine example of a small, fortified medieval town which played an important strategic and commercial role on the fringes of central Europe for several centuries.",
+      "aliases": [
+        "Historic Centre of Sighişoara"
+      ],
+      "alias_points": [
+        {
+          "name": "Historic Centre of Sighişoara",
+          "ref": "902",
+          "lat": 46.21777778,
+          "lon": 24.79222222
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 24.79222222,
+      "lat": 46.21777778
+    },
+    {
       "site_id": "WHS 904",
       "name": "Wooden Churches of Maramureş",
       "name_en": "Wooden Churches of Maramureş",
@@ -127859,38 +127891,6 @@
       "source": "unesco_official_component",
       "lon": 24.0558333333,
       "lat": 47.8208333333
-    },
-    {
-      "site_id": "WHS 902",
-      "name": "Historic Centre of Sighişoara",
-      "name_en": "Historic Centre of Sighişoara",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/902/",
-      "country": "Romania",
-      "inscription_date": "1999",
-      "category": "Cultural",
-      "note": "Founded by German craftsmen and merchants known as the Saxons of Transylvania, Sighişoara is a fine example of a small, fortified medieval town which played an important strategic and commercial role on the fringes of central Europe for several centuries.",
-      "aliases": [
-        "Historic Centre of Sighişoara"
-      ],
-      "alias_points": [
-        {
-          "name": "Historic Centre of Sighişoara",
-          "ref": "902",
-          "lat": 46.21777778,
-          "lon": 24.79222222
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 24.79222222,
-      "lat": 46.21777778
     },
     {
       "site_id": "WHS 900",
@@ -128864,41 +128864,6 @@
       "lat": 50.48111
     },
     {
-      "site_id": "WHS 881",
-      "name": "Temple of Heaven: an Imperial Sacrificial Altar in Beijing",
-      "name_en": "Temple of Heaven: an Imperial Sacrificial Altar in Beijing",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/881/",
-      "country": "China",
-      "inscription_date": "1998",
-      "category": "Cultural",
-      "note": "The Temple of Heaven, founded in the first half of the 15th century, is a dignified complex of fine cult buildings set in gardens and surrounded by historic pine woods. In its overall layout and that of its individual buildings, it symbolizes the relationship between earth and heaven – the human world and God's world – which stands at the heart of Chinese cosmogony, and also the special role played by the emperors within that relationship.",
-      "aliases": [
-        "Temple of Heaven: an Imperial Sacrificial Altar in Beijing"
-      ],
-      "alias_points": [
-        {
-          "name": "Temple of Heaven: an Imperial Sacrificial Altar in Beijing",
-          "ref": "881",
-          "lat": 39.8821666667,
-          "lon": 116.406666667
-        }
-      ],
-      "component_count": 1,
-      "native_names": {
-        "name_ar": "天坛",
-        "name_local": "天坛"
-      },
-      "native_display": "天坛",
-      "source": "unesco_official",
-      "lon": 116.4447222,
-      "lat": 39.84555556
-    },
-    {
       "site_id": "WHS 880",
       "name": "Summer Palace, an Imperial Garden in Beijing",
       "name_en": "Summer Palace, an Imperial Garden in Beijing",
@@ -128932,6 +128897,41 @@
       "source": "unesco_official",
       "lon": 116.1411111,
       "lat": 39.91055556
+    },
+    {
+      "site_id": "WHS 881",
+      "name": "Temple of Heaven: an Imperial Sacrificial Altar in Beijing",
+      "name_en": "Temple of Heaven: an Imperial Sacrificial Altar in Beijing",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/881/",
+      "country": "China",
+      "inscription_date": "1998",
+      "category": "Cultural",
+      "note": "The Temple of Heaven, founded in the first half of the 15th century, is a dignified complex of fine cult buildings set in gardens and surrounded by historic pine woods. In its overall layout and that of its individual buildings, it symbolizes the relationship between earth and heaven – the human world and God's world – which stands at the heart of Chinese cosmogony, and also the special role played by the emperors within that relationship.",
+      "aliases": [
+        "Temple of Heaven: an Imperial Sacrificial Altar in Beijing"
+      ],
+      "alias_points": [
+        {
+          "name": "Temple of Heaven: an Imperial Sacrificial Altar in Beijing",
+          "ref": "881",
+          "lat": 39.8821666667,
+          "lon": 116.406666667
+        }
+      ],
+      "component_count": 1,
+      "native_names": {
+        "name_ar": "天坛",
+        "name_local": "天坛"
+      },
+      "native_display": "天坛",
+      "source": "unesco_official",
+      "lon": 116.4447222,
+      "lat": 39.84555556
     },
     {
       "site_id": "WHS 872",
@@ -158414,38 +158414,6 @@
       "lat": 41.07333
     },
     {
-      "site_id": "WHS 827",
-      "name": "Cathedral, Torre Civica and Piazza Grande, Modena",
-      "name_en": "Cathedral, Torre Civica and Piazza Grande, Modena",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/827/",
-      "country": "Italy",
-      "inscription_date": "1997",
-      "category": "Cultural",
-      "note": "The magnificent 12th-century cathedral at Modena, the work of two great artists (Lanfranco and Wiligelmus), is a supreme example of early Romanesque art. With its piazza and soaring tower, it testifies to the faith of its builders and the power of the Canossa dynasty who commissioned it.",
-      "aliases": [
-        "Cathedral"
-      ],
-      "alias_points": [
-        {
-          "name": "Cathedral, Torre Civica and Piazza Grande, Modena",
-          "ref": "827",
-          "lat": 44.64624,
-          "lon": 10.92568
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 10.92568,
-      "lat": 44.64624
-    },
-    {
       "site_id": "WHS 824",
       "name": "Botanical Garden (Orto Botanico), Padua",
       "name_en": "Botanical Garden (Orto Botanico), Padua",
@@ -158478,6 +158446,38 @@
       "lat": 45.39911111
     },
     {
+      "site_id": "WHS 827",
+      "name": "Cathedral, Torre Civica and Piazza Grande, Modena",
+      "name_en": "Cathedral, Torre Civica and Piazza Grande, Modena",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/827/",
+      "country": "Italy",
+      "inscription_date": "1997",
+      "category": "Cultural",
+      "note": "The magnificent 12th-century cathedral at Modena, the work of two great artists (Lanfranco and Wiligelmus), is a supreme example of early Romanesque art. With its piazza and soaring tower, it testifies to the faith of its builders and the power of the Canossa dynasty who commissioned it.",
+      "aliases": [
+        "Cathedral"
+      ],
+      "alias_points": [
+        {
+          "name": "Cathedral, Torre Civica and Piazza Grande, Modena",
+          "ref": "827",
+          "lat": 44.64624,
+          "lon": 10.92568
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 10.92568,
+      "lat": 44.64624
+    },
+    {
       "site_id": "WHS 830",
       "name": "Costiera Amalfitana",
       "name_en": "Costiera Amalfitana",
@@ -158508,38 +158508,6 @@
       "source": "unesco_official",
       "lon": 14.6027777778,
       "lat": 40.6333333333
-    },
-    {
-      "site_id": "WHS 833",
-      "name": "Su Nuraxi di Barumini",
-      "name_en": "Su Nuraxi di Barumini",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/833/",
-      "country": "Italy",
-      "inscription_date": "1997",
-      "category": "Cultural",
-      "note": "During the late 2nd millennium B.C. in the Bronze Age, a special type of defensive structure known as nuraghi (for which no parallel exists anywhere else in the world) developed on the island of Sardinia. The complex consists of circular defensive towers in the form of truncated cones built of dressed stone, with corbel-vaulted internal chambers. The complex at Barumini, which was extended and reinforced in the first half of the 1st millennium under Carthaginian pressure, is the finest and most complete example of this remarkable form of prehistoric architecture.",
-      "aliases": [
-        "Su Nuraxi di Barumini"
-      ],
-      "alias_points": [
-        {
-          "name": "Su Nuraxi di Barumini",
-          "ref": "833",
-          "lat": 39.70583333,
-          "lon": 8.991388889
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 8.991388889,
-      "lat": 39.70583333
     },
     {
       "site_id": "WHS 823",
@@ -159029,6 +158997,38 @@
       "lat": 45.1480555556
     },
     {
+      "site_id": "WHS 833",
+      "name": "Su Nuraxi di Barumini",
+      "name_en": "Su Nuraxi di Barumini",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/833/",
+      "country": "Italy",
+      "inscription_date": "1997",
+      "category": "Cultural",
+      "note": "During the late 2nd millennium B.C. in the Bronze Age, a special type of defensive structure known as nuraghi (for which no parallel exists anywhere else in the world) developed on the island of Sardinia. The complex consists of circular defensive towers in the form of truncated cones built of dressed stone, with corbel-vaulted internal chambers. The complex at Barumini, which was extended and reinforced in the first half of the 1st millennium under Carthaginian pressure, is the finest and most complete example of this remarkable form of prehistoric architecture.",
+      "aliases": [
+        "Su Nuraxi di Barumini"
+      ],
+      "alias_points": [
+        {
+          "name": "Su Nuraxi di Barumini",
+          "ref": "833",
+          "lat": 39.70583333,
+          "lon": 8.991388889
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 8.991388889,
+      "lat": 39.70583333
+    },
+    {
       "site_id": "WHS 800",
       "name": "Mount Kenya National Park/Natural Forest",
       "name_en": "Mount Kenya National Park/Natural Forest",
@@ -159222,38 +159222,6 @@
       "lat": 27.46889
     },
     {
-      "site_id": "WHS 818",
-      "name": "Mill Network at Kinderdijk-Elshout",
-      "name_en": "Mill Network at Kinderdijk-Elshout",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/818/",
-      "country": "Netherlands (Kingdom of the)",
-      "inscription_date": "1997",
-      "category": "Cultural",
-      "note": "The outstanding contribution made by the people of the Netherlands to the technology of handling water is admirably demonstrated by the installations in the Kinderdijk-Elshout area. Construction of hydraulic works for the drainage of land for agriculture and settlement began in the Middle Ages and have continued uninterruptedly to the present day. The site illustrates all the typical features associated with this technology – dykes, reservoirs, pumping stations, administrative buildings and a series of beautifully preserved windmills.",
-      "aliases": [
-        "Mill Network at Kinderdijk-Elshout"
-      ],
-      "alias_points": [
-        {
-          "name": "Mill Network at Kinderdijk-Elshout",
-          "ref": "818",
-          "lat": 51.8825,
-          "lon": 4.649444444
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 4.649444444,
-      "lat": 51.8825
-    },
-    {
       "site_id": "WHS 819",
       "name": "Historic Area of Willemstad, Inner City and Harbour, Curaçao",
       "name_en": "Historic Area of Willemstad, Inner City and Harbour, Curaçao",
@@ -159284,6 +159252,38 @@
       "source": "unesco_official",
       "lon": -68.90222,
       "lat": 12.10194
+    },
+    {
+      "site_id": "WHS 818",
+      "name": "Mill Network at Kinderdijk-Elshout",
+      "name_en": "Mill Network at Kinderdijk-Elshout",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/818/",
+      "country": "Netherlands (Kingdom of the)",
+      "inscription_date": "1997",
+      "category": "Cultural",
+      "note": "The outstanding contribution made by the people of the Netherlands to the technology of handling water is admirably demonstrated by the installations in the Kinderdijk-Elshout area. Construction of hydraulic works for the drainage of land for agriculture and settlement began in the Middle Ages and have continued uninterruptedly to the present day. The site illustrates all the typical features associated with this technology – dykes, reservoirs, pumping stations, administrative buildings and a series of beautifully preserved windmills.",
+      "aliases": [
+        "Mill Network at Kinderdijk-Elshout"
+      ],
+      "alias_points": [
+        {
+          "name": "Mill Network at Kinderdijk-Elshout",
+          "ref": "818",
+          "lat": 51.8825,
+          "lon": 4.649444444
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 4.649444444,
+      "lat": 51.8825
     },
     {
       "site_id": "WHS 816",
@@ -160292,8 +160292,8 @@
         {
           "name": "Canal du Midi",
           "ref": "770",
-          "lat": 43.61138889,
-          "lon": 1.416388889
+          "lat": 43.61,
+          "lon": 1.416
         }
       ],
       "component_count": 1,
@@ -171116,38 +171116,6 @@
       "lat": 47.3833333333
     },
     {
-      "site_id": "WHS 665",
-      "name": "Royal Monastery of Santa María de Guadalupe",
-      "name_en": "Royal Monastery of Santa María de Guadalupe",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/665/",
-      "country": "Spain",
-      "inscription_date": "1993",
-      "category": "Cultural",
-      "note": "The monastery is an outstanding repository of four centuries of Spanish religious architecture. It symbolizes two significant events in world history that occurred in 1492: the Reconquest of the Iberian peninsula by the Catholic Kings and Christopher Columbus' arrival in the Americas. Its famous statue of the Virgin became a powerful symbol of the Christianization of much of the New World.",
-      "aliases": [
-        "Royal Monastery of Santa María de Guadalupe"
-      ],
-      "alias_points": [
-        {
-          "name": "Royal Monastery of Santa María de Guadalupe",
-          "ref": "665",
-          "lat": 39.45285,
-          "lon": -5.3275
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": -5.3275,
-      "lat": 39.45285
-    },
-    {
       "site_id": "WHS 669",
       "name": "Routes of Santiago de Compostela: Camino Francés and Routes of Northern Spain",
       "name_en": "Routes of Santiago de Compostela: Camino Francés and Routes of Northern Spain",
@@ -171831,6 +171799,38 @@
       "source": "unesco_official_component",
       "lon": -4.105916,
       "lat": 43.392181
+    },
+    {
+      "site_id": "WHS 665",
+      "name": "Royal Monastery of Santa María de Guadalupe",
+      "name_en": "Royal Monastery of Santa María de Guadalupe",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/665/",
+      "country": "Spain",
+      "inscription_date": "1993",
+      "category": "Cultural",
+      "note": "The monastery is an outstanding repository of four centuries of Spanish religious architecture. It symbolizes two significant events in world history that occurred in 1492: the Reconquest of the Iberian peninsula by the Catholic Kings and Christopher Columbus' arrival in the Americas. Its famous statue of the Virgin became a powerful symbol of the Christianization of much of the New World.",
+      "aliases": [
+        "Royal Monastery of Santa María de Guadalupe"
+      ],
+      "alias_points": [
+        {
+          "name": "Royal Monastery of Santa María de Guadalupe",
+          "ref": "665",
+          "lat": 39.45285,
+          "lon": -5.3275
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": -5.3275,
+      "lat": 39.45285
     },
     {
       "site_id": "WHS 555",
@@ -175024,38 +175024,6 @@
       "lat": 29.33333
     },
     {
-      "site_id": "WHS 617",
-      "name": "Historic Centre of Český Krumlov",
-      "name_en": "Historic Centre of Český Krumlov",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/617/",
-      "country": "Czechia",
-      "inscription_date": "1992",
-      "category": "Cultural",
-      "note": "Situated on the banks of the Vltava river, the town was built around a 13th-century castle with Gothic, Renaissance and Baroque elements. It is an outstanding example of a small central European medieval town whose architectural heritage has remained intact thanks to its peaceful evolution over more than five centuries.",
-      "aliases": [
-        "Historic Centre of Český Krumlov"
-      ],
-      "alias_points": [
-        {
-          "name": "Historic Centre of Český Krumlov",
-          "ref": "617",
-          "lat": 48.8106944444,
-          "lon": 14.3150277778
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 14.3150277778,
-      "lat": 48.8106944444
-    },
-    {
       "site_id": "WHS 621",
       "name": "Historic Centre of Telč",
       "name_en": "Historic Centre of Telč",
@@ -175086,6 +175054,38 @@
       "source": "unesco_official",
       "lon": 15.4539722222,
       "lat": 49.1841388889
+    },
+    {
+      "site_id": "WHS 617",
+      "name": "Historic Centre of Český Krumlov",
+      "name_en": "Historic Centre of Český Krumlov",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/617/",
+      "country": "Czechia",
+      "inscription_date": "1992",
+      "category": "Cultural",
+      "note": "Situated on the banks of the Vltava river, the town was built around a 13th-century castle with Gothic, Renaissance and Baroque elements. It is an outstanding example of a small central European medieval town whose architectural heritage has remained intact thanks to its peaceful evolution over more than five centuries.",
+      "aliases": [
+        "Historic Centre of Český Krumlov"
+      ],
+      "alias_points": [
+        {
+          "name": "Historic Centre of Český Krumlov",
+          "ref": "617",
+          "lat": 48.8106944444,
+          "lon": 14.3150277778
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 14.3150277778,
+      "lat": 48.8106944444
     },
     {
       "site_id": "WHS 616",
@@ -175542,38 +175542,6 @@
       "lat": -8.718634
     },
     {
-      "site_id": "WHS 582",
-      "name": "Old Rauma",
-      "name_en": "Old Rauma",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/582/",
-      "country": "Finland",
-      "inscription_date": "1991",
-      "category": "Cultural",
-      "note": "Situated on the Gulf of Botnia, Rauma is one of the oldest harbours in Finland. Built around a Franciscan monastery, where the mid-15th-century Holy Cross Church still stands, it is an outstanding example of an old Nordic city constructed in wood. Although ravaged by fire in the late 17th century, it has preserved its ancient vernacular architectural heritage.",
-      "aliases": [
-        "Old Rauma"
-      ],
-      "alias_points": [
-        {
-          "name": "Old Rauma",
-          "ref": "582bis",
-          "lat": 61.12806,
-          "lon": 21.51167
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 21.51167,
-      "lat": 61.12806
-    },
-    {
       "site_id": "WHS 583",
       "name": "Fortress of Suomenlinna",
       "name_en": "Fortress of Suomenlinna",
@@ -175604,6 +175572,38 @@
       "source": "unesco_official",
       "lon": 24.98722,
       "lat": 60.14722
+    },
+    {
+      "site_id": "WHS 582",
+      "name": "Old Rauma",
+      "name_en": "Old Rauma",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/582/",
+      "country": "Finland",
+      "inscription_date": "1991",
+      "category": "Cultural",
+      "note": "Situated on the Gulf of Botnia, Rauma is one of the oldest harbours in Finland. Built around a Franciscan monastery, where the mid-15th-century Holy Cross Church still stands, it is an outstanding example of an old Nordic city constructed in wood. Although ravaged by fire in the late 17th century, it has preserved its ancient vernacular architectural heritage.",
+      "aliases": [
+        "Old Rauma"
+      ],
+      "alias_points": [
+        {
+          "name": "Old Rauma",
+          "ref": "582bis",
+          "lat": 61.12806,
+          "lon": 21.51167
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 21.51167,
+      "lat": 61.12806
     },
     {
       "site_id": "WHS 515",
@@ -176530,38 +176530,6 @@
       "lat": 41.38083
     },
     {
-      "site_id": "WHS 576",
-      "name": "Historic City of Ayutthaya",
-      "name_en": "Historic City of Ayutthaya",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/576/",
-      "country": "Thailand",
-      "inscription_date": "1991",
-      "category": "Cultural",
-      "note": "Founded c. 1350, Ayutthaya became the second Siamese capital after Sukhothai. It was destroyed by the Burmese in the 18th century. Its remains, characterized by the prang (reliquary towers) and gigantic monasteries, give an idea of its past splendour.",
-      "aliases": [
-        "Historic City of Ayutthaya"
-      ],
-      "alias_points": [
-        {
-          "name": "Historic City of Ayutthaya",
-          "ref": "576",
-          "lat": 14.34778,
-          "lon": 100.56056
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 100.56056,
-      "lat": 14.34778
-    },
-    {
       "site_id": "WHS 574",
       "name": "Historic Town of Sukhothai and Associated Historic Towns",
       "name_en": "Historic Town of Sukhothai and Associated Historic Towns",
@@ -176684,6 +176652,38 @@
       "source": "unesco_official_component",
       "lon": 99.510693,
       "lat": 16.495921
+    },
+    {
+      "site_id": "WHS 576",
+      "name": "Historic City of Ayutthaya",
+      "name_en": "Historic City of Ayutthaya",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/576/",
+      "country": "Thailand",
+      "inscription_date": "1991",
+      "category": "Cultural",
+      "note": "Founded c. 1350, Ayutthaya became the second Siamese capital after Sukhothai. It was destroyed by the Burmese in the 18th century. Its remains, characterized by the prang (reliquary towers) and gigantic monasteries, give an idea of its past splendour.",
+      "aliases": [
+        "Historic City of Ayutthaya"
+      ],
+      "alias_points": [
+        {
+          "name": "Historic City of Ayutthaya",
+          "ref": "576",
+          "lat": 14.34778,
+          "lon": 100.56056
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 100.56056,
+      "lat": 14.34778
     },
     {
       "site_id": "WHS 537",
@@ -181893,38 +181893,6 @@
       "lat": 62.0675833333
     },
     {
-      "site_id": "WHS 517",
-      "name": "Archaeological Site of Olympia",
-      "name_en": "Archaeological Site of Olympia",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/517/",
-      "country": "Greece",
-      "inscription_date": "1989",
-      "category": "Cultural",
-      "note": "The site of Olympia, in a valley in the Peloponnesus, has been inhabited since prehistoric times. In the 10th century B.C., Olympia became a centre for the worship of Zeus. The Altis – the sanctuary to the gods – has one of the highest concentrations of masterpieces from the ancient Greek world. In addition to temples, there are the remains of all the sports structures erected for the Olympic Games, which were held in Olympia every four years beginning in 776 B.C.",
-      "aliases": [
-        "Archaeological Site of Olympia"
-      ],
-      "alias_points": [
-        {
-          "name": "Archaeological Site of Olympia",
-          "ref": "517",
-          "lat": 37.64,
-          "lon": 21.634
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 21.634,
-      "lat": 37.64
-    },
-    {
       "site_id": "WHS 511",
       "name": "Archaeological Site of Mystras",
       "name_en": "Archaeological Site of Mystras",
@@ -181958,6 +181926,38 @@
       "source": "unesco_official",
       "lon": 22.36667,
       "lat": 37.08056
+    },
+    {
+      "site_id": "WHS 517",
+      "name": "Archaeological Site of Olympia",
+      "name_en": "Archaeological Site of Olympia",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/517/",
+      "country": "Greece",
+      "inscription_date": "1989",
+      "category": "Cultural",
+      "note": "The site of Olympia, in a valley in the Peloponnesus, has been inhabited since prehistoric times. In the 10th century B.C., Olympia became a centre for the worship of Zeus. The Altis – the sanctuary to the gods – has one of the highest concentrations of masterpieces from the ancient Greek world. In addition to temples, there are the remains of all the sports structures erected for the Olympic Games, which were held in Olympia every four years beginning in 776 B.C.",
+      "aliases": [
+        "Archaeological Site of Olympia"
+      ],
+      "alias_points": [
+        {
+          "name": "Archaeological Site of Olympia",
+          "ref": "517",
+          "lat": 37.64,
+          "lon": 21.634
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 21.634,
+      "lat": 37.64
     },
     {
       "site_id": "WHS 524",
@@ -185394,38 +185394,6 @@
       "lat": 11.206361
     },
     {
-      "site_id": "WHS 416",
-      "name": "Historic Centre of Puebla",
-      "name_en": "Historic Centre of Puebla",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/416/",
-      "country": "Mexico",
-      "inscription_date": "1987",
-      "category": "Cultural",
-      "note": "Puebla, which was founded ex nihilo in 1531, is situated about 100 km east of Mexico City, at the foot of the Popocatepetl volcano. It has preserved its great religious structures such as the 16th–17th-century cathedral and fine buildings like the old archbishop's palace, as well as a host of houses with walls covered in tiles (azulejos). The new aesthetic concepts resulting from the fusion of European and American styles were adopted locally and are peculiar to the Baroque district of Puebla.",
-      "aliases": [
-        "Historic Centre of Puebla"
-      ],
-      "alias_points": [
-        {
-          "name": "Historic Centre of Puebla",
-          "ref": "416",
-          "lat": 19.045967,
-          "lon": -98.197769
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": -98.197769,
-      "lat": 19.045967
-    },
-    {
       "site_id": "WHS 412",
       "name": "Historic Centre of Mexico City and Xochimilco",
       "name_en": "Historic Centre of Mexico City and Xochimilco",
@@ -185581,6 +185549,38 @@
       "source": "unesco_official_component",
       "lon": -99.098926,
       "lat": 19.249828
+    },
+    {
+      "site_id": "WHS 416",
+      "name": "Historic Centre of Puebla",
+      "name_en": "Historic Centre of Puebla",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/416/",
+      "country": "Mexico",
+      "inscription_date": "1987",
+      "category": "Cultural",
+      "note": "Puebla, which was founded ex nihilo in 1531, is situated about 100 km east of Mexico City, at the foot of the Popocatepetl volcano. It has preserved its great religious structures such as the 16th–17th-century cathedral and fine buildings like the old archbishop's palace, as well as a host of houses with walls covered in tiles (azulejos). The new aesthetic concepts resulting from the fusion of European and American styles were adopted locally and are peculiar to the Baroque district of Puebla.",
+      "aliases": [
+        "Historic Centre of Puebla"
+      ],
+      "alias_points": [
+        {
+          "name": "Historic Centre of Puebla",
+          "ref": "416",
+          "lat": 19.045967,
+          "lon": -98.197769
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": -98.197769,
+      "lat": 19.045967
     },
     {
       "site_id": "WHS 411",
@@ -206060,38 +206060,6 @@
       "lat": -8.107836
     },
     {
-      "site_id": "WHS 379",
-      "name": "Historic City of Toledo",
-      "name_en": "Historic City of Toledo",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/379/",
-      "country": "Spain",
-      "inscription_date": "1986",
-      "category": "Cultural",
-      "note": "Successively a Roman municipium, the capital of the Visigothic Kingdom, a fortress of the Emirate of Cordoba, an outpost of the Christian kingdoms fighting the Moors and, in the 16th century, the temporary seat of supreme power under Charles V, Toledo is the repository of more than 2,000 years of history. Its masterpieces are the product of heterogeneous civilizations in an environment where the existence of three major religions – Judaism, Christianity and Islam – was a major factor.",
-      "aliases": [
-        "Historic City of Toledo"
-      ],
-      "alias_points": [
-        {
-          "name": "Historic City of Toledo",
-          "ref": "379",
-          "lat": 39.8569444444,
-          "lon": -4.0244444444
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": -4.0244444444,
-      "lat": 39.8569444444
-    },
-    {
       "site_id": "WHS 380",
       "name": "Garajonay National Park",
       "name_en": "Garajonay National Park",
@@ -206122,6 +206090,38 @@
       "source": "unesco_official",
       "lon": -17.23722222,
       "lat": 28.12625
+    },
+    {
+      "site_id": "WHS 379",
+      "name": "Historic City of Toledo",
+      "name_en": "Historic City of Toledo",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/379/",
+      "country": "Spain",
+      "inscription_date": "1986",
+      "category": "Cultural",
+      "note": "Successively a Roman municipium, the capital of the Visigothic Kingdom, a fortress of the Emirate of Cordoba, an outpost of the Christian kingdoms fighting the Moors and, in the 16th century, the temporary seat of supreme power under Charles V, Toledo is the repository of more than 2,000 years of history. Its masterpieces are the product of heterogeneous civilizations in an environment where the existence of three major religions – Judaism, Christianity and Islam – was a major factor.",
+      "aliases": [
+        "Historic City of Toledo"
+      ],
+      "alias_points": [
+        {
+          "name": "Historic City of Toledo",
+          "ref": "379",
+          "lat": 39.8569444444,
+          "lon": -4.0244444444
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": -4.0244444444,
+      "lat": 39.8569444444
     },
     {
       "site_id": "WHS 21",
@@ -209391,38 +209391,6 @@
       "lat": 41.025
     },
     {
-      "site_id": "WHS 321",
-      "name": "Historic Mosque City of Bagerhat",
-      "name_en": "Historic Mosque City of Bagerhat",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/321/",
-      "country": "Bangladesh",
-      "inscription_date": "1985",
-      "category": "Cultural",
-      "note": "Situated in the suburbs of Bagerhat, at the meeting-point of the Ganges and Brahmaputra rivers, this ancient city, formerly known as Khalifatabad, was founded by the Turkish general Ulugh Khan Jahan in the 15th century. The city’s infrastructure reveals considerable technical skill and an exceptional number of mosques and early Islamic monuments, many built of brick, can be seen there.",
-      "aliases": [
-        "Historic Mosque City of Bagerhat"
-      ],
-      "alias_points": [
-        {
-          "name": "Historic Mosque City of Bagerhat",
-          "ref": "321",
-          "lat": 22.66667,
-          "lon": 89.8
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 89.8,
-      "lat": 22.66667
-    },
-    {
       "site_id": "WHS 322",
       "name": "Ruins of the Buddhist Vihara at Paharpur",
       "name_en": "Ruins of the Buddhist Vihara at Paharpur",
@@ -209453,6 +209421,38 @@
       "source": "unesco_official",
       "lon": 88.98333333,
       "lat": 25.03333333
+    },
+    {
+      "site_id": "WHS 321",
+      "name": "Historic Mosque City of Bagerhat",
+      "name_en": "Historic Mosque City of Bagerhat",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/321/",
+      "country": "Bangladesh",
+      "inscription_date": "1985",
+      "category": "Cultural",
+      "note": "Situated in the suburbs of Bagerhat, at the meeting-point of the Ganges and Brahmaputra rivers, this ancient city, formerly known as Khalifatabad, was founded by the Turkish general Ulugh Khan Jahan in the 15th century. The city’s infrastructure reveals considerable technical skill and an exceptional number of mosques and early Islamic monuments, many built of brick, can be seen there.",
+      "aliases": [
+        "Historic Mosque City of Bagerhat"
+      ],
+      "alias_points": [
+        {
+          "name": "Historic Mosque City of Bagerhat",
+          "ref": "321",
+          "lat": 22.66667,
+          "lon": 89.8
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 89.8,
+      "lat": 22.66667
     },
     {
       "site_id": "WHS 309",
@@ -210405,41 +210405,6 @@
       "lat": 12.619397
     },
     {
-      "site_id": "WHS 293",
-      "name": "Anjar",
-      "name_en": "Anjar",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/293/",
-      "country": "Lebanon",
-      "inscription_date": "1984",
-      "category": "Cultural",
-      "note": "The city of Anjar was founded by Caliph Walid I at the beginning of the 8th century. The ruins reveal a very regular layout, reminiscent of the palace-cities of ancient times, and are a unique testimony to city planning under the Umayyads.",
-      "aliases": [
-        "Anjar"
-      ],
-      "alias_points": [
-        {
-          "name": "Anjar",
-          "ref": "293",
-          "lat": 33.7319444444,
-          "lon": 35.9333333333
-        }
-      ],
-      "component_count": 1,
-      "native_names": {
-        "name_ar": "عنجر",
-        "name_local": "عنجر"
-      },
-      "native_display": "عنجر",
-      "source": "unesco_official",
-      "lon": 35.9333333333,
-      "lat": 33.7319444444
-    },
-    {
       "site_id": "WHS 295",
       "name": "Byblos",
       "name_en": "Byblos",
@@ -210508,6 +210473,41 @@
       "source": "unesco_official",
       "lon": 36.2041666667,
       "lat": 34.0066666667
+    },
+    {
+      "site_id": "WHS 293",
+      "name": "Anjar",
+      "name_en": "Anjar",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/293/",
+      "country": "Lebanon",
+      "inscription_date": "1984",
+      "category": "Cultural",
+      "note": "The city of Anjar was founded by Caliph Walid I at the beginning of the 8th century. The ruins reveal a very regular layout, reminiscent of the palace-cities of ancient times, and are a unique testimony to city planning under the Umayyads.",
+      "aliases": [
+        "Anjar"
+      ],
+      "alias_points": [
+        {
+          "name": "Anjar",
+          "ref": "293",
+          "lat": 33.7319444444,
+          "lon": 35.9333333333
+        }
+      ],
+      "component_count": 1,
+      "native_names": {
+        "name_ar": "عنجر",
+        "name_local": "عنجر"
+      },
+      "native_display": "عنجر",
+      "source": "unesco_official",
+      "lon": 35.9333333333,
+      "lat": 33.7319444444
     },
     {
       "site_id": "WHS 320",
@@ -211554,8 +211554,8 @@
         {
           "name": "Pilgrimage Church of Wies",
           "ref": "271bis",
-          "lat": 47.68127778,
-          "lon": 10.90013889
+          "lat": 47.6806460297,
+          "lon": 10.9000214547
         }
       ],
       "component_count": 1,
@@ -212358,38 +212358,6 @@
       "lat": 27.17417
     },
     {
-      "site_id": "WHS 274",
-      "name": "Historic Sanctuary of Machu Picchu",
-      "name_en": "Historic Sanctuary of Machu Picchu",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/274/",
-      "country": "Peru",
-      "inscription_date": "1983",
-      "category": "Mixed",
-      "note": "Machu Picchu stands 2,430 m above sea-level, in the middle of a tropical mountain forest, in an extraordinarily beautiful setting. It was probably the most amazing urban creation of the Inca Empire at its height; its giant walls, terraces and ramps seem as if they have been cut naturally in the continuous rock escarpments. The natural setting, on the eastern slopes of the Andes, encompasses the upper Amazon basin with its rich diversity of flora and fauna.",
-      "aliases": [
-        "Historic Sanctuary of Machu Picchu"
-      ],
-      "alias_points": [
-        {
-          "name": "Historic Sanctuary of Machu Picchu",
-          "ref": "274",
-          "lat": -13.184934,
-          "lon": -72.533443
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": -72.533443,
-      "lat": -13.184934
-    },
-    {
       "site_id": "WHS 273",
       "name": "City of Cuzco",
       "name_en": "City of Cuzco",
@@ -212545,6 +212513,38 @@
       "source": "unesco_official_component",
       "lon": -71.9786972222,
       "lat": -13.5166888889
+    },
+    {
+      "site_id": "WHS 274",
+      "name": "Historic Sanctuary of Machu Picchu",
+      "name_en": "Historic Sanctuary of Machu Picchu",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/274/",
+      "country": "Peru",
+      "inscription_date": "1983",
+      "category": "Mixed",
+      "note": "Machu Picchu stands 2,430 m above sea-level, in the middle of a tropical mountain forest, in an extraordinarily beautiful setting. It was probably the most amazing urban creation of the Inca Empire at its height; its giant walls, terraces and ramps seem as if they have been cut naturally in the continuous rock escarpments. The natural setting, on the eastern slopes of the Andes, encompasses the upper Amazon basin with its rich diversity of flora and fauna.",
+      "aliases": [
+        "Historic Sanctuary of Machu Picchu"
+      ],
+      "alias_points": [
+        {
+          "name": "Historic Sanctuary of Machu Picchu",
+          "ref": "274",
+          "lat": -13.184934,
+          "lon": -72.533443
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": -72.533443,
+      "lat": -13.184934
     },
     {
       "site_id": "WHS 265",
@@ -215036,38 +215036,6 @@
       "lat": -18.28611111
     },
     {
-      "site_id": "WHS 162",
-      "name": "Amiens Cathedral",
-      "name_en": "Amiens Cathedral",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/162/",
-      "country": "France",
-      "inscription_date": "1981",
-      "category": "Cultural",
-      "note": "Amiens Cathedral, in the heart of Picardy, is one of the largest 'classic' Gothic churches of the 13th century. It is notable for the coherence of its plan, the beauty of its three-tier interior elevation and the particularly fine display of sculptures on the principal facade and in the south transept.",
-      "aliases": [
-        "Amiens Cathedral"
-      ],
-      "alias_points": [
-        {
-          "name": "Amiens Cathedral",
-          "ref": "162bis",
-          "lat": 49.895,
-          "lon": 2.301666667
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 2.301666667,
-      "lat": 49.895
-    },
-    {
       "site_id": "WHS 164",
       "name": "Arles, Roman and Romanesque Monuments",
       "name_en": "Arles, Roman and Romanesque Monuments",
@@ -215098,6 +215066,38 @@
       "source": "unesco_official",
       "lon": 4.630694444,
       "lat": 43.67763889
+    },
+    {
+      "site_id": "WHS 162",
+      "name": "Amiens Cathedral",
+      "name_en": "Amiens Cathedral",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/162/",
+      "country": "France",
+      "inscription_date": "1981",
+      "category": "Cultural",
+      "note": "Amiens Cathedral, in the heart of Picardy, is one of the largest 'classic' Gothic churches of the 13th century. It is notable for the coherence of its plan, the beauty of its three-tier interior elevation and the particularly fine display of sculptures on the principal facade and in the south transept.",
+      "aliases": [
+        "Amiens Cathedral"
+      ],
+      "alias_points": [
+        {
+          "name": "Amiens Cathedral",
+          "ref": "162bis",
+          "lat": 49.895,
+          "lon": 2.301666667
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 2.301666667,
+      "lat": 49.895
     },
     {
       "site_id": "WHS 165",
@@ -215319,6 +215319,38 @@
       "lat": 7.736111111
     },
     {
+      "site_id": "WHS 156",
+      "name": "Serengeti National Park",
+      "name_en": "Serengeti National Park",
+      "parent_site_id": "",
+      "component_ref": "",
+      "component_index": null,
+      "site_scope": "whs",
+      "status": "active",
+      "unesco_url": "https://whc.unesco.org/en/list/156/",
+      "country": "United Republic of Tanzania",
+      "inscription_date": "1981",
+      "category": "Natural",
+      "note": "The vast plains of the Serengeti comprise 1.5 million ha of savannah. The annual migration to permanent water holes of vast herds of herbivores (wildebeest, gazelles and zebras), followed by their predators, is one of the most impressive natural events in the world.",
+      "aliases": [
+        "Serengeti National Park"
+      ],
+      "alias_points": [
+        {
+          "name": "Serengeti National Park",
+          "ref": "156",
+          "lat": -2.74,
+          "lon": 34.859
+        }
+      ],
+      "component_count": 1,
+      "native_names": {},
+      "native_display": "",
+      "source": "unesco_official",
+      "lon": 34.56667,
+      "lat": -2.33333
+    },
+    {
       "site_id": "WHS 144",
       "name": "Ruins of Kilwa Kisiwani and Ruins of Songo Mnara",
       "name_en": "Ruins of Kilwa Kisiwani and Ruins of Songo Mnara",
@@ -215408,38 +215440,6 @@
       "source": "unesco_official_component",
       "lon": 39.5227777778,
       "lat": -8.9577777778
-    },
-    {
-      "site_id": "WHS 156",
-      "name": "Serengeti National Park",
-      "name_en": "Serengeti National Park",
-      "parent_site_id": "",
-      "component_ref": "",
-      "component_index": null,
-      "site_scope": "whs",
-      "status": "active",
-      "unesco_url": "https://whc.unesco.org/en/list/156/",
-      "country": "United Republic of Tanzania",
-      "inscription_date": "1981",
-      "category": "Natural",
-      "note": "The vast plains of the Serengeti comprise 1.5 million ha of savannah. The annual migration to permanent water holes of vast herds of herbivores (wildebeest, gazelles and zebras), followed by their predators, is one of the most impressive natural events in the world.",
-      "aliases": [
-        "Serengeti National Park"
-      ],
-      "alias_points": [
-        {
-          "name": "Serengeti National Park",
-          "ref": "156",
-          "lat": -2.74,
-          "lon": 34.859
-        }
-      ],
-      "component_count": 1,
-      "native_names": {},
-      "native_display": "",
-      "source": "unesco_official",
-      "lon": 34.56667,
-      "lat": -2.33333
     },
     {
       "site_id": "WHS 150",
