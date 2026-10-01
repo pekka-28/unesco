@@ -1,0 +1,39 @@
+name: Supabase database probe
+on:
+  schedule:
+    - cron: '17 2,10,19 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/supabase-probe.yml'
+      - 'scripts/probe_supabase.mjs'
+      - 'tests/supabase-probe.test.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: supabase-database-probe
+  cancel-in-progress: false
+jobs:
+  probe:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || vars.MWH_SUPABASE_PROBE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate probe behaviour without network access
+        run: node --test tests/supabase-probe.test.mjs
+      - name: Randomize scheduled probe time
+        if: github.event_name == 'schedule'
+        shell: bash
+        run: |
+          delay=$(node -e 'process.stdout.write(String(require("node:crypto").randomInt(0, 91)))')
+          echo "Waiting ${delay} seconds before the database read."
+          sleep "$delay"
+      - name: Run read-only database query
+        if: github.event_name != 'pull_request'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: node scripts/probe_supabase.mjs

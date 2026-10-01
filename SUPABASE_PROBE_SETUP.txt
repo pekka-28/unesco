@@ -1,0 +1,30 @@
+Supabase database probe
+
+Project: https://fjqhgcegnphavatrchjb.supabase.co
+GitHub repository: pekka-28/unesco
+
+Repository secret SUPABASE_URL holds the project URL. No Supabase access token,
+service_role key or database password is passed to the probe.
+
+The read-only endpoint required by this workflow is:
+https://fjqhgcegnphavatrchjb.supabase.co/functions/v1/usage-summary?stats=1
+
+It must return ok:true and stats containing non-negative active_datasets and
+average_visited_sites, and window_days:14, after actually querying Postgres.
+The prepared Supabase usage-summary implementation supplies this contract.
+A static health response is insufficient.
+
+The project endpoint returned HTTP 404 during setup on 2026-10-01. Deploy the
+prepared usage-summary migration and Edge Function before enabling scheduling.
+
+Activation:
+1. Run Supabase database probe manually from GitHub Actions. Manual runs work
+   even with scheduled probing disabled and skip the random delay.
+2. After a successful real database probe, set the repository variable
+   MWH_SUPABASE_PROBE_ENABLED=true. Keep it false while the endpoint is missing.
+3. Scheduled runs occur at 02:17, 10:17 and 19:17 UTC with independent random
+   0-90 second delays. A failed query is a failed workflow run.
+
+Pull requests changing the probe run mocked tests only, without contacting the
+project or using secrets. The probe never writes synthetic submission records.
+Free-tier activity probing is best-effort, not a guarantee against pausing.
