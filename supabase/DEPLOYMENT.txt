@@ -1,3 +1,11 @@
+Routine deployment transition - Issue #6
+The chosen release process is now the native Supabase GitHub integration.
+See GITHUB_DEPLOYMENT.md for connection settings, release checks and activation
+status. The dashboard connection and first successful integration deployment
+remain to be verified. Do not use the historical CLI commands below for releases.
+
+Historical setup and deployment record (not current release instructions)
+
 Canonical application - 2 October 2026
 Use https://pekka-28.github.io/unesco/site/ exclusively. The former preview
 redirects here. Browser identity and visits are unchanged. Only the explicit

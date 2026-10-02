@@ -40,3 +40,5 @@ Product intent, requirements, architecture, and design decisions are maintained 
 
 
 Retired implementations and distribution checks are recorded in [Retired code](RETIRED_CODE.md).
+
+Backend release procedure: [Supabase GitHub deployment](supabase/GITHUB_DEPLOYMENT.md), with activation status tracked in Issue #6.

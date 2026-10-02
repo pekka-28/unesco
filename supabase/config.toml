@@ -1,10 +1,17 @@
+# Production deployment is managed through the native GitHub integration; see GITHUB_DEPLOYMENT.md.
 project_id = "my-world-heritage"
 
 [functions.usage-summary]
+enabled = true
+entrypoint = "./functions/usage-summary/index.ts"
 verify_jwt = false
 
 [functions.new-profile-notifications]
+enabled = true
+entrypoint = "./functions/new-profile-notifications/index.ts"
 verify_jwt = false
 
 [functions.monthly-report]
+enabled = true
+entrypoint = "./functions/monthly-report/index.ts"
 verify_jwt = false
