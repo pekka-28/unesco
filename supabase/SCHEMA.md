@@ -30,7 +30,7 @@ flowchart TB
 
 *Figure Bachman legend*
 
-*Figure Application entity model* shows database entity dependencies. Each record in **Profiles** can have many records in **Submissions** and at most one in **Notifications**. Each row in **Notifications** requires the first accepted report in **Submissions** for its row in **Profiles**. A row in **Submissions** can exist without a corresponding row in **Notifications**, including after historical baselining. Solid lines express these dependencies; their database enforcement is identified in *Table Schema maintenance*.
+*Figure Application entity model* shows database entity dependencies. Each record in **Profiles** can have many records in **Submissions** and at most one in **Notifications**. A record in **Notifications** requires the first accepted record in **Submissions** for its corresponding record in **Profiles**. A record in **Submissions** can exist without a corresponding record in **Notifications**, including after historical baselining. Solid lines express these dependencies; their database enforcement is identified in *Table Schema maintenance*.
 
 ```mermaid
 %%{init: {"themeCSS": "marker circle { fill: #ffffff !important; stroke: #333333 !important; }"}}%%
@@ -51,7 +51,7 @@ flowchart TB
 
 *Figure Application entity model*
 
-**Submissions** retains repeated reports; **Notifications** retains the single alert caused by the first accepted report for each row in **Profiles**. The current trigger creates the first report and its notification in one transaction. The SQL does not yet declare a foreign key from **Notifications** to **Submissions**. Their primary keys are separate identities, while the unique profile key in **Notifications** limits each profile to one alert.
+A record in **Submissions** represents an accepted report. A record in **Notifications** represents the single alert caused by the first accepted record in **Submissions** for a record in **Profiles**. The current trigger creates these records in one transaction. The SQL does not yet declare a foreign key from **Notifications** to **Submissions**. Their primary keys are separate identities, while the unique profile key in **Notifications** limits each profile to one alert.
 
 *Table Monitoring entities* summarises **Profiles**, **Submissions** and **Notifications**. Their columns are defined in *Table Profiles*, *Table Submissions* and *Table Notifications*. All sample values are synthetic. PK denotes primary key, FK foreign key and UQ unique constraint; a dash means none of these.
 
@@ -108,11 +108,11 @@ flowchart TB
 
 # Constraints and access
 
-**Notifications** references **Profiles** through the declared foreign key from `new_profile_notifications.magic_cookie` to `known_usage_profiles.magic_cookie`. `usage_submissions.magic_cookie` and `new_profile_notifications.submission_id` have no declared foreign keys. The accepted-submission trigger maintains the registry and creates the first notification atomically; baselining historical profiles before import suppresses retrospective alerts.
+A record in **Notifications** references a record in **Profiles** through the declared foreign key from `new_profile_notifications.magic_cookie` to `known_usage_profiles.magic_cookie`. `usage_submissions.magic_cookie` and `new_profile_notifications.submission_id` have no declared foreign keys. Inserting a record in **Submissions** runs the trigger that creates the corresponding records in **Profiles** and **Notifications** when the profile is first seen. These changes are atomic. Baselining records in **Profiles** before historical import suppresses retrospective alerts.
 
 Usage and visited counts must be non-negative and are mandatory for `activity` records. Historical `test` and `synthetic` records can preserve missing counts as null. Public submission event types remain `adoption`, `manual` or `periodic`; the database also retains the historical synthetic event `patch`. `record_class` defaults to `activity`, and the public ingest API does not let clients set this classification. `legacy_source` retains a historical diagnostic source label. `usage_stats` includes only `activity` records [6]. Receipt time defaults to the server clock for new reports; historical import preserves the original receipt time.
 
-The optional `reporting_alias` is limited to 80 characters without control characters. It is stored in **Submissions**, **Profiles** and **Notifications**, and included in the initial owner email when supplied [7]. The client offers a separate reporting-alias field and does not automatically share the required local display name. An empty field omits the alias from new submissions; it does not erase historical reports or their recorded aliases. Historical aliases come from the owner-supplied workbook.
+The optional `reporting_alias` is limited to 80 characters without control characters. It is stored in **Submissions**, **Profiles** and **Notifications**, and included in the initial owner email when supplied [7]. The client offers a separate reporting-alias field and does not automatically share the required local display name. An empty field omits the alias from a new record in **Submissions**; it does not erase existing records or their recorded aliases. Historical aliases come from the owner-supplied workbook.
 
 All three tables enable row-level security and deny direct access to anonymous and authenticated browser roles. Edge Functions use the server-held service role for their restricted database operations. Monthly reporting reads aggregates through `usage_stats`; it has no separate application table. The monthly delivery check and first-profile email were confirmed received by the owner on 2 October 2026; recurring monthly scheduling remains inactive.
 
@@ -124,13 +124,13 @@ Table definitions alone do not specify the API. *Table Database APIs* documents 
 
 | SQL signature | Caller | Result | Effect |
 | --- | --- | --- | --- |
-| `accept_usage(p jsonb)` | Service role | JSON with `ok`, `duplicate`, `submission_id` | Atomically accepts a validated summary, records its receipt and runs the new-profile trigger; identical retries reuse the receipt |
-| `usage_stats(start_at timestamptz, end_at timestamptz)` | Service role | JSON counts and average | Reads reports received in the half-open interval `[start_at, end_at)`; returns submissions, active profiles, latest-per-profile average visited count, reported uses and event-type counts |
-| `usage_histogram()` | Service role | Visibility flag and ten relative-height buckets | Uses each profile's latest activity report; always returns ten buckets and never returns exact bucket counts |
-| `claim_new_profile_notifications(p_submission_id text = null, p_limit integer = 10)` | Service role | Set of notification rows | Claims due, unsent, unleased/expired rows, optionally for one submission; clamps batch size to 1–10, increments attempts and assigns five-minute leases |
-| `finish_new_profile_notification(p_id uuid, p_lease_token uuid, p_success boolean)` | Service role | Boolean | Updates only an unsent row with the matching claim token; records success or retry backoff, clears the lease, and returns whether a row matched |
-| `dispatch_new_profile_notifications()` | PostgreSQL scheduler owner | HTTP request ID or null | Reads the private URL/token from Vault and requests the worker only when due rows exist; returns null when work or configuration is absent |
-| `enqueue_new_profile_notification()` | `usage_new_profile` trigger | Trigger row | After a submission insert, records an unseen profile and queues its single notification in the same transaction |
+| `accept_usage(p jsonb)` | Service role | JSON with `ok`, `duplicate`, `submission_id` | Atomically inserts a record in **Submissions** for a validated summary and runs the new-profile trigger; identical retries reuse the receipt |
+| `usage_stats(start_at timestamptz, end_at timestamptz)` | Service role | JSON counts and average | Reads records in **Submissions** received in the half-open interval `[start_at, end_at)`; returns submissions, active profiles, latest-per-profile average visited count, reported uses and event-type counts |
+| `usage_histogram()` | Service role | Visibility flag and ten relative-height buckets | Uses the latest activity record in **Submissions** for each profile; always returns ten buckets and never returns exact bucket counts |
+| `claim_new_profile_notifications(p_submission_id text = null, p_limit integer = 10)` | Service role | Set of records in **Notifications** | Claims due, unsent records in **Notifications** with no active lease, optionally for one record in **Submissions**; clamps batch size to 1–10, increments attempts and assigns five-minute leases |
+| `finish_new_profile_notification(p_id uuid, p_lease_token uuid, p_success boolean)` | Service role | Boolean | Updates an unsent record in **Notifications** with the matching claim token; records success or retry backoff, clears the lease, and returns whether a record matched |
+| `dispatch_new_profile_notifications()` | PostgreSQL scheduler owner | HTTP request ID or null | Reads the private URL/token from Vault and requests the worker only when due records in **Notifications** exist; returns null when work or configuration is absent |
+| `enqueue_new_profile_notification()` | `usage_new_profile` trigger | Inserted record in **Submissions** | Inserting a record in **Submissions** creates records in **Profiles** and **Notifications** for an unseen profile in the same transaction |
 
 *Table HTTP interfaces*
 
@@ -148,15 +148,15 @@ The accepted summary contains a stable submission ID, UTC submission time, pseud
 
 # Delivery leases
 
-The immediate sender and the minute-by-minute retry worker can claim the same alert concurrently. `claim_new_profile_notifications` locks candidate rows with `FOR UPDATE SKIP LOCKED`, writes a random `lease_token` and a `lease_until` time five minutes ahead, then commits. The lease keeps ownership visible while the worker makes the external Exchange request without holding a database transaction open.
+The immediate sender and the minute-by-minute retry worker can claim the same alert concurrently. `claim_new_profile_notifications` locks candidate records in **Notifications** with `FOR UPDATE SKIP LOCKED`, writes a random `lease_token` and a `lease_until` time five minutes ahead, then commits. The lease keeps ownership visible while the worker makes the external Exchange request without holding a database transaction open.
 
-If the worker crashes, another worker can reclaim the row after expiry. Reclaiming replaces the token, so a late completion from the previous worker cannot overwrite the new claim. `finish_new_profile_notification` checks the stored token, rather than independently checking lease expiry. Normal completion clears the lease. Failures set `available_at` using exponential backoff capped at one hour.
+If the worker crashes, another worker can reclaim the record in **Notifications** after expiry. Reclaiming replaces the token, so a late completion from the previous worker cannot overwrite the new claim. `finish_new_profile_notification` checks the stored token, rather than independently checking lease expiry. Normal completion clears the lease. Failures set `available_at` using exponential backoff capped at one hour.
 
 Some form of claim coordination is necessary with these concurrent delivery paths. This lease is useful because it combines exclusion during sending with recovery after a crash. Five minutes is an operational timeout, not a business rule. It does not guarantee exactly-once delivery: Exchange may accept a message before a lost acknowledgement or worker crash, leaving a later retry able to resend it.
 
 # Usage histogram
 
-The Usage summary pane shows exactly ten equal-width buckets from the minimum reported visit count to one above the maximum integer count. Lower bounds are inclusive and upper bounds exclusive. Even a single observed value produces ten buckets. Each profile contributes only its latest `activity` record across the full stored history. Records classified as test or synthetic do not contribute [8].
+The Usage summary pane shows exactly ten equal-width buckets from the minimum reported visit count to one above the maximum integer count. Lower bounds are inclusive and upper bounds exclusive. Even a single observed value produces ten buckets. For each record in **Profiles**, the histogram uses the latest matching `activity` record in **Submissions** across the full stored history, where one exists. Records classified as test or synthetic do not contribute [8].
 
 There is no minimum reporting population. The chart always displays ten buckets, with zero heights when no activity records exist [9]. For non-empty populations, bar heights are normalised to the tallest bar; the API omits absolute bucket counts, aliases and profile identifiers. The chart has no numeric frequency axis, count labels or count tooltips. Relative shapes still communicate distribution; this is not a formal anonymity guarantee.
 
@@ -172,8 +172,8 @@ Schema changes are maintained as ordered SQL migration scripts under `supabase/m
 | **Profiles** | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `CREATE TABLE public.known_usage_profiles` and initial baseline insert |
 | **Notifications** and queue fields | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `CREATE TABLE public.new_profile_notifications` |
 | **Profiles** to **Notifications**, at most one | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | Queue `magic_cookie` is not null, unique and references the profile primary key |
-| **Profiles** to **Submissions**, one-to-many | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `enqueue_new_profile_notification` inserts the registry entry; no submission-to-profile foreign key is declared |
-| First report in **Submissions** to **Notifications**, at most one | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `usage_new_profile` inserts the notification with `new.submission_id`; no foreign key or unique constraint on notification `submission_id` is declared |
+| **Profiles** to **Submissions**, one-to-many | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `enqueue_new_profile_notification` inserts the registry entry; no foreign key from **Submissions** to **Profiles** is declared |
+| First record in **Submissions** to **Notifications**, at most one | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `usage_new_profile` inserts a record in **Notifications** with `new.submission_id`; no foreign key or unique constraint on notification `submission_id` is declared |
 | Acceptance and aggregate APIs | [Usage reporting store](migrations/202610010001_usage_summary.sql) | `accept_usage`, `usage_stats` and their execute grants |
 | Claim/completion APIs | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `claim_new_profile_notifications`, `finish_new_profile_notification` and their execute grants |
 | Scheduled dispatch API and retry job | [Notification retry scheduling](migrations/202610020002_notification_retry_schedule.sql) | `dispatch_new_profile_notifications`, `cron.schedule` and extension creation |
@@ -187,9 +187,9 @@ The missing foreign keys are an implementation limitation, not evidence that the
 
 # Historical import
 
-On 2 October 2026 the owner-supplied workbook contributed 42 submissions: 26 activity, three test and 13 synthetic records. All source records were retained; 41 carried an alias and one had no alias. The import preserved receipt times using the confirmed Africa/Johannesburg time zone and repaired the workbook's mixed event/source column layouts. Missing counts in diagnostic records remain null. Normal activity statistics omit test and synthetic records.
+On 2 October 2026 the owner-supplied workbook contributed 42 records in **Submissions**: 26 activity, three test and 13 synthetic records. All source records were retained; 41 carried an alias and one had no alias. The import preserved receipt times using the confirmed Africa/Johannesburg time zone and repaired the workbook's mixed event/source column layouts. Missing counts in diagnostic records remain null. Normal activity statistics omit test and synthetic records.
 
-The original workbook, its checksum, row-level conversion audit and prepared SQL remain private. The import baselined profile keys before inserting historical reports and created no notification. Deterministic historical receipt IDs and an existing-record check make repeated imports idempotent. The preparation utility is [prepare_legacy_usage_import.py](../scripts/prepare_legacy_usage_import.py); it does not itself connect to or modify Supabase. No new public import API was introduced.
+The original workbook, its checksum, row-level conversion audit and prepared SQL remain private. The import baselined records in **Profiles** before inserting records in **Submissions**, and created no record in **Notifications**. Deterministic historical receipt IDs and an existing-record check make repeated imports idempotent. The preparation utility is [prepare_legacy_usage_import.py](../scripts/prepare_legacy_usage_import.py); it does not itself connect to or modify Supabase. No new public import API was introduced.
 
 # References
 
