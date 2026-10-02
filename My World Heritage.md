@@ -1,5 +1,7 @@
-<!-- HERITAGE_MARK.md -->
+<!-- My World Heritage.md -->
 # <img src="site/icons/mwh-temple.svg" width="36" height="36" alt=""> A heritage symbol to share
+
+*2 October 2026*
 
 My World Heritage uses a simple temple silhouette to signify cultural places and artefacts. The project makes this artwork available to everyone through a public-domain dedication. You can use it on a map, in a collection catalogue, beside a museum entry, or in another application without asking this project for permission.
 
