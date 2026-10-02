@@ -15,10 +15,10 @@ Supabase's GitHub authorisation is separate from the token used by `gh` and from
 
 # Change and release process
 
-Each reported anomaly follows this process:
+Errors and reported anomalies follow the process below. Documentation improvements use a pull request directly and do not require an Issue.
 
 1. Create a GitHub Issue with the observed behaviour and acceptance criteria.
-2. Implement the fix on a branch. Commit new DDL as a new migration; do not rewrite applied migrations. Update functions and schema traceability together.
+2. Implement the fix on a branch. Commit each schema change as a new migration script; do not rewrite applied migrations. Update functions and schema traceability together.
 3. Open a linked pull request and pass the repository checks. Preview branching is disabled, so local database tests do not represent a hosted preview.
 4. Merge reviewed changes to `main`. Supabase applies pending migrations and deploys the functions declared in `supabase/config.toml`. GitHub Pages independently publishes the canonical browser distribution.
 5. Check Supabase's deployment result and the public service/histogram endpoints. For a reporting change, verify the relevant behaviour without generating unnecessary user alerts.
