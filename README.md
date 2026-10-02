@@ -22,7 +22,7 @@ Current version: `0.2.0`
 
 ## Product position
 
-- Primary application: custom viewer in `site/index.html`.
+- Canonical application: Supabase client in `site/index.html`. The retired `site-supabase/` preview redirects here; there is only one application build.
 - Historical and rejected design approaches are documented in [Requirements.md](Requirements.md).
 
 ## Entry points
@@ -38,3 +38,5 @@ Current version: `0.2.0`
 Product intent, requirements, architecture, and design decisions are maintained in [Requirements.md](Requirements.md).
 
 
+
+Retired implementations and distribution checks are recorded in [Retired code](RETIRED_CODE.md).

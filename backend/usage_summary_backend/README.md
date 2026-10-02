@@ -5,7 +5,7 @@ The application submits exclusively to `https://fjqhgcegnphavatrchjb.supabase.co
 
 # Browser cutover
 
-Open [My World Heritage](https://pekka-28.github.io/unesco/site/?submit=1) in your usual browser and reload with Ctrl+F5. The preview address remains available and shares the same browser storage.
+Open [My World Heritage](https://pekka-28.github.io/unesco/site/?submit=1) in your usual browser and reload with Ctrl+F5. The retired preview address redirects to this canonical application, preserving query parameters and fragments. Browser storage stays on the same origin, retaining identity and visit history.
 
 The application updates `mwh_usage_summary_endpoint` and the profile's `settings.usageSummaryEndpoint` automatically, clears obsolete tokens and forces requests to Supabase during the transition. Imported profiles are updated when saved. Identity, visits, notes, publication counters and pending receipt IDs are preserved. Settings show the server address as read-only. Use the user menu's Submit action; no manual server edit is required.
 

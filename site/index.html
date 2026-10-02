@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- index.html 0.2.2 -->
+<!-- index.html 0.2.3 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -333,7 +333,7 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.2.2";
+    const APP_VERSION = "0.2.3";
     const APP_NAME = "My World Heritage";
     const APP_TITLE_SEPARATOR = " \u2013 ";
     const REPORT_TILE_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}";
@@ -422,14 +422,6 @@
       const t = asText(id).trim();
       if (!isValidSiteId(t)) throw new Error(`Invalid ${context}: ${t || "<empty>"}`);
       return t;
-    }
-    function extractWhsNumberFromSiteId(id, context = "site id") {
-      const t = assertValidSiteId(id, context);
-      const whsMatch = t.match(WHS_ID_RE);
-      if (whsMatch) return whsMatch[1];
-      const mwhMatch = t.match(MWH_ID_RE);
-      if (mwhMatch) return mwhMatch[1];
-      throw new Error(`Cannot extract WHS number from ${context}: ${t}`);
     }
     function findFeatureBySiteId(siteId) {
       if (!whsData || !Array.isArray(whsData.features) || !siteId) return null;

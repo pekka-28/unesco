@@ -290,7 +290,7 @@ Last verified on 2 October 2026:
 - Hosted RLS, restricted grants, service-role insertion, duplicate receipts and statistics passed verification; the temporary test row was rolled back.
 - The live read-only database probe passed locally and in [GitHub Actions](https://github.com/pekka-28/unesco/actions/runs/36935189208), and scheduled probing is enabled.
 - The monthly Exchange delivery check and first-profile alert are confirmed received. Recurring monthly scheduling and the separate register-report delivery still require activation/verification.
-- Both `/site/` and `/site-supabase/` submit exclusively to Supabase and share the existing browser profile and visit history. Reload migrates saved endpoint settings automatically. It shares the published current catalogue. A live preview update increased the existing test profile from one to four visited sites without another new-profile notification.
+- Publish only the canonical `/site/` application, with Supabase reporting. The retired `/site-supabase/` entry redirects here without changing browser identity or visit history.
 - The new-profile queue, immediate background dispatch and Supabase retry worker are deployed. The owner confirmed an interactive Exchange 365 test email. Exchange accepted the unattended Supabase delivery test and browser-triggered new-profile alert on 2 October 2026; the owner confirmed inbox receipt of both messages. The isolated browser test verified adoption, a manual visit-count update and profile persistence against live Supabase. It used local site files at the permitted Pages origin; the Supabase-only cutover adds automatic settings migration.
 
 Deployment and credential setup are documented in [supabase/DEPLOYMENT.txt](supabase/DEPLOYMENT.txt). This status records the last verification, not continuous monitoring of the live configuration.
@@ -458,3 +458,7 @@ Display a histogram in the Usage summary pane, using each known reporting profil
 Use exactly ten equal-width buckets scaled to the observed visit-count range, with an upper bound just above the largest integer count so the maximum is included. Leave the dependent frequency axis unscaled: no numeric ticks, count labels or count tooltips. The histogram API returns relative bar heights, not exact bucket counts, aliases or profile identifiers.
 
 Always show the histogram, without a minimum reporting population. With no activity records, show ten empty buckets. Describe the population as reporting profiles, not verified unique people. This requirement replaces the earlier aspirational-only proposal.
+
+# Distribution and issue tracking
+
+Publish only the canonical application, its referenced assets, current catalogue files and compatibility redirects. Exclude archived code, historical snapshots, backend source, scripts and tests from the web distribution. Record retired components in `RETIRED_CODE.md`. Track reported anomalies in GitHub Issues, link fixes to their issues and close them after deployment verification.
