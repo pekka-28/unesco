@@ -59,7 +59,7 @@ Supabase generates and verifies the single-use magic link. The browser removes i
 | Track and resolve anomalies | GitHub Issues REST API | Issues link |
 | Compact Git history, inspect files, compile and test | Local Git/compiler/test tools | Local development; no hosted API equivalent |
 
-The site permits bounded reads and three named mail commands only. It cannot change site content, catalogue, database schema, reporting history, accounts, secrets or release configuration. Backend releases proceed through GitHub and the native Supabase integration; GitHub Pages publishes the site. See [Security policy](SECURITY.md) for enforcement, the complete asset inventory and assurance limits. The server service-role credential remains broadly privileged; this is an explicit residual risk, not proof of capability isolation.
+The site permits bounded reads and three named mail commands only. Its API rejects changes to site content, catalogue, database schema, reporting history, accounts, secrets or release configuration. Backend releases proceed through GitHub and the native Supabase integration; GitHub Pages publishes the site. Irreversible maintenance is confined to that separate change process. Mailbox and credential theft are outside the assessment; no additional application second factor is required for the allowed operations. See [Security policy](SECURITY.md) for enforcement, the complete asset inventory and assurance limits. The server environment still carries broad database/Auth authority, so containment after server compromise is not yet assured even though the exposed operations are restricted.
 
 # Queries and action records
 
