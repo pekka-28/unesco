@@ -6,8 +6,8 @@ param(
   [string]$NativeNameMapFile = "",
   [string]$OutputFile = "data/current/unesco_official_sites.geojson",
   [string]$OutputJsonFile = "data/current/unesco_official_sites.json",
-  [string]$ArchiveDir = "data/history",
-  [int]$KeepVersions = 24,
+  [string]$PriorCatalogueFile = "",
+  [string]$IngestionTimestamp = "",
   [int]$RetryIntervalDays = 30,
   [switch]$OverwriteExisting
 )
@@ -23,9 +23,28 @@ $outDir = Split-Path -Parent $OutputFile
 if ($outDir -and -not (Test-Path -LiteralPath $outDir)) { New-Item -ItemType Directory -Path $outDir -Force | Out-Null }
 $outJsonDir = Split-Path -Parent $OutputJsonFile
 if ($outJsonDir -and -not (Test-Path -LiteralPath $outJsonDir)) { New-Item -ItemType Directory -Path $outJsonDir -Force | Out-Null }
-if ($ArchiveDir -and -not (Test-Path -LiteralPath $ArchiveDir)) { New-Item -ItemType Directory -Path $ArchiveDir -Force | Out-Null }
+. "$PSScriptRoot/reconcile_catalogue.ps1"
+. "$PSScriptRoot/component_countries.ps1"
+$componentCountries = (Get-Content -Raw -Encoding utf8 -LiteralPath "$PSScriptRoot/../data/component_countries.json" | ConvertFrom-Json).countries
+if (-not $PriorCatalogueFile) { $PriorCatalogueFile = $OutputJsonFile }
+$priorSites = @()
+if (Test-Path -LiteralPath $PriorCatalogueFile) {
+  & "$PSScriptRoot/validate_whs_dataset.ps1" -InputFile $PriorCatalogueFile
+  $prior = Get-Content -Raw -Encoding utf8 -LiteralPath $PriorCatalogueFile | ConvertFrom-Json
+  if ($prior.schema -ne 'my-world-heritage-sites/v1') { throw 'Prior catalogue must be canonical JSON.' }
+  $priorSites = @($prior.sites)
+}
+$priorById = @{}
+$priorComponentParents = @{}
+foreach ($site in $priorSites) {
+  $priorById[$site.site_id] = $site
+  if ($site.site_scope -eq 'component') { $priorComponentParents[$site.parent_site_id] = $true }
+}
+if (-not $IngestionTimestamp) { $IngestionTimestamp = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') }
+$IngestionTimestamp = [DateTimeOffset]::Parse($IngestionTimestamp).UtcDateTime.ToString('yyyy-MM-ddTHH:mm:ssZ')
 
-$raw = Get-Content -Raw -LiteralPath $InputFile
+$raw = Get-Content -Raw -Encoding utf8 -LiteralPath $InputFile
+$unmappedSourceIds = New-Object System.Collections.Generic.List[string]
 $trim = $raw.TrimStart()
 if ($trim -match "^(<html|<!doctype html)") { throw "Input source file contains HTML/challenge content, not dataset payload." }
 
@@ -129,7 +148,7 @@ function Load-NativeNameMap {
   param([string]$Path)
   $map = @{}
   if (-not (Test-Path -LiteralPath $Path)) { return $map }
-  $text = Get-Content -Raw -LiteralPath $Path
+  $text = Get-Content -Raw -Encoding utf8 -LiteralPath $Path
   if ([string]::IsNullOrWhiteSpace($text)) { return $map }
   $obj = $text | ConvertFrom-Json
   if ($null -eq $obj) { return $map }
@@ -153,42 +172,6 @@ function Load-NativeNameMap {
     return $map
   }
   return $map
-}
-
-function Archive-ExistingOutputs {
-  param([string]$JsonPath,[string]$GeoPath,[string]$HistoryDir)
-  if (-not (Test-Path -LiteralPath $JsonPath) -and -not (Test-Path -LiteralPath $GeoPath)) { return }
-  $stamp = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
-  if (Test-Path -LiteralPath $JsonPath) {
-    $jsonName = [System.IO.Path]::GetFileNameWithoutExtension($JsonPath)
-    $jsonExt = [System.IO.Path]::GetExtension($JsonPath)
-    Copy-Item -LiteralPath $JsonPath -Destination (Join-Path $HistoryDir "$jsonName.$stamp$jsonExt") -Force
-  }
-  if (Test-Path -LiteralPath $GeoPath) {
-    $geoName = [System.IO.Path]::GetFileNameWithoutExtension($GeoPath)
-    $geoExt = [System.IO.Path]::GetExtension($GeoPath)
-    Copy-Item -LiteralPath $GeoPath -Destination (Join-Path $HistoryDir "$geoName.$stamp$geoExt") -Force
-  }
-}
-
-function Prune-Archive {
-  param([string]$HistoryDir,[int]$KeepCount)
-  if ($KeepCount -lt 1) { return }
-  $groups = @{}
-  foreach ($f in Get-ChildItem -LiteralPath $HistoryDir -File) {
-    $name = $f.Name
-    if ($name -match "^(unesco_official_sites)\.\d{8}T\d{6}Z(\.json|\.geojson)$") {
-      $key = "$($matches[1])$($matches[2])"
-      if (-not $groups.ContainsKey($key)) { $groups[$key] = New-Object System.Collections.Generic.List[object] }
-      $groups[$key].Add($f)
-    }
-  }
-  foreach ($k in $groups.Keys) {
-    $ordered = @($groups[$k] | Sort-Object Name -Descending)
-    if ($ordered.Count -le $KeepCount) { continue }
-    $toDelete = $ordered[$KeepCount..($ordered.Count - 1)]
-    foreach ($d in $toDelete) { Remove-Item -LiteralPath $d.FullName -Force }
-  }
 }
 
 function Build-FeatureCollectionFromOdsArray {
@@ -218,7 +201,15 @@ function Build-FeatureCollectionFromOdsArray {
       $lat = [double]$row.geo_point_2d.lat
       if ((IsFiniteDouble $lat) -and (IsFiniteDouble $lon)) { $point = @{ lat = $lat; lon = $lon } }
     }
-    if (-not $point) { continue }
+    if (-not $point) {
+      $previousRoot = $priorById[$siteId]
+      if ($previousRoot) {
+        $point = @{ lat = [double]$previousRoot.lat; lon = [double]$previousRoot.lon }
+      } else {
+        $unmappedSourceIds.Add($siteId)
+        continue
+      }
+    }
 
     $componentPoints = @(Parse-ComponentPoints -ComponentsText ([string]$row.components_list))
     $nativeNames = $null
@@ -253,7 +244,7 @@ function Build-FeatureCollectionFromOdsArray {
       }
     })
 
-    if (@($componentPoints).Count -gt 1) {
+    if (@($componentPoints).Count -gt 1 -or $priorComponentParents.ContainsKey($siteId)) {
       $idx = 1
       foreach ($cp in $componentPoints) {
         if (-not $cp) { continue }
@@ -342,7 +333,7 @@ function Convert-FeatureCollectionToCanonicalJson {
     })
   }
 
-  $attemptAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+  $attemptAt = $IngestionTimestamp
   $inputBytes = [System.Text.Encoding]::UTF8.GetByteCount($raw)
   return [ordered]@{
     schema = "my-world-heritage-sites/v1"
@@ -422,7 +413,7 @@ function Convert-CanonicalJsonToFeatureCollection {
     metadata = [ordered]@{
       generator = "scripts/convert_unesco_source.ps1"
       source_url = $SourceUrl
-      generated_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+      generated_at = $IngestionTimestamp
       source_format = "canonical_json"
       feature_count = $features.Count
       extract_status = $Canonical.metadata.extract_status
@@ -459,18 +450,41 @@ if (-not $collection -or -not $collection.features -or @($collection.features).C
 }
 
 $canonical = Convert-FeatureCollectionToCanonicalJson -Collection $collection
+$canonical.metadata.unmapped_source_ids = @($unmappedSourceIds.ToArray())
+$freshRootCount = @($canonical.sites | Where-Object { $_.site_scope -eq 'whs' -and $_.status -eq 'active' }).Count
+$priorRootCount = @($priorSites | Where-Object { $_.site_scope -eq 'whs' -and $_.status -eq 'active' }).Count
+if ($priorRootCount -gt 0 -and $freshRootCount -lt ($priorRootCount * 0.9)) {
+  throw 'Source lost more than 10% of active roots. Review the source before publication.'
+}
+$canonical.sites = @(Merge-Catalogue -FreshSites $canonical.sites -PriorSites $priorSites)
+foreach ($site in $canonical.sites) {
+  if ($site.site_scope -eq 'component') {
+    $parent = $canonical.sites | Where-Object { $_.site_id -eq $site.parent_site_id } | Select-Object -First 1
+    $site.country = Get-ComponentCountry -Reference $site.component_ref -ParentCountry $parent.country -CountryMap $componentCountries
+  }
+}
+$canonical.metadata.site_count = $canonical.sites.Count
+$canonical.metadata.extract_status.count = $canonical.sites.Count
 $canonicalJson = $canonical | ConvertTo-Json -Depth 30
 $datasetBytes = [System.Text.Encoding]::UTF8.GetByteCount($canonicalJson)
 $canonical.metadata.extract_status.dataset_bytes = $datasetBytes
 $canonical.metadata.extract_status.note_fragment = Build-NoteFragment -Source $canonical.metadata.extract_status.source -Count $canonical.metadata.extract_status.count -InputBytes $canonical.metadata.extract_status.input_bytes -OutputBytes $datasetBytes -MostRecentData $canonical.metadata.extract_status.most_recent_data -MostRecentAttempt $canonical.metadata.extract_status.most_recent_attempt -RetryDays $canonical.metadata.extract_status.retry_interval_days -Result $canonical.metadata.extract_status.result
 
-Archive-ExistingOutputs -JsonPath $OutputJsonFile -GeoPath $OutputFile -HistoryDir $ArchiveDir
-
-$canonical | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $OutputJsonFile -Encoding utf8
 $geojson = Convert-CanonicalJsonToFeatureCollection -Canonical $canonical
-$geojson | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $OutputFile -Encoding utf8
-
-Prune-Archive -HistoryDir $ArchiveDir -KeepCount $KeepVersions
+$jsonCandidate = "$OutputJsonFile.candidate"
+$geoCandidate = "$OutputFile.candidate"
+try {
+  $canonical | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $jsonCandidate -Encoding utf8
+  $geojson | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $geoCandidate -Encoding utf8
+  & "$PSScriptRoot/validate_whs_dataset.ps1" -InputFile $jsonCandidate
+  & "$PSScriptRoot/validate_whs_dataset.ps1" -InputFile $geoCandidate
+  Move-Item -LiteralPath $jsonCandidate -Destination $OutputJsonFile -Force
+  Move-Item -LiteralPath $geoCandidate -Destination $OutputFile -Force
+} finally {
+  foreach ($candidate in @($jsonCandidate, $geoCandidate)) {
+    if (Test-Path -LiteralPath $candidate) { Remove-Item -LiteralPath $candidate -Force }
+  }
+}
 
 Write-Host "Wrote $OutputJsonFile with $($canonical.sites.Count) sites."
 Write-Host "Wrote $OutputFile with $($geojson.features.Count) features."

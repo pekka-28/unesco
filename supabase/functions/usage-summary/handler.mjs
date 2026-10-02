@@ -61,15 +61,15 @@ export function createHandler({ env, fetch: request = fetch, now = () => new Dat
           !count(p.use_count_since_last_push) || !count(p.visited_site_count) ||
           !['adoption', 'manual', 'periodic'].includes(p.event_type) ||
           typeof p.client_version !== 'string' || p.client_version.length > 32 ||
-          (p.reporting_alias != null && (typeof p.reporting_alias !== 'string' || p.reporting_alias.length > 80 || /[\u0000-\u001f\u007f-\u009f]/.test(p.reporting_alias))) ||
+          (p.name != null && (typeof p.name !== 'string' || p.name.length > 80 || /[\u0000-\u001f\u007f-\u009f]/.test(p.name))) ||
           (p.submission_id != null && !/^[a-f0-9-]{32,64}$/i.test(p.submission_id))) {
         return reply({ ok: false, error: 'Invalid usage summary' }, 400);
       }
-      // Only the explicitly optional reporting alias may identify a profile.
+      // Only the profile Name is retained; home location and individual visits are excluded.
       const clean = { submitted_at_utc: new Date(p.submitted_at_utc).toISOString(), magic_cookie: p.magic_cookie,
         use_count_since_last_push: p.use_count_since_last_push, visited_site_count: p.visited_site_count,
         event_type: p.event_type, client_version: p.client_version };
-      if (typeof p.reporting_alias === 'string' && p.reporting_alias.trim()) clean.reporting_alias = p.reporting_alias.trim();
+      if (typeof p.name === 'string' && p.name.trim()) clean.name = p.name.trim();
       const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(clean)));
       clean.submission_id = p.submission_id || Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
       const receipt = await rpc('accept_usage', { p: clean });

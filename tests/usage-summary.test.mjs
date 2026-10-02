@@ -1,3 +1,4 @@
+import {siteHtml, siteFunction} from '../scripts/site_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHandler } from '../supabase/functions/usage-summary/handler.mjs';
@@ -53,7 +54,7 @@ test('monthly boundaries follow Johannesburg including year rollover', () => {
   assert.match(text, /Accepted submissions: 0/);
 });
 
-const html = readFileSync(new URL('../site/index.html', import.meta.url), 'utf8');
+const html = siteHtml();
 function extract(start, end) { return html.slice(html.indexOf(start), html.indexOf(end, html.indexOf(start))); }
 test('frontend rejects HTML and mismatched acknowledgement; never dispatches opaque fallback', async () => {
   const code = extract('    async function submitUsageSummary(summary)', '    async function copySummaryToClipboard');

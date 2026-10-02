@@ -17,6 +17,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: unesco-data-refresh
+  cancel-in-progress: false
+
 jobs:
   refresh:
     runs-on: windows-latest
@@ -27,6 +31,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Record previous catalogue commit
+        id: baseline
+        shell: pwsh
+        run: |
+          $baseline = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve previous catalogue commit' }
+          "commit=$baseline" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Test catalogue retention
+        id: catalogue_tests
+        shell: pwsh
+        run: ./tests/catalogue.tests.ps1
 
       - name: Fetch UNESCO official dataset
         id: fetch
@@ -49,8 +72,6 @@ jobs:
             -OutputFile "data/current/unesco_official_sites.geojson" `
             -OutputJsonFile "data/current/unesco_official_sites.json" `
             -RetryIntervalDays "${{ env.RETRY_DAYS }}" `
-            -ArchiveDir "data/history" `
-            -KeepVersions 24 `
             -OverwriteExisting
 
       - name: Update extract status on fetch failure
@@ -89,6 +110,8 @@ jobs:
           $softFailed = New-Object System.Collections.Generic.List[string]
           $hardFailed = New-Object System.Collections.Generic.List[string]
 
+          if ("${{ steps.catalogue_tests.outcome }}" -ne "success") { $hardFailed.Add("catalogue_tests") }
+
           if ("${{ steps.fetch.outcome }}" -eq "failure") { $softFailed.Add("fetch") }
           if ("${{ steps.convert.outcome }}" -eq "failure") { $hardFailed.Add("convert") }
           if ("${{ steps.status_update.outcome }}" -eq "failure") { $hardFailed.Add("status_update") }
@@ -115,77 +138,47 @@ jobs:
           }
 
       - name: Commit changes
+        id: commit
         if: steps.gate.outputs.commit_allowed == 'true'
         shell: pwsh
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/current/unesco_official_sites.json data/current/unesco_official_sites.geojson data/history data/staging/unesco_source_raw.txt
+          git add data/current/unesco_official_sites.json data/current/unesco_official_sites.geojson data/staging/unesco_source_raw.txt
+          if ($LASTEXITCODE -ne 0) { throw 'git add failed' }
           if (git diff --cached --quiet) {
             Write-Host "No changes to commit."
           } else {
             git commit -m "chore: refresh UNESCO official dataset"
-            git push
+            if ($LASTEXITCODE -ne 0) { throw 'git commit failed' }
           }
-
-      - name: Evaluate alert configuration
-        id: alert_gate
-        if: steps.gate.outputs.failed == 'true'
-        shell: pwsh
-        env:
-          ALERT_SMTP_SERVER: ${{ secrets.MWH_ALERT_SMTP_SERVER }}
-          ALERT_SMTP_PORT: ${{ secrets.MWH_ALERT_SMTP_PORT }}
-          ALERT_SMTP_USERNAME: ${{ secrets.MWH_ALERT_SMTP_USERNAME }}
-          ALERT_SMTP_PASSWORD: ${{ secrets.MWH_ALERT_SMTP_PASSWORD }}
-          ALERT_MAIL_TO: ${{ secrets.MWH_ALERT_MAIL_TO }}
-          ALERT_MAIL_FROM: ${{ secrets.MWH_ALERT_MAIL_FROM }}
-        run: |
-          $required = @{
-            ALERT_SMTP_SERVER = $env:ALERT_SMTP_SERVER
-            ALERT_SMTP_PORT = $env:ALERT_SMTP_PORT
-            ALERT_SMTP_USERNAME = $env:ALERT_SMTP_USERNAME
-            ALERT_SMTP_PASSWORD = $env:ALERT_SMTP_PASSWORD
-            ALERT_MAIL_TO = $env:ALERT_MAIL_TO
-            ALERT_MAIL_FROM = $env:ALERT_MAIL_FROM
+          if ("${{ steps.gate.outputs.failed }}" -eq 'false') {
+            $tag = 'unesco-ingest/run-${{ github.run_id }}-${{ github.run_attempt }}'
+            $sourceBlob = git rev-parse HEAD:data/staging/unesco_source_raw.txt
+            if ($LASTEXITCODE -ne 0) { throw 'Source provenance lookup failed' }
+            git tag -a $tag -m "Validated ingestion. Source: data/staging/unesco_source_raw.txt; blob: $sourceBlob; run: ${{ env.RUN_URL }}. Dataset generated_at is conversion time."
+            if ($LASTEXITCODE -ne 0) { throw 'Tag creation failed; inspect any existing tag before retrying' }
+            git push --atomic origin "HEAD:${{ github.ref_name }}" "refs/tags/$tag"
+          } else {
+            git push origin "HEAD:${{ github.ref_name }}"
           }
-          $missing = @($required.GetEnumerator() | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.Value) } | ForEach-Object { $_.Key })
-          $ready = ($missing.Count -eq 0)
-          "smtp_ready=$($ready.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          "missing=$($missing -join ',')" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          if ($LASTEXITCODE -ne 0) { throw 'Push failed; no force push will be attempted' }
 
-      - name: Warn when alert email secrets are missing
-        if: steps.gate.outputs.failed == 'true' && steps.alert_gate.outputs.smtp_ready != 'true'
+      - name: Build site register change report
+        id: register_report
+        if: steps.gate.outputs.failed == 'false' && steps.commit.outcome == 'success'
         shell: pwsh
-        run: |
-          Write-Warning "UNESCO refresh failed, but SMTP/mail secrets are not fully configured. No alert email sent."
-          Write-Warning "Missing: ${{ steps.alert_gate.outputs.missing }}"
-          Write-Warning "Required secrets: MWH_ALERT_SMTP_SERVER, MWH_ALERT_SMTP_PORT, MWH_ALERT_SMTP_USERNAME, MWH_ALERT_SMTP_PASSWORD, MWH_ALERT_MAIL_TO, MWH_ALERT_MAIL_FROM."
+        run: node scripts/site_register_report.mjs "${{ steps.baseline.outputs.commit }}" HEAD
 
-      - name: Send failure alert email
-        if: steps.gate.outputs.failed == 'true' && steps.alert_gate.outputs.smtp_ready == 'true'
-        uses: dawidd6/action-send-mail@v3
-        continue-on-error: true
+      - name: Save full site register change report
+        if: steps.register_report.outcome == 'success'
+        uses: actions/upload-artifact@v4
         with:
-          server_address: ${{ secrets.MWH_ALERT_SMTP_SERVER }}
-          server_port: ${{ secrets.MWH_ALERT_SMTP_PORT }}
-          username: ${{ secrets.MWH_ALERT_SMTP_USERNAME }}
-          password: ${{ secrets.MWH_ALERT_SMTP_PASSWORD }}
-          subject: "[My World Heritage] UNESCO refresh failure in ${{ github.repository }}"
-          to: ${{ secrets.MWH_ALERT_MAIL_TO }}
-          from: ${{ secrets.MWH_ALERT_MAIL_FROM }}
-          body: |
-            UNESCO refresh failed for ${{ github.repository }}.
-
-            Failed steps: ${{ steps.gate.outputs.failed_steps }}
-            Hard failures: ${{ steps.gate.outputs.hard_failed_steps }}
-            Soft failures: ${{ steps.gate.outputs.soft_failed_steps }}
-
-            Trigger: ${{ github.event_name }}
-            Source URL: ${{ env.SOURCE_URL }}
-            Retry interval days: ${{ env.RETRY_DAYS }}
-            Run URL: ${{ env.RUN_URL }}
-
-            Please inspect the run logs and update converter/mapping as needed for source drift.
+          name: site-register-changes
+          path: |
+            site-register-changes.txt
+            site-register-changes.json
+          retention-days: 90
 
       - name: Fail job when refresh failed
         if: steps.gate.outputs.failed == 'true'

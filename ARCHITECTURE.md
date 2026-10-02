@@ -34,7 +34,7 @@ flowchart LR
 
 # System overview
 
-*Figure Application stack* places data sources and stores above the components that use them, with the browser at the bottom. The five delivered components each have a Level 2 view. Existing UNESCO, mapping and SMTP services remain outside delivery scope; our GitHub and Supabase configuration is included.
+*Figure Application stack* places data sources and stores above the components that use them, with the browser at the bottom. The five delivered components each have a Level 2 view. Existing UNESCO, mapping and Exchange services remain outside delivery scope; our GitHub and Supabase configuration is included.
 
 ```mermaid
 flowchart TB
@@ -181,14 +181,14 @@ flowchart TB
 
 ## Operations and reporting
 
-*Figure Operations and reporting* separates independent probe and reporting components. Their services and stores sit above them. Supabase runs immediate new-profile notifications and their retries; GitHub Actions runs the probe and scheduled reports.
+*Figure Operations and reporting* separates independent probe and reporting components. Their services and stores sit above them. Supabase runs immediate new-profile notifications and their retries; GitHub Actions runs the probe and refresh report artifact; Supabase Cron runs the monthly email.
 
 ```mermaid
 flowchart TB
     Stores["Git and workflow artifacts"]
     API["Monitoring API"]
     Refresh["Catalogue refresh"]
-    SMTP["Mail services"]
+    SMTP["Exchange 365"]
     subgraph Operations["Operations and reporting"]
         Probe["Database probe"]
         Monthly["Monthly usage reporter"]
@@ -201,7 +201,7 @@ flowchart TB
     API --- Monthly
     Refresh --- Register
     SMTP --- Monthly
-    SMTP --- Register
+    Register --- Monthly
     API --- NewProfile
     SMTP --- NewProfile
     classDef owned fill:#eaf2fb,stroke:#315b80,color:#172b4d
@@ -211,7 +211,7 @@ flowchart TB
     class Probe,Monthly,Register,NewProfile owned
     class Stores,API,Refresh sibling
     class SMTP external
-    linkStyle 5,6,8 stroke:#999999
+    linkStyle 5,8 stroke:#999999
 ```
 
 *Figure Operations and reporting*
@@ -266,7 +266,7 @@ flowchart TB
 | Supabase Edge Function | Validate public requests, handle CORS, enforce the payload contract and return explicit acknowledgements or aggregate statistics | [handler.mjs](supabase/functions/usage-summary/handler.mjs) |
 | Supabase Postgres | Store accepted submissions and enforce atomic duplicate/rate-limit rules; compute read-only aggregates | [SQL migration](supabase/migrations/202610010001_usage_summary.sql) |
 | Database probe | Test the real database read path without writes or administrative credentials in the probe job | [supabase-probe.yml](.github/workflows/supabase-probe.yml), [probe_supabase.mjs](scripts/probe_supabase.mjs) |
-| Owner reporting | Generate independent user-activity and catalogue-change reports and deliver through SMTP | Monthly and refresh workflows; [monthly_usage_report.mjs](scripts/monthly_usage_report.mjs), [site_register_report.mjs](scripts/site_register_report.mjs) |
+| Owner reporting | Generate combined monthly user-activity and catalogue-change email through Exchange | Supabase monthly Edge Function and refresh artifacts; [monthly_usage_report.mjs](scripts/monthly_usage_report.mjs), [site_register_report.mjs](scripts/site_register_report.mjs) |
 | New-profile notifier | Queue the first accepted profile report and send an immediate owner alert through Exchange Online | Supabase Edge Functions, private notification queue, Vault and retry scheduler |
 
 # Data ownership and contracts
@@ -367,11 +367,11 @@ Scheduled probing requires `MWH_SUPABASE_PROBE_ENABLED=true`. Manual diagnostics
 
 A failed probe produces a failed Actions run, not an automatic SMTP email. The reporting jobs run independently; a job result is execution state rather than another application component.
 
-The monthly workflow requires `MWH_MONTHLY_REPORT_ENABLED=true`; manual runs default to preview-only. Include zero-activity months, accepted submissions, active profiles, event counts, reported uses and average visited-site count from each profile's latest submission in the period. These figures describe voluntary reports, not all users or unique people.
+Supabase Cron invokes the private monthly reporter at 08:00 Africa/Johannesburg on the first. Include zero-activity months, accepted submissions, active profiles, event counts, reported uses and the average visited-site count from each profile's latest submission in the period.
 
-The register report separates roots and components across additions, retirements, reactivations, attribute changes and unexpected removals. Ignore generation metadata, formatting and record ordering. Bound email detail to 40 records per category and provide the complete change artifact. Register reporting does not depend on Supabase.
+The same email includes additions, retirements, reactivations, changed attributes and unexpected removals between the catalogue commits immediately before the month boundaries. GitHub refreshes also save detailed change artifacts. Git preserves forensic records.
 
-Both emails go to `pekka@data.co.za` through configured SMTP. Missing SMTP configuration and delivery failures must be visible. A retried mail job may resend a message; the architecture does not promise exactly-once email delivery.
+The combined monthly email goes to `pekka@data.co.za` through Exchange 365 using Supabase-held credentials. A failed catalogue comparison appears explicitly in the email. A failed mail dispatch is visible in cron and HTTP response logs; manual reruns may resend mail.
 
 The immediate new-profile email also goes to `pekka@data.co.za`, through Exchange Online's HTTPS API. A lease prevents concurrent delivery of the same queue item. If Exchange accepts an email but its acknowledgement is lost, a retry can still deliver a duplicate; the notification identifier aids tracing but is not an Exchange idempotency guarantee. Graph acceptance does not itself confirm inbox receipt.
 
@@ -389,7 +389,7 @@ The immediate new-profile email also goes to `pekka@data.co.za`, through Exchang
 | GitHub probe to Edge Function | Project URL only; no access token, service key or database password in this job |
 | Monthly report to Postgres | Server-side GitHub secret permits aggregate query; never expose it in browser code or logs |
 | Owner/agent/deployment tools | Owner GitHub sign-in; separate scoped Supabase credentials or connected integration for agent and CI operations |
-| Reporting jobs to SMTP | SMTP connection credentials held in GitHub Actions secrets |
+| Reporting jobs to Exchange | Mailbox-scoped application credentials held in Supabase |
 | Supabase notifier to Exchange Online | Dedicated Microsoft application permission restricted to the sender mailbox; application credential held in Supabase Secrets |
 
 Owner dashboard login, a Supabase management token, a service-role key and a database password are different credentials with different purposes. GitHub's workflow token does not grant Supabase access. CORS and a browser-held ingest token are not substitutes for server validation or an abuse-control policy.
@@ -408,7 +408,7 @@ Owner dashboard login, a Supabase management token, a service-role key and a dat
 | Concurrent repository update or failed push | Fail safely; refresh/review the branch and retry without force-pushing |
 | Supabase failure or lost acknowledgement | Keep app/profile features usable, preserve the pending summary and retry with the same ID |
 | Failed database probe | Fail the Actions run; investigate the endpoint or resume the project through owner administration if required |
-| SMTP failure | Preserve the report artifact and make failure visible; it does not undo an accepted submission or catalogue commit |
+| Exchange delivery failure | Preserve the report artifact and make failure visible; it does not undo an accepted submission or catalogue commit |
 | Required dataset rollback | Restore the raw source and both outputs from a single Git checkpoint, validate and publish a new commit |
 
 Supabase production backup/restore procedures and submission-retention duration must be selected for the deployed project. Do not assume a backup capability from the local tests. Any future deletion policy must preserve the promised retry/receipt behaviour for its documented retention window.
@@ -427,7 +427,7 @@ Supabase production backup/restore procedures and submission-retention duration 
 | Curated local labels | Separate mapping and language-policy maintenance | Coverage/anomaly reports and unchanged unreviewed names |
 | Reliable optional monitoring | Edge validation, transactional receipts, pending local summaries and private SQL access | Real-origin submission, duplicate/concurrent retries, failed writes and counter checks |
 | Database activity monitoring | Randomised read-only probe | Mock tests plus successful live Postgres-backed response before activation |
-| Owner feedback | Independent register and monthly-user workflows with SMTP | Accurate period/change reports, zero-change cases and verified delivery |
+| Owner feedback | Combined monthly reporting through Supabase/Exchange | Accurate period/change reports, zero-change cases and verified delivery |
 | Operational recovery | Git rollback, visible failures and staged backend cutover | Workflow failure tests, paired dataset restoration and deployed backend verification |
 
 The detailed checks remain in [TEST_PLAN.md](TEST_PLAN.md). Local tests establish code behaviour; they do not establish deployed credentials, hosted concurrency, browser connectivity, Pages publication or email delivery.

@@ -42,3 +42,7 @@ Product intent, requirements, architecture, and design decisions are maintained 
 Retired implementations and distribution checks are recorded in [Retired code](RETIRED_CODE.md).
 
 Backend release procedure: [Supabase GitHub deployment](supabase/GITHUB_DEPLOYMENT.md), with deployment verification tracked in Issue #6.
+
+# Site development
+
+First-party browser code lives in `site/src/*.ts`. `site/index.html` and the compatibility redirect are templates; build them before serving. Run `npm ci`, `npm run typecheck` and `node scripts/build_pages.mjs .local/pages-review`. Serve that output directory to preview the application. The compiler uses strict checking and rejects unused declarations; Pages publishes only compiled runtime files. See [verification instructions](TEST_PLAN.md).

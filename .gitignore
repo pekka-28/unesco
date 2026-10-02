@@ -12,3 +12,5 @@ data/staging/cache/
 
 # Local build output and private working files
 .local/
+node_modules/
+.local-typescript-errors.txt

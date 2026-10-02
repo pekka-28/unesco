@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "allowUmdGlobalAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmitOnError": true,
+    "outDir": ".local/site-build",
+    "rootDir": "site/src",
+    "types": ["leaflet"]
+  },
+  "include": ["site/src/**/*.ts"]
+}

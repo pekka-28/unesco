@@ -3,7 +3,7 @@
 
 The Supabase notifier sends new-profile alerts from and to `pekka@data.co.za` through Microsoft Graph. The owner confirmed receipt of the interactive Exchange test on 2 October 2026. The dedicated application credential and mailbox-scoped Exchange authorisation are configured and verified. On 2 October 2026, Exchange accepted both the unattended Supabase delivery test and the new-profile alert from the browser test. The earlier `403 ErrorAccessDenied` has cleared. The owner confirmed inbox receipt of both messages on 2 October 2026.
 
-The owner also confirmed receipt of the monthly delivery check on 2 October 2026. Both mail paths are confirmed working. The temporary delivery-test helper stopped after acceptance; real notification retries run independently inside Supabase. Recurring monthly scheduling remains inactive.
+The owner also confirmed receipt of the monthly delivery check on 2 October 2026. Both mail paths are confirmed working. The temporary delivery-test helper stopped after acceptance; real notification retries run independently inside Supabase. Supabase schedules the combined monthly report at 08:00 Africa/Johannesburg on the first.
 
 # Administrator setup
 
@@ -49,7 +49,7 @@ The command returns a request ID. Inspect its HTTP result in `net._http_response
 
 # Notification behaviour
 
-The private `monthly-report` Edge Function also uses this Exchange authorisation. Run `supabase/test_monthly_report.sql` through the linked Supabase CLI to send one monthly delivery check. It includes the regular previous calendar month in Africa/Johannesburg and a separately labelled current-month snapshot for verification. It reads aggregate statistics only and creates no new-user event. Re-running sends another message. The prepared monthly GitHub/SMTP workflow remains inactive; deploying this function does not enable a recurring schedule.
+The private `monthly-report` Edge Function also uses this Exchange authorisation. Run `supabase/test_monthly_report.sql` in the Supabase dashboard SQL editor to send one monthly delivery check. It includes the regular previous calendar month in Africa/Johannesburg and a separately labelled current-month snapshot for verification. It reads aggregate statistics only and creates no new-user event. Re-running sends another message. The monthly cron job runs inside Supabase. The report combines user activity with catalogue changes derived from GitHub history.
 
 The first accepted report from a previously unseen profile creates one durable queue item in the same transaction. Any first event type qualifies. Existing profiles at migration time produce no retrospective alerts. The Edge Function begins delivery immediately after acceptance without delaying the browser acknowledgement.
 

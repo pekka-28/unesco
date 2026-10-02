@@ -9,7 +9,7 @@ if (-not (Test-Path -LiteralPath $InputFile)) {
   throw "Input file not found: $InputFile"
 }
 
-$data = Get-Content -Raw -LiteralPath $InputFile | ConvertFrom-Json
+$data = Get-Content -Raw -Encoding utf8 -LiteralPath $InputFile | ConvertFrom-Json
 $sites = @()
 
 if ($data -and $data.schema -eq "my-world-heritage-sites/v1" -and $data.sites) {
@@ -24,6 +24,7 @@ elseif ($data -and $data.type -eq "FeatureCollection" -and $data.features) {
       site_id = [string]$f.properties.site_id
       site_scope = [string]$f.properties.site_scope
       parent_site_id = [string]$f.properties.parent_site_id
+      status = [string]$f.properties.status
       lat = [double]$f.geometry.coordinates[1]
       lon = [double]$f.geometry.coordinates[0]
     }
@@ -42,10 +43,12 @@ foreach ($s in $sites) {
   if ($sid -notmatch '^(WHS \d{1,6}|MWH \d{1,6}-\d{3})$') { throw "Record has invalid site_id format: $sid" }
   if ($seen.ContainsKey($sid)) { throw "Duplicate site_id found: $sid" }
   $seen[$sid] = $true
+  if ($s.status -notin @('active', 'retired')) { throw "Invalid catalogue status for $sid" }
+  if ($null -eq $s.lon -or $null -eq $s.lat) { throw "Missing coordinates: $sid" }
 
   $lon = [double]$s.lon
   $lat = [double]$s.lat
-  if ($lon -lt -180 -or $lon -gt 180 -or $lat -lt -90 -or $lat -gt 90) {
+  if ([double]::IsNaN($lon) -or [double]::IsNaN($lat) -or [double]::IsInfinity($lon) -or [double]::IsInfinity($lat) -or $lon -lt -180 -or $lon -gt 180 -or $lat -lt -90 -or $lat -gt 90) {
     throw "Record $sid has out-of-range coordinates: ($lat, $lon)"
   }
 
@@ -61,6 +64,12 @@ foreach ($s in $sites) {
   }
   else {
     throw "Record has invalid site_scope '$scope' for $sid"
+  }
+}
+
+foreach ($s in $sites) {
+  if ($s.site_scope -eq 'component' -and -not $seen.ContainsKey([string]$s.parent_site_id)) {
+    throw "Missing parent for $($s.site_id): $($s.parent_site_id)"
   }
 }
 

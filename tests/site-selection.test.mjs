@@ -1,15 +1,19 @@
+import {siteHtml, siteFunction} from '../scripts/site_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 
 test('selection reveals an unvisited marker through zoom, until the next redraw', () => {
-  const html = readFileSync(new URL('../site/index.html', import.meta.url), 'utf8');
+  const html = siteHtml();
   const shown = new Set();
-  const marker = id => ({feature:{properties:{site_id:id}}, setStyle(){},
-    addTo(){shown.add(this);}, getLatLng:()=>({lat:1,lng:2})});
+  class CircleMarker {
+    constructor(id) { this.feature={properties:{site_id:id}}; }
+    setStyle() {} addTo() {shown.add(this);} getLatLng() {return {lat:1,lng:2};}
+  }
+  const marker = id => new CircleMarker(id);
   const markers = new Map(['selected','other','visited'].map(id=>[id,marker(id)]));
-  const ctx = vm.createContext({connected:true,profile:{settings:{visitedOnly:true}},
+  const ctx = vm.createContext({L:{CircleMarker},connected:true,profile:{settings:{visitedOnly:true}},
     asText:String,isVisited:id=>id==='visited',isHighVolumeComponent:()=>false,
     explicitVisibleSiteIds:new Set(['other']),lastSearchedSiteIds:['other'],selectedSiteId:null,
     markerStyle:()=>({}),markersBySiteId:markers,searchFocusBySiteId:new Map(),
