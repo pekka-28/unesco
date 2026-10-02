@@ -5,7 +5,7 @@
 
 # Activation status
 
-Repository configuration is prepared. The project connection and first successful native deployment still need verification. The existing Supabase login can access the project, but no project GitHub connection was present during the check on 2 October 2026. Routine CLI deployment is no longer the chosen process; further backend changes wait for this connection.
+The native GitHub connection was verified on 2 October 2026: repository `pekka-28/unesco`, working directory `.`, production branch `main`, and automatic preview branching disabled. Supabase recognises `main` as the default production branch. Release and endpoint verification evidence is recorded in Issue #6. Routine CLI deployment is retired; backend changes are released through GitHub.
 
 # Connection settings
 

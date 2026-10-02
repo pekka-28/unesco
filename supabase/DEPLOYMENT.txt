@@ -1,8 +1,9 @@
 Routine deployment transition - Issue #6
 The chosen release process is now the native Supabase GitHub integration.
 See GITHUB_DEPLOYMENT.md for connection settings, release checks and activation
-status. The dashboard connection and first successful integration deployment
-remain to be verified. Do not use the historical CLI commands below for releases.
+status. The dashboard connection and production branch main are verified. Deployment
+validation evidence is recorded in Issue #6. Do not use the historical CLI
+commands below for releases.
 
 Historical setup and deployment record (not current release instructions)
 

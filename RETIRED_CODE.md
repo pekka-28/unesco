@@ -17,7 +17,7 @@ Git history preserves removed code. Database migrations remain ordered deploymen
 
 # Deployment tooling
 
-Routine CLI deployment is retired as the chosen release process under [Issue #6](https://github.com/pekka-28/unesco/issues/6). Activation of the replacement is tracked in [GitHub deployment](supabase/GITHUB_DEPLOYMENT.md). Setup and diagnostic scripts remain repository-only historical/recovery tools; none is included in the browser distribution.
+Routine CLI deployment is retired as the chosen release process under [Issue #6](https://github.com/pekka-28/unesco/issues/6). The native integration connection is verified; release instructions are in [GitHub deployment](supabase/GITHUB_DEPLOYMENT.md). Setup and diagnostic scripts remain repository-only historical/recovery tools; none is included in the browser distribution.
 
 # Distribution checks
 
