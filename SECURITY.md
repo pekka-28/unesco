@@ -123,8 +123,12 @@ The remaining hardening decisions are branch protection compatible with catalogu
 
 | Operation | Positive authorisation | Least permitted effect |
 | --- | --- | --- |
-| Request sign-in link | Public challenge policy plus successful atomic `admin_reserve_login()` reservation | Fixed owner recipient once per five minutes |
+| Request sign-in link | Public challenge policy, service-role EXECUTE on `admin_reserve_login`, Auth-admin credential to generate the link, and Exchange sender authorisation | Fixed owner recipient once per five minutes |
 | Verify sign-in | Supabase single-use token verification plus exact configured UUID and confirmed email | Issue owner access token |
+| Sign out | Valid owner token at the API and Supabase Auth logout | Revoke the provider session and clear local administration state, subject to token-expiry semantics |
+| Read published site/catalogue | Explicit public-publication policy; no person credential | Download only allowlisted public assets/data |
+| Read public statistics/histogram | Explicit public aggregate contract; service-role EXECUTE on fixed statistics RPCs | Selected aggregate fields, without private records |
+| Edit/export a visitor profile locally | Control of the browser/device and its local profile | Local data only; visitor profile selection/Name is not server authentication |
 | Owner database status, schema and entity queries | Valid owner token at owner API; service-role EXECUTE on `admin_read` | Fixed read models; at most 100 entity rows |
 | Download query results | Successful authorised read already completed | Export current page in the owner's browser |
 | Read workflow status | Valid owner token; public GitHub GET needs no GitHub credential | Fixed repository's latest production runs |
@@ -141,7 +145,7 @@ The remaining hardening decisions are branch protection compatible with catalogu
 | Deploy Pages | `pages: write`, `id-token: write`, production environment and `main` job condition | Publish approved build artifact |
 | Deploy backend/migrations | Connected Supabase GitHub App, production `main` and provider integration authority | Apply reviewed repository changes; unavailable from administration |
 | Create/update an issue | Separate operator repository Issues write permission | Track findings; no deployment permission implied |
-| Prepare/merge release PR | Separate operator Contents/ Pull requests write permissions and release process | Publish reviewed changes through GitHub |
+| Prepare/merge release PR | Separate operator Contents/Pull requests write permissions and release process | Publish reviewed changes through GitHub |
 | Alter repository security | Separate repository Administration write permission | Apply/review repository settings; no application runtime grant |
 | Inspect Supabase management data | Project-scoped token with `database_read` for read-only SQL, or the relevant endpoint-specific read permission | Use the read-only query endpoint; do not grant database writes or API-key-secret reads for ordinary inspection |
 | Rotate secrets/change identity settings | Separately authenticated provider administrator with the corresponding project/account write permission | Time-bounded maintenance; never an administration-site API |
@@ -207,3 +211,5 @@ Scoped [Supabase personal access tokens](https://supabase.com/docs/guides/platfo
 [PR 26](https://github.com/pekka-28/unesco/pull/26) delivered the policy, removed administration mutation paths and applied migration `202610030002` through the native integration. On 3 October 2026, 49 automated tests passed. Live owner/anonymous checks confirmed all removed mutation commands are rejected, private read models still work and ordinary authenticated users cannot invoke administrative database RPCs. Read-only Management API inspection confirmed destructive table rights, submission edits, notification-name edits, actor edits and schema CREATE are denied while required delivery/status columns remain writable.
 
 The GitHub baseline was applied and read back: only the six named official Actions are allowed, full SHA pinning is required, the main-history and ingestion-tag rulesets are active without bypass actors, and Pages allows only `main`. Default workflow authority remains read-only and workflow PR approval remains disabled. Secret scanning/push protection remain enabled; dependency security updates are now enabled. Mandatory PR checks/independent review are not yet enforced. [Issue 33](https://github.com/pekka-28/unesco/issues/33) tracks the remaining release, identity and runtime-isolation work.
+
+The authorised catalogue updater completed successfully under these restrictions in [run 37076676255](https://github.com/pekka-28/unesco/actions/runs/37076676255). This verifies compatibility of the current workflow with the baseline; it does not prove that repository-wide write permission is path-scoped.
