@@ -15,6 +15,10 @@ The following components are retired:
 
 Git history preserves removed code. Database migrations remain ordered deployment history; superseded migration definitions are not alternative application implementations. Maintenance and diagnostic scripts remain repository tools and are not shipped to browsers.
 
+# Deployment tooling
+
+Routine CLI deployment is retired as the chosen release process under [Issue #6](https://github.com/pekka-28/unesco/issues/6). The native integration connection is verified; release instructions are in [GitHub deployment](supabase/GITHUB_DEPLOYMENT.md). Setup and diagnostic scripts remain repository-only historical/recovery tools; none is included in the browser distribution.
+
 # Distribution checks
 
 `Publish canonical application` builds a fresh directory from the explicit twelve-file allowlist in `scripts/build_pages.mjs`. It publishes one application HTML file, eight referenced icon/manifest files, two current catalogue files and one compatibility redirect. No repository-wide copy or Jekyll build is used.
