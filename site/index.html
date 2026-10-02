@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- index.html 0.2.0 -->
+<!-- index.html 0.2.1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -225,14 +225,12 @@
       </div>
       <div class="row setting-line">
         <label for="share-endpoint" class="setting-label">Usage summary endpoint URL</label>
-        <input id="share-endpoint" class="field" type="url" placeholder="https://...">
+        <input id="share-endpoint" class="field" type="url" readonly aria-describedby="share-server-help">
       </div>
-      <div class="row setting-line">
-        <label for="share-token" class="setting-label">Usage summary token</label>
-        <input id="share-token" class="field" type="password" placeholder="Optional shared token">
-      </div>
+      <input id="share-token" type="hidden" value="">
+      <div id="share-server-help" class="meta">Reports use Supabase. Your saved reporting address is updated automatically; your profile and visit history stay in this browser.</div>
       <div class="row">
-        <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonymous usage summary (date, use count since last publication, visited site count, magic cookie) so project maintainers can understand usage trends. If an endpoint is configured, the summary is posted there; otherwise the app falls back to clipboard copy.</div>
+        <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonymous usage summary (date, use count since last publication, visited site count, magic cookie) so project maintainers can understand usage trends. Reports are sent to Supabase. If delivery fails, a clipboard copy does not count as a received report.</div>
       </div>
       <div class="row">
         <div id="share-submit-status" class="meta"></div>
@@ -316,12 +314,12 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
-    const DEFAULT_USAGE_SUMMARY_ENDPOINT = "https://script.google.com/macros/s/AKfycbzPtSZnPoymM9sw2NV2GpSXVsDKAps9txWh_oSmCUw2PvkCjzuM_KHfhVd4MC5Y7BbF/exec";
+    const DEFAULT_USAGE_SUMMARY_ENDPOINT = "https://fjqhgcegnphavatrchjb.supabase.co/functions/v1/usage-summary";
     const PROFILE_KEY = "mwh_profile";
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.2.0";
+    const APP_VERSION = "0.2.1";
     const APP_NAME = "My World Heritage";
     const APP_TITLE_SEPARATOR = " \u2013 ";
     const REPORT_TILE_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}";
@@ -371,7 +369,7 @@
       if (sv != null) return /^(1|true|yes|on)$/i.test(asText(sv));
       return fallback;
     }
-    const flags = { submitEnabled: getBooleanFlag("submit", false), resetEnabled: getBooleanFlag("reset", false) };
+    const flags = { submitEnabled: getBooleanFlag("submit", true), resetEnabled: getBooleanFlag("reset", false) };
     function applyFeatureFlags() {
       if (ui.menuSubmit) ui.menuSubmit.style.display = flags.submitEnabled ? "block" : "none";
       if (ui.menuReset) ui.menuReset.style.display = flags.resetEnabled ? "block" : "none";
@@ -486,7 +484,7 @@
         ui.loadingIndicator.style.display = "none";
       }
     }
-    function defaultProfile() { return { schemaVersion: PROFILE_SCHEMA_VERSION, name: "", homeLat: null, homeLon: null, homeLabel: "", siteVisits: {}, inspectedSiteIds: [], settings: { visitedOnly: false, dateFormat: "y-m-d", lengthUnits: "km", multipleThreshold: 5, usageSummaryEndpoint: "", usageSummaryToken: "" }, usage: { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 }, publishPreference: { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false }, magicCookie: randomCookie(), updatedAt: nowIso() }; }
+    function defaultProfile() { return { schemaVersion: PROFILE_SCHEMA_VERSION, name: "", homeLat: null, homeLon: null, homeLabel: "", siteVisits: {}, inspectedSiteIds: [], settings: { visitedOnly: false, dateFormat: "y-m-d", lengthUnits: "km", multipleThreshold: 5, usageSummaryEndpoint: DEFAULT_USAGE_SUMMARY_ENDPOINT, usageSummaryToken: "" }, usage: { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 }, publishPreference: { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false }, magicCookie: randomCookie(), updatedAt: nowIso() }; }
     function incrementCensusUse() { let c = { schemaVersion: 1, useCount: 0, updatedAt: nowIso() }; try { c = JSON.parse(localStorage.getItem(CENSUS_KEY)) || c; } catch {} c.useCount = Number(c.useCount || 0) + 1; c.updatedAt = nowIso(); localStorage.setItem(CENSUS_KEY, JSON.stringify(c)); }
     function verifyProfile(obj) {
       if (!obj || typeof obj !== "object") return { ok: false, reason: "Profile missing" };
@@ -502,7 +500,7 @@
       }
       return { ok: true };
     }
-    function persistProfile() { if (!profile) return; profile.updatedAt = nowIso(); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
+    function persistProfile() { if (!profile) return; migrateUsageSettings(profile); profile.updatedAt = nowIso(); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
     function siteIdCaption(feature) {
       const p = feature && feature.properties ? feature.properties : {};
       const id = assertValidSiteId(p.site_id, "detail site id");
@@ -1232,7 +1230,8 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       const note = asText(p.note || p.description);
       const wiki = asText(p.wikipedia);
       const wikiUrl = wiki && wiki.includes(":") ? `https://${wiki.replace(":", ".wikipedia.org/wiki/")}` : "";
-      const infoLines = [];
+      const infoLines = [`<strong>Catalogue status:</strong> ${p.status === "retired" ? "Retired" : "Active"}`];
+      if (p.status === "retired") infoLines.push("Not matched in the latest source; retained for recording visits.");
       if (inscription) infoLines.push(`<strong>Inscription date:</strong> ${inscription}`);
       const scope = asText(p.site_scope);
       if (scope === "whs") {
@@ -1631,18 +1630,28 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       renderSubmitStatus();
     }
     function buildUsageSummary(eventType = "manual") {
+      profile.usage.pendingSummaries = profile.usage.pendingSummaries || {};
+      if (eventType !== "adoption") {
+        const pending = profile.usage.pendingSummaries.manual || profile.usage.pendingSummaries.periodic;
+        if (pending) return pending.summary;
+      }
+      if (profile.usage.pendingSummaries[eventType]) return profile.usage.pendingSummaries[eventType].summary;
       let visitedSiteCount = 0;
       if (profile && profile.siteVisits) {
         for (const siteId of Object.keys(profile.siteVisits)) if (getVisitStatus(siteId) === "visited") visitedSiteCount += 1;
       }
-      return {
+      const summary = {
+        submission_id: crypto.randomUUID(),
         submitted_at_utc: nowIso(),
         magic_cookie: asText(profile && profile.magicCookie),
-        use_count_since_last_push: Math.max(0, Number(profile && profile.usage && profile.usage.useCount || 0) - Number(profile && profile.usage && profile.usage.publishedUseCount || 0)),
+        use_count_since_last_push: eventType === "adoption" ? 0 : Math.max(0, Number(profile && profile.usage && profile.usage.useCount || 0) - Number(profile && profile.usage && profile.usage.publishedUseCount || 0)),
         visited_site_count: visitedSiteCount,
         event_type: asText(eventType) || "manual",
         client_version: APP_VERSION
       };
+      profile.usage.pendingSummaries[eventType] = { summary, useCount: Number(profile.usage.useCount || 0) };
+      persistProfile();
+      return summary;
     }
     function isSummaryDue() {
       if (!(connected && profile)) return false;
@@ -1726,12 +1735,16 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
 
       profile.publishPreference = profile.publishPreference || {};
       profile.publishPreference.lastPromptAt = nowIso();
-      let sent = !!submitted.ok;
+      let sent = submitted.ok === true && !submitted.unverified;
       if (!sent) {
         try { sent = await copySummaryToClipboard(summary); } catch {}
       }
-      if (sent) {
-        profile.usage.publishedUseCount = Number(profile.usage.useCount || 0);
+      if (submitted.ok === true && !submitted.unverified) {
+        const pending = profile.usage.pendingSummaries && profile.usage.pendingSummaries[summary.event_type];
+        if (pending && pending.summary.submission_id === summary.submission_id) {
+          profile.usage.publishedUseCount = Math.max(Number(profile.usage.publishedUseCount || 0), pending.useCount);
+          delete profile.usage.pendingSummaries[summary.event_type];
+        }
       }
       persistProfile();
       updateSummaryReminderUi();
@@ -2006,16 +2019,29 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       }
     }
     function getUsageSummaryEndpoint() {
-      const fromProfile = asText(profile && profile.settings && profile.settings.usageSummaryEndpoint).trim();
-      if (fromProfile) return fromProfile;
-      const fromLocal = asText(localStorage.getItem("mwh_usage_summary_endpoint")).trim();
-      if (fromLocal) return fromLocal;
+      // Cutover guard: stale settings/imports must never select the retired service.
       return DEFAULT_USAGE_SUMMARY_ENDPOINT;
     }
     function getUsageSummaryToken() {
-      const fromProfile = asText(profile && profile.settings && profile.settings.usageSummaryToken).trim();
-      if (fromProfile) return fromProfile;
-      return asText(localStorage.getItem("mwh_usage_summary_token")).trim();
+      return "";
+    }
+    function migrateUsageSettings(target) {
+      if (!target || typeof target !== "object" || Array.isArray(target)) return;
+      if (!target.settings || typeof target.settings !== "object" || Array.isArray(target.settings)) target.settings = {};
+      target.settings.usageSummaryEndpoint = DEFAULT_USAGE_SUMMARY_ENDPOINT;
+      target.settings.usageSummaryToken = "";
+    }
+    function migrateStoredUsageSettings() {
+      localStorage.setItem("mwh_usage_summary_endpoint", DEFAULT_USAGE_SUMMARY_ENDPOINT);
+      localStorage.removeItem("mwh_usage_summary_token");
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (!raw) return;
+      try {
+        const stored = JSON.parse(raw);
+        if (!stored || typeof stored !== "object" || Array.isArray(stored)) return;
+        migrateUsageSettings(stored);
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(stored));
+      } catch { /* Preserve unreadable profiles for the existing recovery flow. */ }
     }
     async function fetchUsageStats() {
       const endpoint = getUsageSummaryEndpoint();
@@ -2055,49 +2081,19 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: AbortSignal.timeout(18000),
           body: JSON.stringify(payload)
         });
         const raw = await res.text();
         let parsed = null;
         try { parsed = raw ? JSON.parse(raw) : null; } catch {}
         if (!res.ok) return { ok: false, reason: `HTTP ${res.status}`, detail: asText(raw).slice(0, 240) };
-        if (parsed && parsed.ok === false) return { ok: false, reason: asText(parsed.error) || "Endpoint rejected submission.", detail: asText(raw).slice(0, 240) };
+        if (!parsed || parsed.ok !== true) return { ok: false, reason: asText(parsed && parsed.error) || "Endpoint did not confirm receipt." };
+        if (parsed.submission_id !== summary.submission_id) return { ok: false, reason: "Endpoint did not acknowledge this submission." };
         return { ok: true, duplicate: !!(parsed && parsed.duplicate), detail: asText(raw).slice(0, 240), stats: parsed && parsed.stats ? parsed.stats : null };
       } catch (e) {
         const reason = asText(e && e.message) || "Submission failed.";
-        const token = getUsageSummaryToken();
-        const payload = {
-          ...summary,
-          source: "my-world-heritage",
-          user_agent: asText(navigator.userAgent).slice(0, 512)
-        };
-        if (token) payload.token = token;
-        const fallback = await submitUsageSummaryNoCors(endpoint, payload);
-        if (fallback.ok) return fallback;
         return { ok: false, reason: reason };
-      }
-    }
-    async function submitUsageSummaryNoCors(endpoint, payload) {
-      try {
-        const asTextPayload = JSON.stringify(payload);
-        if (navigator.sendBeacon) {
-          const blob = new Blob([asTextPayload], { type: "text/plain;charset=UTF-8" });
-          const queued = navigator.sendBeacon(endpoint, blob);
-          if (queued) return { ok: true, unverified: true, transport: "beacon" };
-        }
-      } catch {}
-      try {
-        await fetch(endpoint, {
-          method: "POST",
-          mode: "no-cors",
-          redirect: "follow",
-          headers: { "Content-Type": "text/plain;charset=UTF-8" },
-          body: JSON.stringify(payload),
-          keepalive: true
-        });
-        return { ok: true, unverified: true, transport: "no-cors" };
-      } catch (e) {
-        return { ok: false, reason: asText(e && e.message) || "No-cors fallback failed." };
       }
     }
     async function copySummaryToClipboard(summary) {
@@ -2124,6 +2120,10 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       if (!submitted.ok) {
         recordSubmitStatus("adoption_failed", `Adoption submission failed.${statsLine ? " " + statsLine : ""}`);
         return;
+      }
+      if (!submitted.unverified) {
+        delete profile.usage.pendingSummaries.adoption;
+        persistProfile();
       }
       if (submitted.duplicate) {
         recordSubmitStatus("adoption_duplicate", `Adoption summary already recently recorded.${statsLine ? " " + statsLine : ""}`);
@@ -2291,6 +2291,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         hideLoading();
       }).catch(err => { hideLoading(); ui.detailPane.style.display = "block"; ui.detailPane.innerHTML = `<p>Failed to load local data: ${asText(err)}</p>`; });
     }
+    migrateStoredUsageSettings();
     applyFeatureFlags();
     wireUi();
     renderAppVersion();
@@ -2300,6 +2301,3 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
   </script>
 </body>
 </html>
-
-
-

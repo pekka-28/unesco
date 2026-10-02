@@ -1,0 +1,238 @@
+Supabase-only cutover, 2026-10-02
+Both site paths force Supabase and automatically migrate saved reporting settings.
+Reload with Ctrl+F5 in the existing browser; no manual endpoint change is needed.
+New-user and monthly delivery emails are confirmed received. Monthly scheduling
+remains inactive. Historical sheet import awaits the private CSV and time zone.
+Schema: SCHEMA.md. Earlier deployment notes below record the rollout stages.
+
+Supabase replacement and monthly owner email
+Prepared 2026-10-01; database and Edge Function deployed 2026-10-02.
+
+Published preview: https://pekka-28.github.io/unesco/site-supabase/?submit=1
+Shares the existing browser profile and history; use the same browser as the
+original site. The preview fixes reporting to Supabase regardless of legacy
+profile endpoint settings. The primary /site/ remains on its existing version.
+Live preview testing increased the same test profile from one to four visits;
+Postgres retained the new receipt with no additional new-profile notification.
+
+Owner-supplied project: https://fjqhgcegnphavatrchjb.supabase.co
+Project reference: fjqhgcegnphavatrchjb
+Supabase CLI 2.119.0 linked this project and applied only migration
+202610010001_usage_summary.sql after a dry run. A subsequent dry run confirmed
+no pending migrations. Deployed usage-summary with --use-api and configured
+MWH_ALLOWED_ORIGIN=https://pekka-28.github.io; JWT verification remains disabled
+as specified in config.toml. Hosted default credentials serve the private RPCs.
+Verified RLS, restricted grants, service-role insertion, duplicate receipts and
+statistics in a transaction whose temporary test row was rolled back.
+The live read-only probe passed locally and in GitHub:
+https://github.com/pekka-28/unesco/actions/runs/36935189208
+GitHub SUPABASE_URL is configured; MWH_SUPABASE_PROBE_ENABLED is now true.
+The 13 local database, monitoring and probe tests passed before deployment.
+Browser cutover, hosted concurrency checks and owner-email activation remain.
+New-profile notification migrations, Edge worker and Supabase retry scheduler
+are also deployed. Worker authentication is configured in Secrets and Vault.
+Exchange Online is the selected delivery service; its interactive test email
+was received by the owner on 2026-10-02. Unattended Microsoft application
+authorisation is configured and its mailbox scope verified. Exchange accepted
+the Supabase delivery test and browser-triggered new-profile alert on 2026-10-02.
+The earlier 403 cleared; the local delivery-test helper stopped after acceptance.
+The owner confirmed inbox receipt of both messages on 2026-10-02.
+An isolated Chrome test used local site files at the permitted Pages origin
+against live Supabase: adoption (zero visits), manual update (one visit),
+disconnect/reconnect and reload passed. One alert was accepted in 0.663 seconds.
+The test profile remains in aggregate monitoring totals. Published-site cutover,
+periodic submission and hosted concurrency/failure checks remain outstanding.
+See EXCHANGE_SETUP.md for setup, expiry, retry status and verification details.
+No GitHub workflow participates in immediate new-profile email delivery.
+For interactive owner login, use --agent no --output-format text to prevent
+agent detection selecting JSON output mode and blocking login prompts.
+
+Architecture
+The public static app POSTs JSON to /functions/v1/usage-summary. The Edge
+Function handles OPTIONS/CORS, validates a maximum 4096 UTF-8 bytes, strips
+private/unneeded fields, and calls the private accept_usage transaction.
+Postgres stores a durable submission ID and the accepted payload. Duplicate
+retries acknowledge the original row before rate limiting. Different content
+with the same ID is rejected. Failed inserts cannot mark a submission accepted.
+No browser database SDK, service key, user login, or hosted visit database is needed.
+The existing endpoint setting permits a staged cutover.
+
+Account and automation authentication
+- Owner: use Continue with GitHub at https://supabase.com/dashboard/sign-in with
+  your existing GitHub account. Keep its two-factor authentication enabled.
+  This signs YOU into the Supabase dashboard; it does not authenticate GitHub jobs.
+- Agent access: connect the Supabase integration under your account, granting
+  access to this project. If using a local CLI/MCP token instead, create a
+  separate scoped Supabase personal access token limited to this project and
+  the operations needed. Keep credentials in the connection or local environment.
+- GitHub deployments (when added): use a separate project-scoped Supabase PAT
+  stored as the Actions secret SUPABASE_ACCESS_TOKEN. GitHub's GITHUB_TOKEN is
+  not a Supabase credential. Edge Function deployment needs Edge Functions
+  read/write; add only the permissions needed for other deployment operations.
+  Supabase documents Project Settings, API Keys and API Key Secrets read access
+  for CLI link. Database migrations via db push may separately require the
+  database password; a scoped PAT does not restrict direct password-based SQL.
+- Probe: NO Supabase access token, service_role key or database password is
+  supplied to this job. It only needs the project URL. It calls the public
+  aggregate endpoint, which performs a database read using the Edge Function's
+  own server-side credentials.
+- Application backend and monthly report: the current implementation uses the
+  server-only service_role key described below. This is distinct from a PAT.
+  It is not used for account login or for the GitHub probe.
+
+Supabase recommends scoped PATs for agents and CI. The convenient browser flow
+of supabase login creates a classic, account-wide token. For scoped access,
+set SUPABASE_ACCESS_TOKEN in the local environment or use a credential manager
+rather than using the browser login command below. Do not share one token across
+the agent and CI: separate tokens can be revoked independently.
+
+Database activity probe
+The Supabase database probe workflow runs at 02:17, 10:17 and 19:17 UTC, adding
+an independently random 0-90 second delay on each scheduled run. Thus intervals
+vary around 8, 9 and 7 hours. Manual runs skip the delay. This small jitter avoids
+spending long GitHub runner periods asleep. GitHub itself can delay scheduled runs.
+The request is GET /functions/v1/usage-summary?stats=1, which executes the existing
+read-only usage_stats SQL function. The bare health endpoint is deliberately not
+used: it does not prove database access. No synthetic submissions, timestamp
+updates or writes are performed, and no aggregate values are logged by the probe.
+
+To activate after deploying the Edge Function:
+1. In GitHub Settings -> Secrets and variables -> Actions, set the existing
+   repository secret SUPABASE_URL to https://YOUR_PROJECT_REF.supabase.co.
+2. Keep repository VARIABLE MWH_SUPABASE_PROBE_ENABLED=false during setup.
+3. Merge the workflow to main and run Supabase database probe manually once.
+   Manual runs bypass the schedule switch. Expect: Database read succeeded.
+   After a successful run, set MWH_SUPABASE_PROBE_ENABLED=true. A failed query
+   produces a failed Actions run and should be fixed before enabling scheduling.
+4. Check scheduled runs periodically. GitHub can disable schedules in public
+   repositories after 60 days without repository activity; probing alone does
+   not commit anything. The existing monthly dataset commits normally supply
+   repository activity, but this should be checked if refreshes stop.
+
+This is a best-effort activity/availability check, not an uptime guarantee.
+Supabase describes Free project pausing after insufficient activity over seven
+days and says a few database requests daily are typically sufficient. Only paid
+projects are exempt from automatic inactivity pausing. A paused project must be
+resumed in the dashboard; this workflow cannot resume it automatically.
+
+Setup and activation (steps 1-4 completed for the owner project)
+1. Create a Supabase project in the owner's organisation and chosen region.
+   Connect the Supabase integration to allow deployment, or use the dashboard/CLI.
+   Open https://supabase.com/dashboard, create/select your organisation, and
+   choose New project. Use a name such as my-world-heritage. Save the database
+   password in your password manager and wait for provisioning to finish.
+   Copy the project reference from the dashboard URL/settings. This reference
+   is an identifier, not a secret. No Supabase Auth users need to be created.
+2. Apply migrations/202610010001_usage_summary.sql once through migrations or the
+   SQL editor. Tables have RLS enabled and no anon/authenticated grants. Only
+   service_role may invoke the two RPCs. Never put its key in the app or Git.
+   Recommended PowerShell commands from C:\Users\Pekka\Source\repos\unesco
+   (Node 20+ is needed; this machine has Node 22):
+
+     npx.cmd --yes supabase login --agent no --output-format text
+     npx.cmd supabase link --project-ref YOUR_PROJECT_REF
+     npx.cmd supabase db push --dry-run
+     npx.cmd supabase db push
+
+   Login opens the account authentication flow. Supply the database password
+   interactively if requested by link. Check that the dry run lists only the
+   prepared usage-summary migration. Do not run supabase init --force: this
+   repository already includes its configuration. If you instead ran the SQL
+   manually, do not also apply it via db push without reconciling migration history.
+3. Deploy functions/usage-summary with JWT verification disabled as configured
+   in config.toml. This endpoint intentionally accepts pseudonymous submissions
+   without Supabase Auth. Example CLI: supabase functions deploy usage-summary.
+   From the same PowerShell terminal:
+
+     npx.cmd supabase functions deploy usage-summary --project-ref YOUR_PROJECT_REF --use-api
+
+   The deployment uploads both index.ts and its imported handler.mjs. If the CLI
+   asks for a local container runtime, follow its setup instructions or deploy
+   both files through the Edge Functions dashboard editor.
+4. Confirm SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are available to the Edge
+   Function. Set MWH_ALLOWED_ORIGIN=https://pekka-28.github.io. Optionally set
+   MWH_INGEST_TOKEN and matching client setting. A token in a public browser is
+   not a strong anti-abuse boundary. Rate limits are per cookie (30 seconds,
+   12/hour); add gateway abuse controls if traffic requires them.
+   Set the allowed origin from PowerShell:
+
+     npx.cmd supabase secrets set MWH_ALLOWED_ORIGIN=https://pekka-28.github.io --project-ref YOUR_PROJECT_REF
+
+   Hosted functions supply SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY by default.
+   Confirm them in the project's Edge Function settings. The current code uses
+   the service_role key (not the publishable/anon key) for its server-side calls.
+5. In app Settings, test endpoint:
+   https://<project-ref>.supabase.co/functions/v1/usage-summary
+   Verify real browser OPTIONS and POST, receipt ID, one stored row, retries,
+   denial of public direct table/RPC access, and all three event types. The old
+   Google URL remains the default until this check passes. Then replace the
+   DEFAULT_USAGE_SUMMARY_ENDPOINT constant in site/index.html and migrate any
+   old endpoint overrides stored in profiles/localStorage.
+6. Add GitHub Actions secrets SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.
+   Confirm existing SMTP secrets MWH_ALERT_SMTP_SERVER, MWH_ALERT_SMTP_PORT,
+   MWH_ALERT_SMTP_USERNAME, MWH_ALERT_SMTP_PASSWORD and MWH_ALERT_MAIL_FROM.
+   Also set MWH_ALERT_MAIL_TO=pekka@data.co.za for the existing refresh alert gate.
+   Recipient is pekka@data.co.za. Do not paste credentials into source or chat.
+   GitHub location: repository Settings -> Secrets and variables -> Actions.
+   Put the project URL and service_role key into repository secrets, not variables.
+   The project API Keys settings expose the service_role key under the legacy
+   keys section; use the actual service_role value, not a database password.
+7. Set repository variable MWH_MONTHLY_REPORT_ENABLED=true. On the work branch,
+   after the workflow exists on main, manually run Monthly user activity email
+   (select the desired branch) with send_email=false to inspect
+   its report artifact. With configuration verified, run once with send_email=true
+   for the authorised delivery test. The scheduled workflow starts only after
+   merging to the default branch. Schedule: first of month 06:00 UTC / 08:00 SAST.
+   GitHub scheduling can be delayed. Report covers the previous Johannesburg
+   calendar month using server receipt times, including zero-submission months.
+   Manual sending/rerunning a successful send can deliver another copy; SMTP
+   does not provide a transactional exactly-once delivery guarantee.
+8. Disable the legacy Apps Script digest trigger at cutover. Keep the old Sheet
+   read-only for reference; no automatic Sheet import is included. Monthly
+   Supabase reports cover rows received by Supabase, not historical Sheet rows.
+
+Site register email (independent of Supabase)
+Update UNESCO Data now produces a separate email after a successful validated
+commit and push, including unchanged refreshes. It compares the pre-refresh
+canonical catalogue with the committed result by site ID. It reports added,
+newly retired, reactivated, changed and unexpectedly removed entries, separating
+roots from components. Formatting and generation metadata are ignored. The
+email lists up to 40 entries per category; the workflow artifact includes the
+complete JSON change list and text report for 90 days. Git remains the permanent
+record. Changes are to this application's register, not necessarily new UNESCO
+inscriptions or official delistings. The message confirms a pushed catalogue,
+not successful completion of a separate Pages deployment.
+It uses the same SMTP secrets, sends to pekka@data.co.za, and does not require
+MWH_MONTHLY_REPORT_ENABLED or Supabase. Configure all refresh alert secrets,
+merge the workflow to main, then verify one scheduled or manual successful run.
+Manual refresh runs also send a report; no additional cron job is needed.
+
+Local validation
+powershell -File tests/catalogue.tests.ps1
+node --test tests/usage-summary.test.mjs
+node --test tests/site-register-report.test.mjs
+node --test tests/supabase-probe.test.mjs
+npm install --prefix .local --no-save --package-lock=false @electric-sql/pglite@0.5.8
+node --test tests/database.test.mjs
+node --test tests/new-profile-notifications.test.mjs
+These do not establish hosted concurrency, deployment secrets, SMTP deliverability,
+or actual browser behaviour. Test these before switching the default endpoint.
+
+Recovery and rollback
+For an endpoint rollback, restore the previous endpoint setting. Keep Supabase
+rows for audit and avoid resubmitting accepted summaries to both backends.
+Disable MWH_MONTHLY_REPORT_ENABLED to stop scheduled email.
+For dataset rollback, restore BOTH current outputs and their raw source from
+the same ingestion commit or tag, validate, and publish in a new commit.
+Do not reset or force-push main.
+
+References checked during implementation
+https://supabase.com/docs/guides/functions/cors
+https://supabase.com/docs/guides/functions/function-configuration
+https://supabase.com/docs/guides/functions/secrets
+https://supabase.com/docs/guides/database/postgres/row-level-security
+https://github.com/dawidd6/action-send-mail
+https://supabase.com/docs/guides/functions/deploy
+https://supabase.com/docs/guides/local-development/cli/getting-started
+https://supabase.com/docs/guides/platform/personal-access-tokens
+https://supabase.com/docs/guides/platform/free-project-pausing

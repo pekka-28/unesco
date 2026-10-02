@@ -10,6 +10,11 @@
     "visited_site_count"
   ],
   "properties": {
+    "submission_id": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9-]{32,64}$",
+      "description": "Stable receipt identifier reused for retries; Supabase derives one for legacy clients."
+    },
     "submitted_at_utc": {
       "type": "string",
       "format": "date-time",

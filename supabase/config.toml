@@ -1,0 +1,10 @@
+project_id = "my-world-heritage"
+
+[functions.usage-summary]
+verify_jwt = false
+
+[functions.new-profile-notifications]
+verify_jwt = false
+
+[functions.monthly-report]
+verify_jwt = false
