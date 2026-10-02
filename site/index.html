@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- index.html 0.2.4 -->
+<!-- index.html 0.2.5 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -97,6 +97,7 @@
       </button>
       <div class="brand-tooltip">
         This symbol is a custom My World Heritage mark. It is not the UNESCO logo, not the World Heritage Emblem, and not the Hague Convention Blue Shield.
+        The artwork is dedicated to the public domain. <a href="https://github.com/pekka-28/unesco/blob/main/HERITAGE_MARK.md" target="_blank" rel="noopener">About the symbol and how to reuse it</a>.
       </div>
     </div>
     <button id="app-title-btn" class="pill" type="button"><strong>My World Heritage</strong></button>
@@ -234,12 +235,12 @@
       </div>
       <div class="row setting-line">
         <label for="share-endpoint" class="setting-label">Usage summary endpoint URL</label>
-        <input id="share-endpoint" class="field" type="url" readonly aria-describedby="share-server-help">
+        <input id="share-endpoint" class="field" type="url" aria-describedby="share-server-help">
       </div>
       <input id="share-token" type="hidden" value="">
-      <div id="share-server-help" class="meta">Reports use Supabase. Your saved reporting address is updated automatically; your profile and visit history stay in this browser.</div>
+      <div id="share-server-help" class="meta">Supabase is the default. You may enter another reporting server; clear this field and save to restore the current default.</div>
       <div class="row">
-        <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonymous usage summary (date, use count since last publication, visited site count, magic cookie) so project maintainers can understand usage trends. Reports are sent to Supabase. If delivery fails, a clipboard copy does not count as a received report.</div>
+        <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonymous usage summary (date, use count since last publication, visited site count, magic cookie) so project maintainers can understand usage trends. Reports are sent to your saved reporting server. If delivery fails, a clipboard copy does not count as a received report.</div>
       </div>
       <div class="row">
         <div id="share-submit-status" class="meta"></div>
@@ -315,6 +316,8 @@
         <li>Leaflet for map rendering and interaction.</li>
         <li>OpenStreetMap for basemap tiles.</li>
         <li>Nominatim for geographic text search.</li>
+        <li>Supabase for statistics collection and reporting.</li>
+        <li>GitHub Pages for site hosting.</li>
       </ul>
       <div style="display:flex; justify-content:flex-end; margin-top:10px;">
         <button id="help-close" class="btn" type="button">Close</button>
@@ -328,12 +331,17 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
-    const DEFAULT_USAGE_SUMMARY_ENDPOINT = "https://fjqhgcegnphavatrchjb.supabase.co/functions/v1/usage-summary";
+    const USAGE_SUMMARY_ENDPOINTS = Object.freeze({
+      current: "https://fjqhgcegnphavatrchjb.supabase.co/functions/v1/usage-summary",
+      previous: "https://script.google.com/macros/s/AKfycbzPtSZnPoymM9sw2NV2GpSXVsDKAps9txWh_oSmCUw2PvkCjzuM_KHfhVd4MC5Y7BbF/exec"
+    });
+    const DEFAULT_USAGE_SUMMARY_ENDPOINT = USAGE_SUMMARY_ENDPOINTS.current;
+    const USAGE_ENDPOINT_STORAGE_KEY = "mwh_usage_summary_endpoint";
     const PROFILE_KEY = "mwh_profile";
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.2.4";
+    const APP_VERSION = "0.2.5";
     const APP_NAME = "My World Heritage";
     const APP_TITLE_SEPARATOR = " \u2013 ";
     const REPORT_TILE_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}";
@@ -490,7 +498,7 @@
         ui.loadingIndicator.style.display = "none";
       }
     }
-    function defaultProfile() { return { schemaVersion: PROFILE_SCHEMA_VERSION, name: "", homeLat: null, homeLon: null, homeLabel: "", siteVisits: {}, inspectedSiteIds: [], settings: { visitedOnly: false, dateFormat: "y-m-d", lengthUnits: "km", multipleThreshold: 5, usageSummaryEndpoint: DEFAULT_USAGE_SUMMARY_ENDPOINT, usageSummaryToken: "" }, usage: { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 }, publishPreference: { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false }, magicCookie: randomCookie(), updatedAt: nowIso() }; }
+    function defaultProfile() { return { schemaVersion: PROFILE_SCHEMA_VERSION, name: "", homeLat: null, homeLon: null, homeLabel: "", siteVisits: {}, inspectedSiteIds: [], settings: { visitedOnly: false, dateFormat: "y-m-d", lengthUnits: "km", multipleThreshold: 5, usageSummaryEndpoint: getUsageSummaryEndpoint(), usageSummaryToken: "" }, usage: { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 }, publishPreference: { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false }, magicCookie: randomCookie(), updatedAt: nowIso() }; }
     function incrementCensusUse() { let c = { schemaVersion: 1, useCount: 0, updatedAt: nowIso() }; try { c = JSON.parse(localStorage.getItem(CENSUS_KEY)) || c; } catch {} c.useCount = Number(c.useCount || 0) + 1; c.updatedAt = nowIso(); localStorage.setItem(CENSUS_KEY, JSON.stringify(c)); }
     function verifyProfile(obj) {
       if (!obj || typeof obj !== "object") return { ok: false, reason: "Profile missing" };
@@ -506,7 +514,7 @@
       }
       return { ok: true };
     }
-    function persistProfile() { if (!profile) return; migrateUsageSettings(profile); profile.updatedAt = nowIso(); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
+    function persistProfile() { if (!profile) return; migrateUsageSettings(profile); localStorage.setItem(USAGE_ENDPOINT_STORAGE_KEY, profile.settings.usageSummaryEndpoint); profile.updatedAt = nowIso(); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
     function siteIdCaption(feature) {
       const p = feature && feature.properties ? feature.properties : {};
       const id = assertValidSiteId(p.site_id, "detail site id");
@@ -1826,6 +1834,14 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       ui.submitClose.disabled = false;
     }
     function saveSettings() {
+      const enteredEndpoint = ui.shareEndpoint.value.trim();
+      if (enteredEndpoint) {
+        try {
+          const url = new URL(enteredEndpoint);
+          if (!["https:", "http:"].includes(url.protocol)) throw new Error();
+        } catch { ui.shareEndpoint.setCustomValidity("Enter a complete HTTP or HTTPS reporting URL, or leave blank for the default."); ui.shareEndpoint.reportValidity(); return; }
+      }
+      ui.shareEndpoint.setCustomValidity("");
       const name = asText(ui.userName.value).trim();
       if (!name) return alert("Please provide a user name.");
       if (!selectedHome) return alert("Please select a home location.");
@@ -2062,8 +2078,12 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       }
     }
     function getUsageSummaryEndpoint() {
-      // Cutover guard: stale settings/imports must never select the retired service.
-      return DEFAULT_USAGE_SUMMARY_ENDPOINT;
+      const saved = localStorage.getItem(USAGE_ENDPOINT_STORAGE_KEY);
+      return resolveUsageEndpoint(saved ?? profile?.settings?.usageSummaryEndpoint);
+    }
+    function resolveUsageEndpoint(value) {
+      const endpoint = typeof value === "string" ? value.trim() : "";
+      return !endpoint || endpoint === USAGE_SUMMARY_ENDPOINTS.previous ? USAGE_SUMMARY_ENDPOINTS.current : endpoint;
     }
     function getUsageSummaryToken() {
       return "";
@@ -2071,20 +2091,24 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
     function migrateUsageSettings(target) {
       if (!target || typeof target !== "object" || Array.isArray(target)) return;
       if (!target.settings || typeof target.settings !== "object" || Array.isArray(target.settings)) target.settings = {};
-      target.settings.usageSummaryEndpoint = DEFAULT_USAGE_SUMMARY_ENDPOINT;
+      target.settings.usageSummaryEndpoint = resolveUsageEndpoint(target.settings.usageSummaryEndpoint);
       target.settings.usageSummaryToken = "";
     }
     function migrateStoredUsageSettings() {
-      localStorage.setItem("mwh_usage_summary_endpoint", DEFAULT_USAGE_SUMMARY_ENDPOINT);
-      localStorage.removeItem("mwh_usage_summary_token");
       const raw = localStorage.getItem(PROFILE_KEY);
-      if (!raw) return;
+      let stored = null;
       try {
-        const stored = JSON.parse(raw);
-        if (!stored || typeof stored !== "object" || Array.isArray(stored)) return;
-        migrateUsageSettings(stored);
-        localStorage.setItem(PROFILE_KEY, JSON.stringify(stored));
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) stored = parsed;
       } catch { /* Preserve unreadable profiles for the existing recovery flow. */ }
+      const endpoint = resolveUsageEndpoint(localStorage.getItem(USAGE_ENDPOINT_STORAGE_KEY) ?? stored?.settings?.usageSummaryEndpoint);
+      localStorage.setItem(USAGE_ENDPOINT_STORAGE_KEY, endpoint);
+      localStorage.removeItem("mwh_usage_summary_token");
+      if (stored) {
+        migrateUsageSettings(stored);
+        stored.settings.usageSummaryEndpoint = endpoint;
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(stored));
+      }
     }
     async function fetchUsageStats() {
       const endpoint = getUsageSummaryEndpoint();
@@ -2197,6 +2221,22 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       selectionContext = "";
       if (ui.detailPane.style.display !== "none") clearSelection();
     }
+    function openAppDialog() {
+      ui.helpOverlay.style.display = "flex";
+      void loadUsageHistogram();
+    }
+    function scheduleStartupHelp() {
+      const events = ["pointerdown", "keydown", "wheel", "touchstart"];
+      const cleanup = () => events.forEach(name => document.removeEventListener(name, cancel, true));
+      const cancel = () => { window.clearTimeout(timer); cleanup(); };
+      const timer = window.setTimeout(() => {
+        cleanup();
+        if (document.visibilityState !== "visible") return;
+        const dialogOpen = Array.from(document.querySelectorAll(".modal-overlay")).some(el => getComputedStyle(el).display !== "none");
+        if (!dialogOpen) openAppDialog();
+      }, 60000);
+      events.forEach(name => document.addEventListener(name, cancel, { capture: true, passive: true }));
+    }
     function wireUi() {
       document.getElementById("search-btn").addEventListener("click", runSearch);
       document.getElementById("copy-snapshot-btn").addEventListener("click", copySnapshot);
@@ -2205,7 +2245,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       ui.submitClose.addEventListener("click", closeSubmissionDialog);
       ui.searchInput.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTransientUi(); if (e.key === "Enter") { e.preventDefault(); runSearch(); } });
       ui.siteListMode.addEventListener("change", () => { renderSiteList(asText(ui.siteListMode.value)); });
-      ui.appTitleBtn.addEventListener("click", () => { ui.helpOverlay.style.display = "flex"; void loadUsageHistogram(); });
+      ui.appTitleBtn.addEventListener("click", openAppDialog);
       document.getElementById("help-close").addEventListener("click", () => { ui.helpOverlay.style.display = "none"; });
       ui.userMenuToggle.addEventListener("click", () => { ui.userMenu.style.display = ui.userMenu.style.display === "block" ? "none" : "block"; });
       window.addEventListener("click", (e) => { if (!document.getElementById("user-menu-wrap").contains(e.target)) ui.userMenu.style.display = "none"; });
@@ -2341,6 +2381,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
     updateUserUi();
     applyScaleUnits();
     bootData();
+    scheduleStartupHelp();
   </script>
 </body>
 </html>

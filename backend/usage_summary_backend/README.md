@@ -1,15 +1,17 @@
 ﻿<!-- README.md -->
 # Usage summary backend
 
-The application submits exclusively to `https://fjqhgcegnphavatrchjb.supabase.co/functions/v1/usage-summary`. Supabase stores pseudonymous summaries and sends email through Exchange Online. The owner confirmed the initial-profile alert and monthly delivery check on 2 October 2026. Automatic monthly scheduling remains inactive.
+The default reporting destination is `https://fjqhgcegnphavatrchjb.supabase.co/functions/v1/usage-summary`. Supabase stores pseudonymous summaries and sends email through Exchange Online. The owner confirmed the initial-profile alert and monthly delivery check on 2 October 2026. Automatic monthly scheduling remains inactive.
 
 # Browser cutover
 
 Open [My World Heritage](https://pekka-28.github.io/unesco/site/?submit=1) in your usual browser and reload with Ctrl+F5. The retired preview address redirects to this canonical application, preserving query parameters and fragments. Browser storage stays on the same origin, retaining identity and visit history.
 
-The application updates `mwh_usage_summary_endpoint` and the profile's `settings.usageSummaryEndpoint` automatically, clears obsolete tokens and forces requests to Supabase during the transition. Imported profiles are updated when saved. Identity, visits, notes, publication counters and pending receipt IDs are preserved. Settings show the server address as read-only. Use the user menu's Submit action; no manual server edit is required.
+At startup the client resolves `mwh_usage_summary_endpoint` from local storage, falling back to the profile setting only when the browser key is absent. An empty value or an exact match for the previous standard address becomes the current address. The result is saved in both local storage and the profile. Other addresses are retained as custom overrides. Identity, visits, notes, publication counters and pending receipt IDs are preserved.
 
-Close or reload older tabs before submitting. Previously loaded JavaScript cannot be updated until reloaded. The forcing guard can be removed later if configurable servers are reintroduced; retain the settings migration.
+In Settings, edit **Usage summary endpoint URL** to override the server. Clear the field and save to restore the current default. The Submit dialog shows the resolved URL. Custom servers must implement the same reporting and histogram contract; no legacy Google submission adapter is retained. Profile imports preserve a custom endpoint and synchronise it to local storage.
+
+For the next standard-server move, set `USAGE_SUMMARY_ENDPOINTS.previous` to the outgoing `current` value and set `current` to the new URL in `site/index.html`. Exact matching migrates regular configurations while preserving overrides. The previous Google address is retained only as a migration marker. Close or reload older tabs before changing settings so stale application versions do not overwrite them.
 
 # Historical Google Sheets records
 
