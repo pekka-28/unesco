@@ -25,6 +25,11 @@ export function createHandler({ env, fetch: request = fetch, now = () => new Dat
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     try {
       if (req.method === 'GET') {
+        if (new URL(req.url).searchParams.get('histogram') === '1') {
+          const histogram = await rpc('usage_histogram', {});
+          return reply({ ok: true, histogram: { visible: true,
+            buckets: histogram.buckets, population: 'latest_per_profile', bucket_count: 10 } });
+        }
         if (new URL(req.url).searchParams.get('stats') !== '1') return reply({ ok: true, service: 'mwh-supabase', version: 1 });
         const end = now();
         const stats = await rpc('usage_stats', { start_at: new Date(+end - 14 * 86400000).toISOString(), end_at: end.toISOString() });
@@ -56,13 +61,15 @@ export function createHandler({ env, fetch: request = fetch, now = () => new Dat
           !count(p.use_count_since_last_push) || !count(p.visited_site_count) ||
           !['adoption', 'manual', 'periodic'].includes(p.event_type) ||
           typeof p.client_version !== 'string' || p.client_version.length > 32 ||
+          (p.reporting_alias != null && (typeof p.reporting_alias !== 'string' || p.reporting_alias.length > 80 || /[\u0000-\u001f\u007f-\u009f]/.test(p.reporting_alias))) ||
           (p.submission_id != null && !/^[a-f0-9-]{32,64}$/i.test(p.submission_id))) {
         return reply({ ok: false, error: 'Invalid usage summary' }, 400);
       }
-      // Explicit allow-list: never persist tokens, browser details, names or visits.
+      // Only the explicitly optional reporting alias may identify a profile.
       const clean = { submitted_at_utc: new Date(p.submitted_at_utc).toISOString(), magic_cookie: p.magic_cookie,
         use_count_since_last_push: p.use_count_since_last_push, visited_site_count: p.visited_site_count,
         event_type: p.event_type, client_version: p.client_version };
+      if (typeof p.reporting_alias === 'string' && p.reporting_alias.trim()) clean.reporting_alias = p.reporting_alias.trim();
       const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(clean)));
       clean.submission_id = p.submission_id || Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
       const receipt = await rpc('accept_usage', { p: clean });

@@ -9,7 +9,7 @@ The product uses OSM-based mapping, keeps the UNESCO site catalogue current thro
 
 The product supports long-term personal use through profile export/import for archive and migration between machines, plus a static visited-sites report export.
 
-A separate pseudonymous usage-summary path tracks adoption and broad usage interest without collecting personally identifiable information.
+A separate Supabase monitoring platform records pseudonymous usage summaries and provides aggregate adoption statistics. GitHub Actions monitors database availability and sends owner reports for user activity and site-register changes. Profiles, visit details and the site catalogue do not move into Supabase.
 
 ## Overarching goal
 
@@ -21,7 +21,7 @@ Project origin and baseline architecture:
 - Project start date: 2025-12-21 (from the initial `OpenStreetMap vibe coding` kickoff message).
 - Initial mapping architecture baseline: hosted uMap prototype on the OpenStreetMap uMap platform.
 
-Figure 1 shows runtime and data flow. Process components are rectangles and data artifacts are rounded nodes.
+Figure 1 shows the target runtime and data flow. Process components are rectangles and data artifacts are rounded nodes. Deployment status is recorded in the monitoring-platform specification below.
 
 ```mermaid
 flowchart TD
@@ -29,12 +29,16 @@ flowchart TD
   A2(Canonical UNESCO dataset)
   A3(Extracted WHS map dataset)
   A4(User profile and visits)
-  A5(Submission statistics)
+  A5(Supabase Postgres usage submissions)
+  A6(Owner email reports)
 
   P1[CI refresh workflow]
   P2[Conversion and validation tooling]
   P3[My World Heritage web app]
-  P4[Statistics portal]
+  P4[Supabase usage-summary Edge Function]
+  P5[GitHub database probe]
+  P6[Monthly usage report and SMTP]
+  P7[Site-register change report and SMTP]
 
   A1 --> P1
   P1 --> P2
@@ -42,8 +46,14 @@ flowchart TD
   P2 --> A3
   A3 --> P3
   A4 --> P3
-  P3 --> P4
+  P3 -->|Optional pseudonymous summary| P4
   P4 --> A5
+  P4 -->|Acknowledgement and aggregate statistics| P3
+  P5 -->|Read-only statistics query| P4
+  A5 --> P6
+  P6 --> A6
+  P1 -->|Successful validated commit and push| P7
+  P7 --> A6
 ```
 
 Figure 1. My World Heritage data and application architecture.
@@ -59,11 +69,12 @@ The dataset pipeline must keep a stable, auditable, periodically refreshed catal
 - Use canonical root site identifiers in `WHS <id>` form in converted datasets.
 - Maintain generated component-level synthetic sites in `MWH <WHS id>-<nnn>` form for UNESCO multi-location properties while preserving original WHS entries unchanged.
 - Do not generate synthetic component sites when only one component point exists.
-- Preserve retired or delisted sites with explicit `status`.
-- Keep stable `current` filenames and retain timestamped previous versions in history storage.
+- Preserve known sites and components with `status` of `active` or `retired`. Retired means absent from the latest source, not independently confirmed UNESCO delisting. Preserve visit identifiers; reappearance reactivates the same entry.
+- Keep stable `current` filenames and use Git history plus annotated ingestion tags for forensic history. Do not generate duplicate timestamped snapshots or build a temporal catalogue.
 - Validate extracted WHS output before publication.
 - Include extract-status metadata in canonical JSON with source, counts, sizes, most recent data timestamp, most recent attempt timestamp, and retry interval.
 - Send owner alert email when refresh, conversion, or validation fails.
+- Email the owner a separate site-register change report after each successful refresh commit and push, distinguishing added, retired, reactivated, changed and unexpectedly removed records. Ignore formatting and generation metadata; include root/component counts and a complete downloadable change list.
 
 The site-name dictionary remains in scope because it improves readability and is measurable via coverage:
 - Maintain curated local-name mapping in `data/mappings/local_name_table.json`, keyed by WHS id with `english_name` and curated `local_name`.
@@ -138,6 +149,7 @@ Settings are one-line controls and include:
 - Date display format selector (`y-m-d`, `d-m-y`, `m-d-y`) while stored entry values remain canonical.
 - Length units selector (`kilometres` or `miles`).
 - Multiple-sites threshold.
+- Selecting a site temporarily reveals its marker during zoom even when the visited-only filter is enabled. The next normal marker redraw reapplies the filter.
 - `Opt in to periodic usage summary` checkbox.
 - Usage-summary info bubble triggered by the `(i)` control.
 - Reminder interval numeric input (`days`) with `None` checkbox override.
@@ -157,6 +169,10 @@ Usage telemetry is optional, pseudonymous, and aggregate-only:
 - Record coarse per-load census counters without detailed behavioural telemetry.
 - Treat counts as approximate due to abandoned sessions, multi-device use, and repeated use.
 - Keep nearby-site distance display locale-sensitive and configurable (pending strategy finalisation).
+- Use Supabase as the replacement for Google Apps Script/Sheets submission storage; no Supabase account is required for app users.
+- Reuse the same submission identifier and payload on retry. A duplicate accepted submission must acknowledge the existing row without creating another.
+- Advance publication counters only after a valid acceptance acknowledgement, and only to the usage total captured in that submission. Clipboard copies, unverified dispatch and failures do not count as accepted submissions.
+- Do not store local profile names, home locations, individual visits, visit notes, browser user-agent strings or submission tokens in the monitoring database. An explicitly optional reporting alias may be shared, stored and included in the initial owner notification. Preserve owner-supplied historical aliases during import.
 
 ## Data formats and storage
 
@@ -167,13 +183,16 @@ Table 1. Data artifacts and file types.
 | Canonical UNESCO dataset | `.json` | Authoritative project dataset | `data/current/unesco_official_sites.json` |
 | WHS map dataset | `.geojson` | Map-layer consumption by SPA | `data/current/unesco_official_sites.geojson` |
 | User profile export/import | `.profile` (JSON payload) | Archive and machine transfer of user data | User-managed files |
-| Dataset history snapshots | `.json` and `.geojson` | Audit and rollback history | `data/history/` |
+| Dataset history | Git commits and annotated tags | Audit and rollback of source and current outputs | `unesco-ingest/*` tags; `data/provenance/ingestion-history.json` inventories older commits |
 | Usage-summary payload contract | `.json` schema | Backend payload contract | `backend/usage_summary_backend/usage_summary.schema.json` |
+| Accepted usage submissions | PostgreSQL rows | Pseudonymous adoption records and aggregate reporting | Supabase `public.usage_submissions` |
+| Site-register change report | Text and JSON workflow artifacts | Owner notification and complete change list | Successful refresh run; 90-day artifact retention, with permanent evidence in Git |
 
 Storage behaviour is:
 - User profile, visits, and usage counters are stored in browser `localStorage`.
 - Logout state is in-memory for the active page session.
 - Personal/private artifacts must remain excluded from commits.
+- Supabase tables and SQL functions must deny direct access by anonymous and ordinary authenticated app clients. The server-side service role handles approved database operations.
 
 ## Source, licensing, and OSM support
 
@@ -210,7 +229,9 @@ Table 2. Application components and imported services.
 | ArcGIS World Physical Map tiles | External data service | Summary report world-map tile source | Report-map rendering path |
 | Nominatim | External data service | Place geocoding for search/home location | Geographic search provider |
 | `html2canvas` | External library | Snapshot/report rendering support | Client-side capture helper |
-| Google Apps Script endpoint | External application | Usage-summary ingest and aggregate stats | Statistics portal |
+| Supabase Edge Function and Postgres | Monitoring backend | Usage-summary ingest, durable receipts, aggregate statistics and new-profile alert queue | `supabase/`; deployed, browser test and Exchange acceptance verified; published-site cutover pending |
+| GitHub Actions database probe | Availability and activity check | Read-only database query with randomised timing | `.github/workflows/supabase-probe.yml`; live verification passed and schedule enabled |
+| GitHub Actions and SMTP | Owner reporting | Monthly user-activity email and separate site-register change email | Monthly report at 08:00 Africa/Johannesburg on the first; register report after each successful refresh push |
 | GitHub Pages | Hosting platform | Public static site delivery | Production hosting |
 | UNESCO dataset artifacts | Repository data | Current and historical WHS records | Application data source |
 
@@ -254,54 +275,113 @@ The exported Summary report is a self-contained HTML artifact designed for shari
 - `Name` links to UNESCO narrative URL when available.
 - Report ends with a column guide describing each table field.
 
-## Backend script specification
+## Supabase monitoring platform
 
-The Apps Script backend at `backend/usage_summary_backend/google_apps_script/Code.gs` supports ingest, aggregate statistics, and digest support.
+### Project and deployment status
 
-Public web-callable interfaces are only `doGet` and `doPost`. Self-test and helper functions are callable from Apps Script editor/runtime context, not from public web requests.
+The designated project is `fjqhgcegnphavatrchjb`, at `https://fjqhgcegnphavatrchjb.supabase.co`. Its application endpoint is `/functions/v1/usage-summary`.
 
-Table 4. Backend interfaces and invocation context.
+Last verified on 2 October 2026:
 
-| Interface | Web callable | Purpose |
+- The owner has created the project.
+- The [GitHub probe change](https://github.com/pekka-28/unesco/pull/1) is merged into `main`, and its automated tests pass.
+- GitHub secret `SUPABASE_URL` contains the project URL. Repository variable `MWH_SUPABASE_PROBE_ENABLED` is `true`.
+- Supabase CLI applied the usage-summary migration and deployed the Edge Function. The allowed origin is `https://pekka-28.github.io`; a further migration dry run found no pending changes.
+- Hosted RLS, restricted grants, service-role insertion, duplicate receipts and statistics passed verification; the temporary test row was rolled back.
+- The live read-only database probe passed locally and in [GitHub Actions](https://github.com/pekka-28/unesco/actions/runs/36935189208), and scheduled probing is enabled.
+- The monthly Exchange delivery check and first-profile alert are confirmed received. Recurring monthly scheduling and the separate register-report delivery still require activation/verification.
+- Both `/site/` and `/site-supabase/` submit exclusively to Supabase and share the existing browser profile and visit history. Reload migrates saved endpoint settings automatically. It shares the published current catalogue. A live preview update increased the existing test profile from one to four visited sites without another new-profile notification.
+- The new-profile queue, immediate background dispatch and Supabase retry worker are deployed. The owner confirmed an interactive Exchange 365 test email. Exchange accepted the unattended Supabase delivery test and browser-triggered new-profile alert on 2 October 2026; the owner confirmed inbox receipt of both messages. The isolated browser test verified adoption, a manual visit-count update and profile persistence against live Supabase. It used local site files at the permitted Pages origin; the Supabase-only cutover adds automatic settings migration.
+
+Deployment and credential setup are documented in [supabase/DEPLOYMENT.txt](supabase/DEPLOYMENT.txt). This status records the last verification, not continuous monitoring of the live configuration.
+
+### Submission and statistics interfaces
+
+The implementation consists of the Edge Function in `supabase/functions/usage-summary/` and versioned SQL migrations in `supabase/migrations/`.
+
+Table 4. Monitoring interfaces and access.
+
+| Interface | Access | Required behaviour |
 | --- | --- | --- |
-| `doGet` | Yes | Health and aggregate stats response (`?stats=1`). |
-| `doPost` | Yes | Validate payload and append usage summary row. |
-| `buildRecentStats_` | No | Compute active users and average visited sites. |
-| `sendPeriodicDigest` | No | Send owner digest email from workbook rows. |
-| `backendSelfTestDryRun` | No | Validate workbook and token wiring without row insert. |
-| `backendSelfTestAppend` | No | Insert controlled backend self-test row. |
-| `installDailyDigestTrigger` | No | Create daily digest trigger. |
-| `enforceWorkbookBinding_` | No | Restrict writes to configured workbook id/name. |
+| `OPTIONS /functions/v1/usage-summary` | Browser preflight | Permit the configured application origin and supported methods/headers. |
+| `POST /functions/v1/usage-summary` | Pseudonymous application submission | Validate payload, optionally check the ingest token, and acknowledge only an accepted database transaction or its confirmed duplicate. |
+| `GET /functions/v1/usage-summary?stats=1` | Public aggregate read | Query Postgres and return aggregate active-profile and visited-site statistics for the preceding 14 days. Expose no individual submission rows or profile identifiers. |
+| Bare `GET /functions/v1/usage-summary` | Static service identification | Identify the service; this response alone must not count as evidence that the database is working. |
+| `accept_usage(jsonb)` | Server-side service role only | Atomically enforce duplicate detection and per-cookie rate limits and store the accepted submission. |
+| `usage_stats(start_at, end_at)` | Server-side service role only | Return aggregate counts for a specified receipt-time interval; used by the public statistics endpoint and private monthly reporting. |
 
-Table 5. Backend settings guidance.
+Submission requirements are:
 
-| Setting | Default | Recommended | Range | Description |
-| --- | --- | --- | --- | --- |
-| `MWH_ALLOWED_SPREADSHEET_ID` | none | required | exact id | Bound workbook id allow-list. |
-| `MWH_ALLOWED_SPREADSHEET_NAME` | empty | set in production | exact name or empty | Optional strict workbook name check. |
-| `MWH_INGEST_TOKEN` | empty | set for shared/public endpoint | non-empty string or empty | Optional shared token gate for ingest. |
-| `MWH_REPORT_EMAIL` | none | required for digest | valid email | Digest recipient address. |
-| `MWH_REPORT_DAYS` | `7` | `7` or `14` | integer >= 1 | Digest lookback window in days. |
-| `MWH_STATS_WINDOW_DAYS` | `14` | about `2 x MWH_REPORT_DAYS` | integer >= 1 | Encouragement/aggregate stats window. |
-| `MWH_MIN_INTERVAL_SECONDS` | `30` | `30` to `120` | `1` to `3600` | Minimum gap per cookie between accepted submissions. |
-| `MWH_MAX_SUBMISSIONS_PER_COOKIE_PER_HOUR` | `12` | `12` production, higher for test | `1` to `1000` | Hourly cap per cookie for burst damping. |
-| `MWH_DUPLICATE_TTL_SECONDS` | `3600` | >= min interval | `60` to `86400` | Duplicate suppression window. |
-| `MWH_MAX_PAYLOAD_BYTES` | `4096` | `4096` | `512` to `65536` | Payload size guardrail. |
-| `MWH_LAST_DIGEST_AT` | script-managed | do not set manually | ISO timestamp | Last digest send marker. |
+- Accept `adoption`, `manual` and `periodic` events with a submission timestamp, pseudonymous cookie, non-negative usage and visited-site counts, client version and stable submission ID. Derive a deterministic ID for supported legacy payloads without one.
+- Enforce a maximum payload size of 4,096 UTF-8 bytes before accepting it.
+- Store the server receipt timestamp and an allow-listed payload. Do not retain credentials or detailed personal activity.
+- Check for an already accepted submission before rate limiting. Reusing an ID with different content must fail.
+- Limit each cookie to a minimum 30-second interval and at most 12 accepted submissions per rolling hour. Failed writes must not consume accepted-submission quota or create false duplicate receipts.
+- Use database transactions and a bounded concurrency policy to prevent racing retries from creating duplicate rows. Duplicate records are durable while the accepted rows are retained, rather than dependent on an expiring cache marker.
+- Keep `usage_submissions` protected by row-level security and grants. Ordinary app clients must not directly query its rows or invoke private SQL functions.
+- Return explicit failures for invalid input, rate limits and unavailable database operations. Optional aggregate statistics must not turn an already accepted write into a misleading rejection.
 
-### Backend settings guidance details
+These numeric limits belong to the prepared implementation; unlike the old Apps Script configuration, they are not adjustable through legacy Google script properties.
 
-#### `MWH_ALLOWED_SPREADSHEET_ID` and `MWH_ALLOWED_SPREADSHEET_NAME`
+### Database availability and activity probe
 
-Use id binding as a hard requirement. Name binding is optional but recommended in production as an additional guard against accidental re-binding.
+The GitHub workflow `.github/workflows/supabase-probe.yml` must:
 
-#### `MWH_STATS_WINDOW_DAYS` and `MWH_REPORT_DAYS`
+- Run three scheduled probes daily at 02:17, 10:17 and 19:17 UTC (04:17, 12:17 and 21:17 Africa/Johannesburg), with an independently random 0-90 second delay before each scheduled query. The intervals therefore vary around eight, nine and seven hours; the schedule is not a promise of exact execution times.
+- Query the database-backed `?stats=1` endpoint using `scripts/probe_supabase.mjs`. Perform no writes, synthetic submissions or changes to usage counters.
+- Supply only the project URL to the probe job. The Edge Function uses its own server credentials; no administrative token, service-role key or database password is passed to the probe.
+- Require a successful HTTP response and a valid aggregate response. Static health responses, malformed content and failed queries must fail the workflow.
+- Avoid logging aggregate values or individual records.
+- Gate scheduled runs on `MWH_SUPABASE_PROBE_ENABLED=true`. Allow manual diagnostics while scheduling is disabled, without the random delay.
+- Run mocked probe tests on relevant pull requests without contacting Supabase or using project secrets.
 
-Set stats window longer than digest window so user-facing encouragement stays stable while owner digests stay frequent enough for operations.
+The probe is a best-effort availability/activity check. It does not guarantee that a free project will avoid provider pausing, and it cannot resume an already paused project. Operators must monitor failed Actions runs and provider pause warnings, and check that GitHub schedules remain enabled. Successful mocked tests are not a substitute for a successful live database query.
 
-#### `MWH_MIN_INTERVAL_SECONDS`, `MWH_MAX_SUBMISSIONS_PER_COOKIE_PER_HOUR`, and `MWH_DUPLICATE_TTL_SECONDS`
+### Owner email reports
 
-Treat these as coordinated controls: minimum interval limits immediate repeats, hourly cap dampens scripted bursts, and duplicate TTL suppresses near-identical replays.
+Immediate alerts use the owner's Exchange 365 mailbox through Microsoft Graph. Keep the notifier's application authorisation in Supabase Secrets and restrict its Exchange send permission to the sender mailbox. GitHub credentials and Supabase Auth emails do not participate in this delivery path.
+
+**Immediate new-profile alert:** after accepting the first report for a previously unseen pseudonymous profile, Supabase queues one owner email to `pekka@data.co.za` in the same database transaction. Begin delivery immediately after acceptance, without delaying the browser acknowledgement or waiting for the monthly report. Any first event type qualifies; a repeated adoption event is not a new profile. Existing profiles at migration time must not generate retrospective alerts. Deduplicate by profile identifier, retain failures for retry and prevent simultaneous workers from sending the same queued alert. Supabase runs both the immediate delivery and retry scheduler; GitHub is not involved. Include first-receipt time, report type, visited-site count and the optional reporting alias when supplied, without profile identifiers or individual visits. A new profile does not prove a new unique person. Provider acceptance followed by an interrupted acknowledgement can still cause a duplicate email on retry; SMTP cannot guarantee exactly-once delivery.
+
+Both report types go to `pekka@data.co.za` using GitHub Actions and configured SMTP delivery. They are separate from submission acceptance and must not alter usage data.
+
+**Monthly user-activity report:** `.github/workflows/monthly-usage-email.yml` targets 08:00 Africa/Johannesburg on the first of each month. It covers the preceding Johannesburg calendar month using server receipt times, including zero-activity months. Include accepted submissions, active pseudonymous profiles, adoption/manual/periodic event counts, reported uses and average visited-site count from each profile's latest submission in the period. Explain that these are voluntary reports, not a count of all users or unique people. Exclude individual identifiers and visit details. Store the preview artifact for 30 days. Gate the workflow on `MWH_MONTHLY_REPORT_ENABLED=true`; manual runs default to preview-only.
+
+**Site-register change report:** the dataset-refresh workflow sends a separate report after each successful validation, commit and push, including unchanged refreshes and manual refresh runs. Compare the preceding canonical catalogue with the committed result by stable site ID. Report additions, newly retired entries, reactivations, changed attributes and unexpected removals, separating roots and components. Ignore formatting, generation timestamps and record ordering. Include source roots without usable coordinates when that metadata is available. List up to 40 entries per category in the email and retain the full text/JSON report artifact for 90 days. Git remains the permanent forensic record. Register additions are not necessarily new UNESCO inscriptions, and retirements are not proof of official delisting. A successful push does not itself prove that the separate Pages deployment completed.
+
+The site-register report must work independently of Supabase and the monthly-report enable switch. Failed refreshes continue to use the existing failure-alert path. Missing SMTP configuration must be visible; no workflow may claim that an email was sent when it was not. Manual reruns can resend mail; exactly-once SMTP delivery is not guaranteed.
+
+### Authentication and operational configuration
+
+Owner dashboard access may use the existing GitHub identity with two-factor authentication. Agent connections and CI deployment credentials are separate from owner login and from application-user identity. Prefer a connected Supabase integration or dedicated project-scoped access tokens, with separate revocable credentials for agents and deployment automation. GitHub's `GITHUB_TOKEN` is not a Supabase credential. No monitoring capability requires an app user to create a Supabase account.
+
+Table 5. Supabase and GitHub configuration.
+
+| Setting | Location | Purpose and handling |
+| --- | --- | --- |
+| `SUPABASE_URL` | Hosted Edge Function environment and GitHub Actions secret | Project URL; the only Supabase configuration supplied to the probe job. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side Edge Function environment; GitHub secret for monthly reporting | Private database operations. Never expose in browser code, probe configuration, commits or logs. |
+| `MWH_ALLOWED_ORIGIN` | Edge Function configuration | Application origin; current default is `https://pekka-28.github.io`. |
+| `MWH_INGEST_TOKEN` | Optional Edge Function secret and matching app setting | Optional submission gate. A browser-held token is not a strong anti-abuse boundary. |
+| `SUPABASE_ACCESS_TOKEN` | Agent connection/local environment or separate GitHub deployment secret | Scoped Management API/CLI access; not used by the probe or for app submissions. |
+| `MWH_SUPABASE_PROBE_ENABLED` | GitHub repository variable | Enable scheduled probes only after a successful live query. Currently `false`. |
+| `MWH_MONTHLY_REPORT_ENABLED` | GitHub repository variable | Enable the monthly user-activity workflow after configuration and delivery verification. |
+| `MWH_ALERT_SMTP_SERVER`, `MWH_ALERT_SMTP_PORT`, `MWH_ALERT_SMTP_USERNAME`, `MWH_ALERT_SMTP_PASSWORD` | GitHub Actions secrets | SMTP connection and authentication shared by owner reports and refresh alerts. |
+| `MWH_ALERT_MAIL_FROM`, `MWH_ALERT_MAIL_TO` | GitHub Actions secrets | Sender and refresh-failure recipient. Set the latter to the owner address for the existing alert configuration gate; the two report workflows target the owner explicitly. |
+
+Database migration tools may separately require the database password. Do not treat a scoped management token as limiting a direct SQL connection authenticated with that password. Detailed setup steps and required deployment permissions belong in the deployment guide.
+
+### Google integration retirement and cutover
+
+The application submits exclusively to Supabase. New profiles default to the Supabase URL. During cutover, the client forces this destination regardless of old overrides, rewrites both browser-local and profile settings, clears obsolete tokens, and migrates imported profiles without changing identity, visits or pending receipt IDs. The server field is read-only. Reload previously opened tabs to apply the change. The old Apps Script implementation is removed from the working tree and retained in Git history. See [cutover and historical-import instructions](backend/usage_summary_backend/README.md).
+
+Before cutover:
+
+1. Apply the prepared SQL migration and deploy the Edge Function to the designated project.
+2. Verify CORS and all three event types from the real Pages origin, confirmed database receipts, retry/concurrency behaviour, rejected requests without counter advance and denial of direct client table/RPC access.
+3. Switch the default endpoint and handle old overrides in profiles/localStorage. Keep ordinary profile and visit features usable when reporting is unavailable.
+4. Verify one manual GitHub database probe, then enable its schedule. Verify the monthly report preview and delivery before enabling its schedule, and separately verify register-report delivery.
+5. Disable the legacy Apps Script digest trigger to avoid duplicate owner reports. Keep the old Sheet as historical evidence. Historical import is authorised once the owner supplies the private export and spreadsheet time zone: preserve dates, reconcile duplicates, strip excluded fields and baseline existing profiles before inserting so no retrospective alerts are sent.
 
 ## History (retired paths)
 
@@ -365,4 +445,16 @@ Release readiness requires:
 - Stable WHS layer load with deterministic identifiers.
 - Personal data not committed by default.
 - Working profile lifecycle without mandatory backend dependency.
+- Verified Supabase submission receipts, durable retry handling and private database access from the real application deployment.
+- A successful live read-only database probe before scheduled probing is enabled; randomized timing must not introduce writes or require probe credentials.
+- Verified monthly user-activity and separate site-register email delivery, with reporting failures visible and the Google digest disabled after cutover.
+- Accurate distinction between prepared code, published workflows and verified live services.
 - Synchronised requirements and implemented feature set.
+
+# Visited-site histogram
+
+Display a histogram in the Usage summary pane, using each known reporting profile's latest accepted activity report, regardless of age. Repeated submissions must not count as additional users. Include profiles reporting zero visits and exclude test and synthetic records.
+
+Use exactly ten equal-width buckets scaled to the observed visit-count range, with an upper bound just above the largest integer count so the maximum is included. Leave the dependent frequency axis unscaled: no numeric ticks, count labels or count tooltips. The histogram API returns relative bar heights, not exact bucket counts, aliases or profile identifiers.
+
+Always show the histogram, without a minimum reporting population. With no activity records, show ten empty buckets. Describe the population as reporting profiles, not verified unique people. This requirement replaces the earlier aspirational-only proposal.
