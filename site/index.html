@@ -274,11 +274,6 @@
       <h3 style="margin-top:0;">Usage summary</h3>
       <div id="submit-summary" class="status-grid"></div>
       <div id="submit-status" class="status-scroll submit-status">Ready to submit.</div>
-      <section id="usage-histogram-section" aria-labelledby="usage-histogram-title">
-        <h4 id="usage-histogram-title">Sites visited by reporting profiles</h4>
-        <div id="usage-histogram" style="overflow-x:auto;"></div>
-        <p id="usage-histogram-caption" class="meta" aria-live="polite"></p>
-      </section>
       <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
         <button id="submit-send" class="btn primary" type="button">Submit</button>
         <button id="submit-close" class="btn" type="button">Close</button>
@@ -290,6 +285,11 @@
     <div class="modal" style="max-width:560px;">
       <h3 style="margin-top:0;">My World Heritage</h3>
       <p class="meta">Version <span id="app-version">-</span></p>
+      <section id="usage-histogram-section" aria-labelledby="usage-histogram-title">
+        <h4 id="usage-histogram-title">Sites visited by reporting profiles</h4>
+        <div id="usage-histogram" style="overflow-x:auto;"></div>
+        <p id="usage-histogram-caption" class="meta" aria-live="polite"></p>
+      </section>
       <p>Track World heritage visits and travel with a maintained UNESCO site catalogue, while keeping personal data under your control. A periodic opt-in statistical submission can be enabled to track usage interest; no personally identifiable information is submitted, and a pseudonymous identity links submissions from the same client.</p>
       <h4 style="margin-bottom:6px;">Where data is stored</h4>
       <ul>
@@ -1725,7 +1725,6 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       ui.submitSend.disabled = false;
       ui.submitClose.disabled = false;
       ui.submitOverlay.style.display = "flex";
-      void loadUsageHistogram();
     }
     async function loadUsageHistogram() {
       const container = document.getElementById("usage-histogram");
@@ -1741,7 +1740,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         if (!Array.isArray(bins) || bins.length !== 10 || bins.some(b => !Number.isFinite(b.lower_bound) || b.lower_bound < 0 || !Number.isFinite(b.upper_bound) || b.upper_bound <= b.lower_bound || !Number.isFinite(b.height) || b.height < 0 || b.height > 1)) throw new Error("Invalid buckets");
         const width = Math.max(420, bins.length * 45 + 30), plotHeight = 130, baseline = 145, step = (width - 30) / bins.length;
         const bars = bins.map((b, i) => {
-          const format = n => Number(n.toFixed(1)).toLocaleString();
+          const format = n => Math.round(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
           const label = `${format(b.lower_bound)}–${format(b.upper_bound)}`;
           const x = 20 + i * step, height = b.height * plotHeight;
           return `<rect x="${x}" y="${baseline-height}" width="${Math.max(1,step-3)}" height="${height}" fill="#287b8e"/><text x="${x+step/2}" y="${baseline+16}" transform="rotate(45 ${x+step/2} ${baseline+16})" font-size="11" fill="#334155">${escapeHtml(label)}</text>`;
@@ -2206,7 +2205,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       ui.submitClose.addEventListener("click", closeSubmissionDialog);
       ui.searchInput.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTransientUi(); if (e.key === "Enter") { e.preventDefault(); runSearch(); } });
       ui.siteListMode.addEventListener("change", () => { renderSiteList(asText(ui.siteListMode.value)); });
-      ui.appTitleBtn.addEventListener("click", () => { ui.helpOverlay.style.display = "flex"; });
+      ui.appTitleBtn.addEventListener("click", () => { ui.helpOverlay.style.display = "flex"; void loadUsageHistogram(); });
       document.getElementById("help-close").addEventListener("click", () => { ui.helpOverlay.style.display = "none"; });
       ui.userMenuToggle.addEventListener("click", () => { ui.userMenu.style.display = ui.userMenu.style.display === "block" ? "none" : "block"; });
       window.addEventListener("click", (e) => { if (!document.getElementById("user-menu-wrap").contains(e.target)) ui.userMenu.style.display = "none"; });

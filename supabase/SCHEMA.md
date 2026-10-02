@@ -156,7 +156,7 @@ Some form of claim coordination is necessary with these concurrent delivery path
 
 # Usage histogram
 
-The Usage summary pane shows exactly ten equal-width buckets from the minimum reported visit count to one above the maximum integer count. Lower bounds are inclusive and upper bounds exclusive. Even a single observed value produces ten buckets. For each record in **Profiles**, the histogram uses the latest matching `activity` record in **Submissions** across the full stored history, where one exists. Records classified as test or synthetic do not contribute [8].
+The My World Heritage dialog shows exactly ten equal-width buckets from the minimum reported visit count to one above the maximum integer count. Lower bounds are inclusive and upper bounds exclusive. The displayed boundary labels are rounded to whole numbers; the underlying bucket boundaries and sample selection are unchanged. Even a single observed value produces ten buckets. For each record in **Profiles**, the histogram uses the latest matching `activity` record in **Submissions** across the full stored history, where one exists. Records classified as test or synthetic do not contribute [8].
 
 There is no minimum reporting population. The chart always displays ten buckets, with zero heights when no activity records exist [9]. For non-empty populations, bar heights are normalised to the tallest bar; the API omits absolute bucket counts, aliases and profile identifiers. The chart has no numeric frequency axis, count labels or count tooltips. Relative shapes still communicate distribution; this is not a formal anonymity guarantee.
 

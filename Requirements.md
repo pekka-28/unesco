@@ -453,9 +453,9 @@ Release readiness requires:
 
 # Visited-site histogram
 
-Display a histogram in the Usage summary pane, using each known reporting profile's latest accepted activity report, regardless of age. Repeated submissions must not count as additional users. Include profiles reporting zero visits and exclude test and synthetic records.
+Display a histogram in the My World Heritage dialog, using each known reporting profile's latest accepted activity report, regardless of age. Repeated submissions must not count as additional users. Include profiles reporting zero visits and exclude test and synthetic records.
 
-Use exactly ten equal-width buckets scaled to the observed visit-count range, with an upper bound just above the largest integer count so the maximum is included. Leave the dependent frequency axis unscaled: no numeric ticks, count labels or count tooltips. The histogram API returns relative bar heights, not exact bucket counts, aliases or profile identifiers.
+Use exactly ten equal-width buckets scaled to the observed visit-count range, with an upper bound just above the largest integer count so the maximum is included. Display bucket boundary labels rounded to whole numbers. Leave the dependent frequency axis unscaled: no numeric ticks, count labels or count tooltips. The histogram API returns relative bar heights, not exact bucket counts, aliases or profile identifiers.
 
 Always show the histogram, without a minimum reporting population. With no activity records, show ten empty buckets. Describe the population as reporting profiles, not verified unique people. This requirement replaces the earlier aspirational-only proposal.
 
