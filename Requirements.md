@@ -461,3 +461,9 @@ Deploy Supabase migrations and declared Edge Functions from `main` through the n
 # Startup help
 
 After 60 seconds without pointer presses, keyboard input, touch or wheel interaction following startup, open the My World Heritage colophon/help dialog once. Do not cover another open dialog or open it in a hidden tab. User interaction cancels this startup prompt; closing help does not restart it. Manual opening remains available from the application title. The tooling list identifies Supabase statistics collection and GitHub Pages site hosting.
+
+# Owner administration
+
+Provide a separate administration interface restricted to the confirmed owner account, with a fixed owner UUID checked on every API request. Sign-in links use Supabase Auth and the existing Exchange sender. Public source, known URLs, CORS and hidden controls must confer no authority. Every executing component must authenticate its immediate caller and enforce its configured authorisation; downstream services may use explicitly delegated server identities.
+
+Include bounded read-only queries of Profiles, Submissions, Notifications, schema and operation history; database health, size, migrations and schedules; workflow status; catalogue refresh, publication and probe dispatch; notification retries; test mail and monthly delivery checks. Preserve historical classifications. Record state-changing commands with unique request IDs and expose uncertain outcomes without automatic repetition. Keep privileged imports, schema changes, permission changes and secret management in reviewed maintenance workflows. The published-API inventory and configuration are in [Administration](ADMINISTRATION.md).

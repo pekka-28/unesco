@@ -5,7 +5,7 @@ Status: proposed target architecture, aligned with [Requirements.md](Requirement
 
 # Architectural approach
 
-The system consists of a static mapping application, a Git-managed catalogue pipeline and optional Supabase monitoring. GitHub Actions runs scheduled processing and owner reporting. Profiles and visits stay on the user's device; Git retains catalogue history; Supabase holds accepted pseudonymous usage summaries. Monitoring failure must not prevent local profile use.
+The system consists of static mapping and owner-administration interfaces, a Git-managed catalogue pipeline and optional Supabase monitoring. GitHub Actions runs catalogue processing; Supabase runs owner mail reporting. Profiles and visits stay on the user's device; Git retains catalogue history; Supabase holds accepted pseudonymous usage summaries. Monitoring failure must not prevent local profile use.
 
 The catalogue shows current active or retired status. Git commits and ingestion tags support forensic investigation without a temporal site database.
 
@@ -58,6 +58,7 @@ flowchart TB
     Source --- Catalogue
     Maps --- Browser
     Mail --- Operations
+    Operations --- Browser
     classDef owned fill:#eaf2fb,stroke:#315b80,color:#172b4d
     classDef sibling fill:#ffffff,stroke:#315b80,color:#172b4d,stroke-dasharray:5 5
     classDef external fill:#eeeeee,stroke:#888888,color:#555555
@@ -130,6 +131,7 @@ flowchart TB
         Profile["Profile and export manager"]
         Client["Monitoring client"]
         UI["Map and visit interface"]
+        AdminUI["Owner administration interface"]
         Profile --- UI
         Client --- UI
     end
@@ -138,12 +140,15 @@ flowchart TB
     API --- Client
     Pages --- UI
     Maps --- UI
+    Operations["Operations and reporting"]
+    Operations --- AdminUI
+    Pages --- AdminUI
     classDef owned fill:#eaf2fb,stroke:#315b80,color:#172b4d
     classDef sibling fill:#ffffff,stroke:#315b80,color:#172b4d,stroke-dasharray:5 5
     classDef external fill:#eeeeee,stroke:#888888,color:#555555
     linkStyle default stroke:#315b80
-    class Profile,Client,UI owned
-    class Local,Pages,API sibling
+    class Profile,Client,UI,AdminUI owned
+    class Local,Pages,API,Operations sibling
     class Maps external
     linkStyle 6 stroke:#999999
 ```
@@ -194,6 +199,7 @@ flowchart TB
         Monthly["Monthly usage reporter"]
         Register["Register reports and refresh alerts"]
         NewProfile["New-profile notifier"]
+        AdminAPI["Owner administration API"]
     end
     Stores --- Monthly
     Stores --- Register
@@ -204,11 +210,15 @@ flowchart TB
     Register --- Monthly
     API --- NewProfile
     SMTP --- NewProfile
+    API --- AdminAPI
+    Stores --- AdminAPI
+    AdminAPI --- Monthly
+    AdminAPI --- NewProfile
     classDef owned fill:#eaf2fb,stroke:#315b80,color:#172b4d
     classDef sibling fill:#ffffff,stroke:#315b80,color:#172b4d,stroke-dasharray:5 5
     classDef external fill:#eeeeee,stroke:#888888,color:#555555
     linkStyle default stroke:#315b80
-    class Probe,Monthly,Register,NewProfile owned
+    class Probe,Monthly,Register,NewProfile,AdminAPI owned
     class Stores,API,Refresh sibling
     class SMTP external
     linkStyle 5,8 stroke:#999999
@@ -225,7 +235,7 @@ flowchart TB
     subgraph Stores["Databases and stores"]
         Git["Git repository"]
         DB["Postgres"]
-        Local["Browser localStorage"]
+        Local["Browser storage"]
         Files["User-managed files"]
         Artifacts["Workflow artifacts"]
     end
@@ -239,6 +249,7 @@ flowchart TB
     Artifacts --- Operations
     Local --- Browser
     Files --- Browser
+    DB --- Operations
     classDef owned fill:#eaf2fb,stroke:#315b80,color:#172b4d
     classDef sibling fill:#ffffff,stroke:#315b80,color:#172b4d,stroke-dasharray:5 5
     classDef external fill:#eeeeee,stroke:#888888,color:#555555

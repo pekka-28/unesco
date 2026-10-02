@@ -5,6 +5,7 @@ import {siteHtml} from './site_source.mjs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 export const files = [
+  'admin/index.html',
   'site/index.html', 'site/favicon.svg', 'site/site.webmanifest',
   'site/icons/apple-touch-icon.svg', 'site/icons/favicon-16.svg',
   'site/icons/favicon-32.svg', 'site/icons/icon-192.svg',
@@ -23,6 +24,7 @@ export async function buildPages(destination) {
     if (!(await lstat(source)).isFile()) throw new Error(`Not a regular file: ${file}`);
     await mkdir(path.dirname(target), {recursive:true});
     if (file === 'site/index.html') await writeFile(target, siteHtml());
+    else if (file === 'admin/index.html') await writeFile(target, siteHtml('admin'));
     else if (file === 'site-supabase/index.html') await writeFile(target, siteHtml('redirect'));
     else await copyFile(source, target);
   }

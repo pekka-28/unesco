@@ -21,7 +21,7 @@ Routine CLI deployment is retired as the chosen release process under [Issue #6]
 
 # Distribution checks
 
-`Publish canonical application` builds a fresh directory from the explicit twelve-file allowlist in `scripts/build_pages.mjs`. It publishes one application HTML file, eight referenced icon/manifest files, two current catalogue files and one compatibility redirect. No repository-wide copy or Jekyll build is used.
+`Publish canonical application` builds a fresh directory from the explicit thirteen-file allowlist in `scripts/build_pages.mjs`. It publishes the visit and administration HTML files, eight referenced icon/manifest files, two current catalogue files and one compatibility redirect. No repository-wide copy or Jekyll build is used.
 
 The distribution excludes backend source, migrations, credentials, tests, build scripts, archived implementations, staging inputs and historical snapshots. Documentation remains in the GitHub repository. Automated tests check the exact output file list, refusal to reuse an existing output directory, the Supabase endpoint and redirect behaviour. Browser validation checks retained profile/history, map loading, histogram rendering and both entry URLs.
 
