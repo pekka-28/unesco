@@ -1,0 +1,2282 @@
+<!doctype html>
+<!-- index.html 0.2.0 -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My World Heritage — Supabase preview</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="./icons/favicon-32.svg" sizes="32x40" type="image/svg+xml">
+  <link rel="icon" href="./icons/favicon-16.svg" sizes="16x20" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.svg">
+  <link rel="manifest" href="./site.webmanifest">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100%; }
+    #search-controls { position: absolute; top: 10px; left: 56px; right: 10px; z-index: 1200; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    #search-wrap { position: relative; display: flex; align-items: center; background: #fff; border: 1px solid #b8c1cc; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; }
+    #search-input { width: 220px; border: 0; outline: none; padding: 8px 10px; font: 13px sans-serif; }
+    .icon-btn { width: 36px; height: 36px; border: 0; background: #fff; cursor: pointer; font: 14px sans-serif; display: inline-flex; align-items: center; justify-content: center; }
+    .icon-btn svg { width: 18px; height: 18px; stroke: #2f465c; stroke-width: 2; fill: none; pointer-events: none; }
+    .pill { background: #fff; border: 1px solid #b8c1cc; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 6px 10px; font: 13px sans-serif; }
+    #brand-mark-wrap { position: relative; }
+    #brand-mark-btn { width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+    #brand-mark-btn img { width: 20px; height: 24px; display: block; }
+    .brand-tooltip { position: absolute; top: 42px; left: 0; width: min(380px, 72vw); z-index: 1300; display: none; margin-top: 0; background:#fff; border:1px solid #b8c1cc; border-radius:3px; box-shadow:0 1px 3px rgba(0,0,0,0.25); padding:6px 8px; font:13px/1.4 sans-serif; color:#222; }
+    #brand-mark-wrap:hover .brand-tooltip, #brand-mark-wrap:focus-within .brand-tooltip { display: block; }
+    #loading-indicator { height: 36px; box-sizing: border-box; padding: 0 10px; display: inline-flex; align-items: center; }
+    #search-results { position: absolute; top: 44px; left: 0; width: 420px; max-height: 280px; overflow: auto; background: #fff; border: 1px solid #b8c1cc; border-radius: 8px; box-shadow: 0 8px 18px rgba(0,0,0,0.2); display: none; font: 13px/1.4 sans-serif; }
+    .result-row { padding: 8px 10px; border-bottom: 1px solid #eef2f6; cursor: pointer; }
+    .result-row:hover { background: #f6f9fc; }
+    .result-meta { color: #556; font-size: 12px; }
+    #title-bar { position: absolute; top: 10px; right: 10px; z-index: 1200; display: flex; align-items: center; gap: 8px; }
+    #user-menu-wrap { position: relative; }
+    #user-menu-toggle { cursor: pointer; }
+    #user-menu { position: absolute; top: 42px; right: 0; width: 190px; background: #fff; border: 1px solid #b8c1cc; border-radius: 8px; box-shadow: 0 8px 18px rgba(0,0,0,0.2); display: none; overflow: hidden; font: 13px sans-serif; }
+    .menu-item { width: 100%; text-align: left; border: 0; border-bottom: 1px solid #edf2f7; background: #fff; padding: 9px 10px; cursor: pointer; font: 13px sans-serif; }
+    .menu-item:hover { background: #f5f9fc; }
+    .menu-item:last-child { border-bottom: 0; }
+    #detail-pane { position: absolute; top: 58px; right: 10px; z-index: 1100; width: 380px; max-height: calc(100% - 68px); overflow: auto; background: #fff; border: 1px solid #b8c1cc; border-radius: 8px; box-shadow: 0 8px 18px rgba(0,0,0,0.2); padding: 12px; font: 13px/1.4 sans-serif; display: none; }
+    .meta { color: #445; font-size: 12px; }
+    .muted { color: #667; font-size: 12px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(18, 28, 38, 0.45); z-index: 2000; display: none; align-items: center; justify-content: center; }
+    .modal { width: min(820px, calc(100% - 24px)); max-height: calc(100% - 24px); overflow: auto; background: #fff; border-radius: 10px; border: 1px solid #b8c1cc; box-shadow: 0 12px 24px rgba(0,0,0,0.28); padding: 14px; font: 14px/1.45 sans-serif; }
+    .row { margin-bottom: 10px; }
+    .field { width: 100%; box-sizing: border-box; padding: 7px; }
+    .btn { border: 1px solid #8ea1b5; background: #fff; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+    .btn.primary { background: #0a4f8a; color: #fff; border-color: #0a4f8a; }
+    .visited-row { margin-bottom: 6px; }
+    .site-row { margin-bottom: 6px; }
+    .site-table-head { display: grid; grid-template-columns: 1fr 110px; gap: 8px; font-weight: 700; font-size: 13px; margin-bottom: 8px; position: sticky; top: 0; background: #fff; z-index: 2; padding-top: 2px; }
+    .site-table-head a { color: inherit; text-decoration: none; cursor: pointer; }
+    .site-row-grid { display: grid; grid-template-columns: 1fr 110px; gap: 8px; align-items: start; margin-bottom: 6px; }
+    .site-name-clip { display: inline-block; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+    .site-list-wrap { max-height: calc(100vh - 170px); overflow: auto; }
+    .visit-note-clip { display: inline-block; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+    .plain-link { color: #0a4f8a; text-decoration: none; cursor: pointer; }
+    .plain-link:hover { text-decoration: underline; }
+    .hint-link { margin-left: 6px; font-size: 12px; }
+    .inline-bubble { display: none; margin-top: 6px; background: #f7fafc; border: 1px solid #d7dde5; border-radius: 6px; padding: 8px; font-size: 12px; color: #334; }
+    .combo-inline { display:flex; gap:8px; margin-top:6px; align-items:stretch; }
+    .combo-field-wrap { position: relative; flex: 1 1 auto; }
+    .combo-results { margin-top: 6px; width: 100%; max-height: 220px; overflow: auto; background: #fff; border: 1px solid #b8c1cc; border-radius: 8px; box-shadow: 0 6px 14px rgba(0,0,0,0.12); display: none; font: 13px/1.4 sans-serif; }
+    .combo-results.infield { position:absolute; top:calc(100% + 2px); left:0; right:0; margin-top:0; z-index:12; }
+    .combo-row { padding: 8px 10px; border-bottom: 1px solid #eef2f6; cursor: pointer; }
+    .combo-row:hover { background: #f6f9fc; }
+    .combo-row:last-child { border-bottom: 0; }
+    .info-btn { width: 24px; height: 24px; border: 1px solid #8ea1b5; border-radius: 999px; background: #fff; cursor: pointer; font: 12px sans-serif; line-height: 1; }
+    .status-scroll { max-height: 110px; overflow: auto; background: #f7fafc; border: 1px solid #d7dde5; border-radius: 6px; padding: 8px; white-space: pre-wrap; word-break: break-word; font: 12px/1.35 sans-serif; }
+    .status-grid { display: grid; grid-template-columns: 140px 1fr; gap: 6px 10px; font-size: 12px; margin-bottom: 8px; }
+    .setting-line { display: flex; align-items: center; gap: 10px; }
+    .setting-line .setting-label { min-width: 220px; flex: 0 0 220px; font-weight: 700; }
+    .setting-line .field { flex: 1 1 auto; }
+    .setting-line.compact .field { flex: 0 0 auto; width: auto; }
+    .compact-select { min-width: 160px; }
+    .compact-number { width: 110px; min-width: 0; }
+    .setting-inline { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+    .notify-dot { position: absolute; right: 6px; top: 6px; width: 8px; height: 8px; border-radius: 999px; background: #c21a1a; display: none; }
+    .submit-status { min-height: 72px; }
+    @media (max-width: 800px) {
+      #search-controls { left: 50px; right: 8px; gap: 4px; }
+      #search-input { width: min(46vw, 200px); }
+      #detail-pane { width: min(92vw, 380px); right: 8px; top: 92px; max-height: calc(100% - 100px); }
+      #title-bar { top: 56px; right: 8px; }
+      .site-name-clip { max-width: 52vw; }
+      .visit-note-clip { max-width: 52vw; }
+      .setting-line { flex-wrap: wrap; }
+      .setting-line .setting-label { min-width: 0; flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div style="position:fixed;bottom:24px;left:10px;z-index:1300;background:white;padding:5px 9px;border:1px solid #b8c1cc;border-radius:6px;font:12px sans-serif">Supabase preview · Shared local profile</div>
+  <div id="search-controls">
+    <div id="brand-mark-wrap">
+      <button id="brand-mark-btn" class="pill icon-btn" type="button" title="Symbol information" aria-label="Symbol information">
+        <img src="./icons/mwh-temple.svg" alt="My World Heritage symbol">
+      </button>
+      <div class="brand-tooltip">
+        This symbol is a custom My World Heritage mark. It is not the UNESCO logo, not the World Heritage Emblem, and not the Hague Convention Blue Shield.
+      </div>
+    </div>
+    <button id="app-title-btn" class="pill" type="button"><strong>My World Heritage</strong></button>
+    <div id="search-wrap">
+      <input id="search-input" type="text" placeholder="Search">
+      <button id="search-btn" class="icon-btn" type="button" title="Search" aria-label="Search">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+        </svg>
+      </button>
+      <div id="search-results"></div>
+    </div>
+    <button id="copy-snapshot-btn" class="icon-btn pill" type="button" title="Snapshot image" aria-label="Copy snapshot image">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="9" y="9" width="10" height="10" rx="2" ry="2"></rect>
+        <path d="M5 15V7c0-1.1 0.9-2 2-2h8"></path>
+      </svg>
+    </button>
+    <select id="site-list-mode" class="pill" style="height:36px;">
+      <option value=""></option>
+      <option value="all" selected>All sites</option>
+      <option value="multiple">Multiple sites</option>
+      <option value="visited">Visited sites</option>
+      <option value="searched">Searched sites</option>
+    </select>
+    <div id="loading-indicator" class="pill" style="display:none;">Loading ...</div>
+  </div>
+
+  <div id="title-bar">
+    <button id="summary-inbox-btn" class="icon-btn pill" type="button" title="Usage summary reminder" aria-label="Usage summary reminder" style="position:relative; display:none;">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 6h18v12H3z"></path>
+        <path d="M3 7l9 6 9-6"></path>
+      </svg>
+      <span id="summary-inbox-dot" class="notify-dot"></span>
+    </button>
+    <div id="user-menu-wrap">
+      <button id="user-menu-toggle" class="pill" type="button">Guest</button>
+      <div id="user-menu">
+        <button id="menu-connect" class="menu-item" type="button">Connect</button>
+        <button id="menu-settings" class="menu-item" type="button">Settings</button>
+        <button id="menu-export" class="menu-item" type="button">Export</button>
+        <button id="menu-import" class="menu-item" type="button">Import</button>
+        <button id="menu-summary" class="menu-item" type="button">Summary</button>
+        <button id="menu-submit" class="menu-item" type="button">Submit</button>
+        <button id="menu-reset" class="menu-item" type="button">Reset</button>
+        <button id="menu-logout" class="menu-item" type="button">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="detail-pane"></div>
+
+  <div id="enrol-overlay" class="modal-overlay">
+    <div class="modal">
+      <h2 style="margin-top:0;">My World Heritage enrolment</h2>
+      <p class="meta">Set up user name and home location, then optionally mark nearby visited sites.</p>
+      <div class="row">
+        <label for="enrol-user-name"><strong>User name</strong></label>
+        <input id="enrol-user-name" class="field" type="text" placeholder="Your name or alias">
+      </div>
+      <div class="row">
+        <strong>Home location</strong>
+        <div class="combo-inline">
+          <div class="combo-field-wrap">
+            <input id="enrol-home-query" class="field" type="text" placeholder="Search for your home place">
+            <div id="enrol-home-suggestions" class="combo-results infield"></div>
+          </div>
+          <button id="enrol-home-search" class="btn" type="button">Search</button>
+        </div>
+        <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+          <button id="enrol-use-my-location" class="btn" type="button">Use my location</button>
+          <span id="enrol-loc-status" class="meta"></span>
+        </div>
+        <div id="enrol-home-selected" class="meta" style="margin-top:4px;"></div>
+      </div>
+      <div class="row">
+        <strong>Nearby sites</strong>
+        <div id="enrol-nearby-list"></div>
+      </div>
+      <div class="row" style="display:flex; justify-content:flex-end;">
+        <button id="enrol-save" class="btn primary" type="button">Create profile</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-overlay" class="modal-overlay">
+    <div class="modal">
+      <h2 style="margin-top:0;">My World Heritage settings</h2>
+      <p class="meta">Profile data is stored locally in your browser only.</p>
+      <div class="row setting-line">
+        <label for="user-name" class="setting-label">User name</label>
+        <input id="user-name" class="field" type="text" placeholder="Your name or alias">
+      </div>
+      <div class="row">
+        <strong>Home location</strong>
+        <div style="display:flex; gap:8px; margin-top:6px;">
+          <input id="home-query" class="field" type="text" list="home-matches" placeholder="Search for your home place">
+          <button id="home-search" class="btn" type="button">Search</button>
+        </div>
+        <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+          <button id="use-my-location" class="btn" type="button">Use my location</button>
+          <span id="loc-status" class="meta"></span>
+        </div>
+        <datalist id="home-matches"></datalist>
+        <div id="home-selected" class="meta" style="margin-top:4px;"></div>
+      </div>
+      <div class="row setting-line">
+        <span class="setting-label">Visited only</span>
+        <label><input id="visited-only-setting" type="checkbox"> Show only visited markers</label>
+      </div>
+      <div class="row setting-line">
+        <span class="setting-label">Usage summary</span>
+        <div style="flex:1;">
+          <label><input id="share-enabled" type="checkbox"> Opt in to periodic usage summary</label>
+          <button id="share-info-link" class="info-btn hint-link" type="button" aria-label="Usage summary info">i</button>
+        </div>
+      </div>
+      <div class="row setting-line compact">
+        <span class="setting-label">Reminder interval (days)</span>
+        <div class="setting-inline">
+          <input id="share-interval" class="field compact-number" type="number" min="0.0001" step="any">
+          <label><input id="share-none" type="checkbox"> None</label>
+        </div>
+      </div>
+      <div class="row setting-line">
+        <label for="share-endpoint" class="setting-label">Usage summary endpoint URL</label>
+        <input id="share-endpoint" readonly class="field" type="url" placeholder="https://...">
+      </div>
+      <div class="row setting-line">
+        <label for="share-token" class="setting-label">Usage summary token</label>
+        <input id="share-token" disabled class="field" type="password" placeholder="Optional shared token">
+      </div>
+      <div class="row">
+        <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonymous usage summary (date, use count since last publication, visited site count, magic cookie) so project maintainers can understand usage trends. If an endpoint is configured, the summary is posted there; otherwise the app falls back to clipboard copy.</div>
+      </div>
+      <div class="row">
+        <div id="share-submit-status" class="meta"></div>
+      </div>
+      <div class="row setting-line compact">
+        <label for="date-format" class="setting-label">Date display format</label>
+        <select id="date-format" class="field compact-select">
+          <option value="y-m-d">y-m-d</option>
+          <option value="d-m-y">d-m-y</option>
+          <option value="m-d-y">m-d-y</option>
+        </select>
+      </div>
+      <div class="row setting-line compact">
+        <label for="length-units" class="setting-label">Length units</label>
+        <select id="length-units" class="field compact-select">
+          <option value="km">Kilometres</option>
+          <option value="mi">Miles</option>
+        </select>
+      </div>
+      <div class="row setting-line compact">
+        <label for="multiple-threshold" class="setting-label">Multiple sites threshold</label>
+        <input id="multiple-threshold" class="field compact-number" type="number" min="1" step="1" value="5">
+      </div>
+      <div class="row" style="display:flex; justify-content:flex-end; gap:8px;">
+        <button id="settings-save" class="btn primary" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="submit-overlay" class="modal-overlay">
+    <div class="modal" style="max-width:560px;">
+      <h3 style="margin-top:0;">Usage summary</h3>
+      <div id="submit-summary" class="status-grid"></div>
+      <div id="submit-status" class="status-scroll submit-status">Ready to submit.</div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+        <button id="submit-send" class="btn primary" type="button">Submit</button>
+        <button id="submit-close" class="btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="help-overlay" class="modal-overlay">
+    <div class="modal" style="max-width:560px;">
+      <h3 style="margin-top:0;">My World Heritage</h3>
+      <p class="meta">Version <span id="app-version">-</span></p>
+      <p>Track World heritage visits and travel with a maintained UNESCO site catalogue, while keeping personal data under your control. A periodic opt-in statistical submission can be enabled to track usage interest; no personally identifiable information is submitted, and a pseudonymous identity links submissions from the same client.</p>
+      <h4 style="margin-bottom:6px;">Where data is stored</h4>
+      <ul>
+        <li>Site catalogue in use: <code>data/current/unesco_official_sites.geojson</code>.</li>
+        <li>Profile, visits and usage counters: browser <code>localStorage</code> (persists across browser restarts).</li>
+        <li>Logout state: in-memory on the current page only (no browser storage key).</li>
+      </ul>
+      <h4 style="margin-bottom:6px;">Dataset extract status</h4>
+      <div class="status-grid">
+        <div><strong>Status</strong></div><div id="extract-status-result">Unavailable</div>
+        <div><strong>Source</strong></div><div id="extract-status-source">-</div>
+        <div><strong>Count</strong></div><div id="extract-status-count">-</div>
+        <div><strong>Input size</strong></div><div id="extract-status-input">-</div>
+        <div><strong>Dataset size</strong></div><div id="extract-status-size">-</div>
+        <div><strong>Most recent data</strong></div><div id="extract-status-data-at">-</div>
+        <div><strong>Most recent attempt</strong></div><div id="extract-status-attempt-at">-</div>
+        <div><strong>Retry interval</strong></div><div id="extract-status-retry">-</div>
+      </div>
+      <p><strong>Export</strong> downloads your local profile <code>.profile</code> file. <strong>Import</strong> loads a compatible <code>.profile</code> file, so you can migrate data between systems without backend support.</p>
+      <p>Sites with very large UNESCO component counts are grouped under <strong>Multiple sites</strong> and not shown to reduce map and list clutter; visited, searched, or explicitly selected sites are shown.</p>
+      <h4 style="margin-bottom:6px;">Tooling used</h4>
+      <ul>
+        <li>Leaflet for map rendering and interaction.</li>
+        <li>OpenStreetMap for basemap tiles.</li>
+        <li>Nominatim for geographic text search.</li>
+      </ul>
+      <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+        <button id="help-close" class="btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <input id="import-file" type="file" accept=".profile" style="display:none;">
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+    const DEFAULT_USAGE_SUMMARY_ENDPOINT = "https://fjqhgcegnphavatrchjb.supabase.co/functions/v1/usage-summary";
+    const PROFILE_KEY = "mwh_profile";
+    const CENSUS_KEY = "mwh_census";
+    const MAP_VIEW_KEY = "mwh_map_view";
+    const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
+    const APP_VERSION = "0.2.0";
+    const APP_NAME = "My World Heritage";
+    const APP_TITLE_SEPARATOR = " \u2013 ";
+    const REPORT_TILE_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}";
+    const PROFILE_SCHEMA_VERSION = 1;
+    const FEATURE_FLAG_PREFIX = "mwh_flag_";
+    const CRITERIA_URL = "https://whc.unesco.org/en/criteria/";
+    const criteriaTitles = { i: "Masterpiece of human creative genius", ii: "Interchange of human values", iii: "Exceptional testimony to a tradition or civilisation", iv: "Outstanding example illustrating stages in history", v: "Outstanding settlement, land-use, or sea-use example", vi: "Association with events, traditions, ideas, or beliefs", vii: "Exceptional natural beauty", viii: "Earth history and geomorphic processes", ix: "Ecological and biological processes", x: "In-situ biodiversity conservation" };
+    const map = L.map("map").setView([20, 0], 2);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors", crossOrigin: "anonymous" }).addTo(map);
+    let scaleControl = null;
+    const ui = {
+      detailPane: document.getElementById("detail-pane"), searchInput: document.getElementById("search-input"), searchResults: document.getElementById("search-results"), loadingIndicator: document.getElementById("loading-indicator"),
+      helpOverlay: document.getElementById("help-overlay"), settingsOverlay: document.getElementById("settings-overlay"), enrolOverlay: document.getElementById("enrol-overlay"), userMenuToggle: document.getElementById("user-menu-toggle"),
+      userMenu: document.getElementById("user-menu"), menuSummary: document.getElementById("menu-summary"), menuSubmit: document.getElementById("menu-submit"), menuReset: document.getElementById("menu-reset"), importFile: document.getElementById("import-file"), userName: document.getElementById("user-name"),
+      brandMarkWrap: document.getElementById("brand-mark-wrap"), brandMarkBtn: document.getElementById("brand-mark-btn"),
+      homeQuery: document.getElementById("home-query"), homeMatchesList: document.getElementById("home-matches"), homeSelected: document.getElementById("home-selected"),
+      locStatus: document.getElementById("loc-status"), visitedOnlySetting: document.getElementById("visited-only-setting"),
+      shareEnabled: document.getElementById("share-enabled"), shareInterval: document.getElementById("share-interval"), shareNone: document.getElementById("share-none"), shareEndpoint: document.getElementById("share-endpoint"), shareToken: document.getElementById("share-token"), shareSubmitStatus: document.getElementById("share-submit-status"),
+      shareInfoLink: document.getElementById("share-info-link"), shareInfoBubble: document.getElementById("share-info-bubble"),
+      summaryInboxBtn: document.getElementById("summary-inbox-btn"), summaryInboxDot: document.getElementById("summary-inbox-dot"),
+      submitOverlay: document.getElementById("submit-overlay"), submitSummary: document.getElementById("submit-summary"), submitStatus: document.getElementById("submit-status"), submitSend: document.getElementById("submit-send"), submitClose: document.getElementById("submit-close"),
+      enrolUserName: document.getElementById("enrol-user-name"), enrolHomeQuery: document.getElementById("enrol-home-query"), enrolHomeSuggestions: document.getElementById("enrol-home-suggestions"),
+      enrolLocStatus: document.getElementById("enrol-loc-status"), enrolHomeSelected: document.getElementById("enrol-home-selected"), enrolNearbyList: document.getElementById("enrol-nearby-list"),
+      siteListMode: document.getElementById("site-list-mode"), appTitleBtn: document.getElementById("app-title-btn"),
+      extractStatusResult: document.getElementById("extract-status-result"), extractStatusSource: document.getElementById("extract-status-source"),
+      extractStatusCount: document.getElementById("extract-status-count"), extractStatusInput: document.getElementById("extract-status-input"),
+      extractStatusSize: document.getElementById("extract-status-size"), extractStatusDataAt: document.getElementById("extract-status-data-at"),
+      extractStatusAttemptAt: document.getElementById("extract-status-attempt-at"), extractStatusRetry: document.getElementById("extract-status-retry"),
+      dateFormat: document.getElementById("date-format"), lengthUnits: document.getElementById("length-units"), multipleThreshold: document.getElementById("multiple-threshold"),
+      appVersion: document.getElementById("app-version")
+    };
+    let whsData = null, layer = null, markersBySiteId = new Map(), profile = null, connected = false, manuallyDisconnected = false, selectedHome = null, homeMatches = [], enrolSelectedHome = null, enrolMatches = [], lastSearchedSiteIds = [], searchFocusBySiteId = new Map(), ignoreMapClickUntil = 0, selectedSiteId = null, listSortBy = "name", listSortDir = "asc", selectionContext = "";
+    let homeMatchIndexByLabel = new Map(), enrolMatchIndexByLabel = new Map();
+    let summaryReminderTimer = null, pendingSummaryDialog = null, submissionInProgress = false;
+    let componentCountByRootId = new Map(), highVolumeComponentSiteIds = new Set(), explicitVisibleSiteIds = new Set();
+    const asText = (v) => v == null ? "" : String(v);
+    const nowIso = () => new Date().toISOString();
+    function buildAppTitle(userName = "") {
+      const who = asText(userName).trim();
+      return who ? `${APP_NAME}${APP_TITLE_SEPARATOR}${who}` : APP_NAME;
+    }
+    function getBooleanFlag(name, fallback = false) {
+      const qp = new URLSearchParams(window.location.search);
+      const qv = qp.get(name);
+      if (qv != null) return /^(1|true|yes|on)$/i.test(asText(qv));
+      const sv = localStorage.getItem(`${FEATURE_FLAG_PREFIX}${name}`);
+      if (sv != null) return /^(1|true|yes|on)$/i.test(asText(sv));
+      return fallback;
+    }
+    const flags = { submitEnabled: getBooleanFlag("submit", true), resetEnabled: getBooleanFlag("reset", false) };
+    function applyFeatureFlags() {
+      if (ui.menuSubmit) ui.menuSubmit.style.display = flags.submitEnabled ? "block" : "none";
+      if (ui.menuReset) ui.menuReset.style.display = flags.resetEnabled ? "block" : "none";
+    }
+    function rawDisplayName(p) {
+      const en = asText(p && p.name_en);
+      const nm = asText(p && p.name);
+      if (en) return en;
+      if (nm) return nm;
+      return "Unnamed site";
+    }
+    function splitComponentName(raw) {
+      const text = asText(raw);
+      const ix = text.indexOf(" - ");
+      if (ix <= 0) return null;
+      return { root: text.slice(0, ix).trim(), child: text.slice(ix + 3).trim() };
+    }
+    function sanitizeSiteName(value) {
+      return asText(value).replace(/\\/g, "").replace(/\s{2,}/g, " ").trim();
+    }
+    function foldTextForCompare(value) {
+      return asText(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    }
+    function namesEquivalent(a, b) {
+      const aa = foldTextForCompare(a);
+      const bb = foldTextForCompare(b);
+      return !!aa && !!bb && aa === bb;
+    }
+    const WHS_ID_RE = /^WHS\s+(\d{1,6})$/;
+    const MWH_ID_RE = /^MWH\s+(\d{1,6})-(\d{3})$/;
+    function isValidSiteId(id) {
+      const t = asText(id).trim();
+      return WHS_ID_RE.test(t) || MWH_ID_RE.test(t);
+    }
+    function assertValidSiteId(id, context = "site id") {
+      const t = asText(id).trim();
+      if (!isValidSiteId(t)) throw new Error(`Invalid ${context}: ${t || "<empty>"}`);
+      return t;
+    }
+    function extractWhsNumberFromSiteId(id, context = "site id") {
+      const t = assertValidSiteId(id, context);
+      const whsMatch = t.match(WHS_ID_RE);
+      if (whsMatch) return whsMatch[1];
+      const mwhMatch = t.match(MWH_ID_RE);
+      if (mwhMatch) return mwhMatch[1];
+      throw new Error(`Cannot extract WHS number from ${context}: ${t}`);
+    }
+    function findFeatureBySiteId(siteId) {
+      if (!whsData || !Array.isArray(whsData.features) || !siteId) return null;
+      const wanted = asText(siteId).trim();
+      if (!wanted) return null;
+      return whsData.features.find((f) => asText(f && f.properties && f.properties.site_id).trim() === wanted) || null;
+    }
+    function displayName(p) {
+      const raw = rawDisplayName(p);
+      if (asText(p && p.site_scope) === "component") {
+        const parts = splitComponentName(raw);
+        if (parts && parts.child) return sanitizeSiteName(parts.child);
+      }
+      return sanitizeSiteName(raw);
+    }
+    function detectNativeScriptName(p, primaryName = "") {
+      const mapped = asText(p && p.native_display).trim();
+      if (mapped && !namesEquivalent(mapped, primaryName)) return mapped;
+      const strongScript = /[\u0370-\u03FF\u0400-\u052F\u0590-\u08FF\u0900-\u0DFF\u0E00-\u0E7F\u1100-\u11FF\u2D30-\u2D7F\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/;
+      const nativeObj = p && typeof p.native_names === "object" ? p.native_names : null;
+      const mappedFields = nativeObj ? [asText(nativeObj.name_ar), asText(nativeObj.name_ru), asText(nativeObj.name_zh)] : [];
+      const candidates = [...mappedFields, asText(p && p.name), asText(p && p.name_en), ...(Array.isArray(p && p.aliases) ? p.aliases.map(asText) : [])];
+      for (const c of candidates) {
+        const t = asText(c).trim();
+        if (!t) continue;
+        if (!strongScript.test(t)) continue;
+        if (namesEquivalent(t, primaryName)) continue;
+        return t;
+      }
+      const scope = asText(p && p.site_scope);
+      const parentId = asText(p && p.parent_site_id);
+      if (scope === "component" && parentId) {
+        const parent = findFeatureBySiteId(parentId);
+        const parentNative = asText(parent && parent.properties && parent.properties.native_display).trim();
+        if (parentNative && strongScript.test(parentNative) && !namesEquivalent(parentNative, primaryName)) return parentNative;
+      }
+      return "";
+    }
+    function escapeHtml(text) {
+      return asText(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+    function nbspHtml(text) {
+      return escapeHtml(text).replace(/ /g, "&nbsp;");
+    }
+    function tooltipContent(feature) {
+      const p = feature && feature.properties ? feature.properties : {};
+      const primary = displayName(p);
+      const native = detectNativeScriptName(p, primary);
+      const lines = [
+        `<span dir="auto" style="display:block; font-size:13px; line-height:1.2;">${escapeHtml(primary)}</span>`
+      ];
+      if (native) lines.push(`<span dir="auto" style="display:block; font-size:13px; line-height:1.2;">${escapeHtml(native)}</span>`);
+      return lines.join("");
+    }
+    function randomCookie() { const arr = new Uint8Array(16); crypto.getRandomValues(arr); return Array.from(arr).map(x => x.toString(16).padStart(2, "0")).join(""); }
+    let loadingCounter = 0;
+    function showLoading(text = "Loading ...") {
+      loadingCounter += 1;
+      ui.loadingIndicator.textContent = text;
+      ui.loadingIndicator.style.display = "inline-flex";
+    }
+    function hideLoading() {
+      loadingCounter = Math.max(0, loadingCounter - 1);
+      if (loadingCounter === 0) {
+        ui.loadingIndicator.textContent = "Loading ...";
+        ui.loadingIndicator.style.display = "none";
+      }
+    }
+    function defaultProfile() { return { schemaVersion: PROFILE_SCHEMA_VERSION, name: "", homeLat: null, homeLon: null, homeLabel: "", siteVisits: {}, inspectedSiteIds: [], settings: { visitedOnly: false, dateFormat: "y-m-d", lengthUnits: "km", multipleThreshold: 5, usageSummaryEndpoint: "", usageSummaryToken: "" }, usage: { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 }, publishPreference: { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false }, magicCookie: randomCookie(), updatedAt: nowIso() }; }
+    function incrementCensusUse() { let c = { schemaVersion: 1, useCount: 0, updatedAt: nowIso() }; try { c = JSON.parse(localStorage.getItem(CENSUS_KEY)) || c; } catch {} c.useCount = Number(c.useCount || 0) + 1; c.updatedAt = nowIso(); localStorage.setItem(CENSUS_KEY, JSON.stringify(c)); }
+    function verifyProfile(obj) {
+      if (!obj || typeof obj !== "object") return { ok: false, reason: "Profile missing" };
+      if (obj.schemaVersion !== PROFILE_SCHEMA_VERSION) return { ok: false, reason: `Unsupported profile version ${obj.schemaVersion}` };
+      if (!Array.isArray(obj.inspectedSiteIds)) return { ok: false, reason: "Invalid profile arrays" };
+      if (!obj.usage || typeof obj.usage !== "object") return { ok: false, reason: "Usage block missing" };
+      if (obj.siteVisits != null && typeof obj.siteVisits !== "object") return { ok: false, reason: "Invalid site visits block" };
+      try {
+        for (const id of obj.inspectedSiteIds || []) assertValidSiteId(id, "inspected site id");
+        for (const k of Object.keys(obj.siteVisits || {})) assertValidSiteId(k, "visit site id");
+      } catch (e) {
+        return { ok: false, reason: asText(e && e.message) || "Invalid site id format in profile" };
+      }
+      return { ok: true };
+    }
+    function persistProfile() { if (!profile) return; profile.updatedAt = nowIso(); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
+    function siteIdCaption(feature) {
+      const p = feature && feature.properties ? feature.properties : {};
+      const id = assertValidSiteId(p.site_id, "detail site id");
+      const scope = asText(p.site_scope);
+      const parent = asText(p.parent_site_id);
+      if (scope === "component" && parent) {
+        if (!WHS_ID_RE.test(parent)) throw new Error(`Invalid component parent id in detail: ${parent}`);
+        const rootFeature = findFeatureBySiteId(parent);
+        const rootName = rootFeature ? displayName(rootFeature.properties || {}) : "";
+        if (rootName) return `Site id ${id} (component of ${parent}: ${rootName})`;
+        return `Site id ${id} (component of ${parent})`;
+      }
+      if (WHS_ID_RE.test(id)) return id;
+      return `Site id ${id}`;
+    }
+    function setVisitStatus(siteId, status) {
+      if (!(connected && profile) || !siteId) return;
+      ensureVisitStructures();
+      const list = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
+      const latest = getLatestVisitEntry(siteId);
+      const now = nowIso();
+      if (!latest) {
+        if (status !== "not_visited") {
+          list.push({ id: crypto.randomUUID(), date: "", status, note: "", createdAt: now, updatedAt: now });
+          profile.siteVisits[siteId] = list;
+        }
+      } else {
+        const idx = list.findIndex((x) => asText(x.id) === asText(latest.id));
+        if (idx >= 0) {
+          list[idx].status = status;
+          list[idx].updatedAt = now;
+          profile.siteVisits[siteId] = list;
+        }
+      }
+      persistProfile();
+    }
+    function ensureVisitStructures() {
+      if (!profile) return;
+      profile.siteVisits = profile.siteVisits || {};
+    }
+    function normalizeDateOnly(value) {
+      const raw = asText(value).trim();
+      if (!raw) return "";
+      const y = raw.match(/^(\d{4})$/);
+      if (y) return y[1];
+      const ym = raw.match(/^(\d{4})-(\d{1,2})$/);
+      if (ym) {
+        const year = ym[1];
+        const month = Number(ym[2]);
+        if (Number.isNaN(month) || month < 0 || month > 12) return "";
+        return `${year}-${String(month).padStart(2, "0")}`;
+      }
+      const ymd = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (ymd) {
+        const year = Number(ymd[1]);
+        const month = Number(ymd[2]);
+        const day = Number(ymd[3]);
+        if (Number.isNaN(month) || Number.isNaN(day) || month < 0 || month > 12 || day < 0 || day > 31) return "";
+        if (month === 0 && day !== 0) return "";
+        if (month > 0 && day > 0) {
+          const maxDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+          if (day > maxDay) return "";
+        }
+        return `${ymd[1]}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      }
+      return "";
+    }
+    function formatStatusLabel(status) {
+      const s = asText(status);
+      if (s === "wont_visit") return "Won't visit";
+      const t = s.replace(/_/g, " ");
+      return t ? t.charAt(0).toUpperCase() + t.slice(1) : "Not visited";
+    }
+    function truncateText(value, maxLen) {
+      const t = asText(value);
+      return t.length <= maxLen ? t : `${t.slice(0, maxLen - 1)}...`;
+    }
+    function dateSortKey(raw) {
+      const d = normalizeDateOnly(raw);
+      if (!d) return "";
+      const parts = d.split("-");
+      if (parts.length === 1) return `${parts[0]}-00-00`;
+      if (parts.length === 2) return `${parts[0]}-${parts[1]}-00`;
+      return d;
+    }
+    function defaultVisitDateValue() {
+      return new Date().toISOString().slice(0, 10);
+    }
+    function formatVisitDateForDisplay(raw) {
+      const fmt = asText(profile && profile.settings && profile.settings.dateFormat) || "y-m-d";
+      const d = normalizeDateOnly(raw);
+      if (!d) return "";
+      const parts = d.split("-");
+      const y = parts[0] || "";
+      const m = parts[1] || "";
+      const day = parts[2] || "";
+      if (parts.length === 1) return y;
+      if (parts.length === 2) {
+        if (fmt === "m-d-y") return `${m}-${y}`;
+        if (fmt === "d-m-y") return `${m}-${y}`;
+        return `${y}-${m}`;
+      }
+      if (fmt === "d-m-y") return `${day}-${m}-${y}`;
+      if (fmt === "m-d-y") return `${m}-${day}-${y}`;
+      return `${y}-${m}-${day}`;
+    }
+    function formatVisitDateForReport(raw) {
+      const d = normalizeDateOnly(raw);
+      if (!d) return "";
+      const p = d.split("-");
+      if (p.length === 1) return p[0];
+      if (p.length === 2) {
+        const dt = new Date(Number(p[0]), Number(p[1]) - 1, 1);
+        if (Number.isNaN(dt.getTime())) return `${p[1]} ${p[0]}`;
+        const mon = dt.toLocaleString(undefined, { month: "short" });
+        return `${mon} ${p[0]}`;
+      }
+      const dt = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+      if (Number.isNaN(dt.getTime())) return d;
+      const day = dt.toLocaleString(undefined, { day: "numeric" });
+      const mon = dt.toLocaleString(undefined, { month: "short" });
+      const year = dt.toLocaleString(undefined, { year: "numeric" });
+      return `${day} ${mon} ${year}`;
+    }
+    function formatTimestampLocal(raw) {
+      const dt = raw instanceof Date ? raw : new Date(raw);
+      if (Number.isNaN(dt.getTime())) return asText(raw);
+      const day = dt.toLocaleString(undefined, { day: "numeric" });
+      const mon = dt.toLocaleString(undefined, { month: "short" });
+      const year = dt.toLocaleString(undefined, { year: "numeric" });
+      const time = dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+      return `${day} ${mon} ${year} ${time}`;
+    }
+    function formatTimestampUtc(raw) {
+      const dt = raw instanceof Date ? raw : new Date(raw);
+      if (Number.isNaN(dt.getTime())) return asText(raw);
+      const mon = dt.toLocaleString("en-GB", { timeZone: "UTC", month: "short" });
+      const day = String(dt.getUTCDate());
+      const year = String(dt.getUTCFullYear());
+      const hh = String(dt.getUTCHours()).padStart(2, "0");
+      const mm = String(dt.getUTCMinutes()).padStart(2, "0");
+      return `${day} ${mon} ${year} ${hh}:${mm} UTC`;
+    }
+    function applyScaleUnits() {
+      if (scaleControl) map.removeControl(scaleControl);
+      const units = asText(profile && profile.settings && profile.settings.lengthUnits) || "km";
+      if (units === "mi") scaleControl = L.control.scale({ metric: false, imperial: true });
+      else scaleControl = L.control.scale({ metric: true, imperial: false });
+      scaleControl.addTo(map);
+    }
+    function getSiteVisits(siteId) {
+      if (!(connected && profile) || !siteId) return [];
+      ensureVisitStructures();
+      const visits = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
+      return visits.slice().sort((a, b) => {
+        const da = normalizeDateOnly(a.date);
+        const db = normalizeDateOnly(b.date);
+        if (da !== db) return db.localeCompare(da);
+        return asText(b.updatedAt || b.createdAt).localeCompare(asText(a.updatedAt || a.createdAt));
+      });
+    }
+    function getLatestVisitEntry(siteId) {
+      const visits = getSiteVisits(siteId);
+      return visits.length ? visits[0] : null;
+    }
+    function saveSiteVisit(siteId, visit) {
+      if (!(connected && profile) || !siteId) return;
+      ensureVisitStructures();
+      const list = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
+      const clean = {
+        id: asText(visit.id) || crypto.randomUUID(),
+        date: normalizeDateOnly(visit.date),
+        status: asText(visit.status) || "not_visited",
+        note: asText(visit.note).trim(),
+        createdAt: asText(visit.createdAt) || nowIso(),
+        updatedAt: nowIso()
+      };
+      const idx = list.findIndex((x) => asText(x.id) === clean.id);
+      if (idx >= 0) list[idx] = clean;
+      else list.push(clean);
+      profile.siteVisits[siteId] = list;
+      persistProfile();
+    }
+    function deleteSiteVisit(siteId, visitId) {
+      if (!(connected && profile) || !siteId || !visitId) return;
+      ensureVisitStructures();
+      const list = Array.isArray(profile.siteVisits[siteId]) ? profile.siteVisits[siteId] : [];
+      profile.siteVisits[siteId] = list.filter((x) => asText(x.id) !== asText(visitId));
+      if (!profile.siteVisits[siteId].length) delete profile.siteVisits[siteId];
+      persistProfile();
+    }
+    function setTitle() {
+      const who = connected && profile ? asText(profile.name) : "";
+      document.title = buildAppTitle(who);
+    }
+    function updateUserUi() {
+      if (connected && profile && profile.name) ui.userMenuToggle.textContent = profile.name;
+      else if (manuallyDisconnected) ui.userMenuToggle.textContent = "Disconnected";
+      else ui.userMenuToggle.textContent = "Guest";
+      document.getElementById("menu-connect").style.display = connected ? "none" : "block";
+      document.getElementById("menu-settings").style.display = connected ? "block" : "none";
+      document.getElementById("menu-export").style.display = connected ? "block" : "none";
+      if (ui.menuSummary) ui.menuSummary.style.display = connected ? "block" : "none";
+      document.getElementById("menu-logout").style.display = connected ? "block" : "none";
+      setTitle();
+      updateSummaryReminderUi();
+    }
+    function parseCriteriaTokens(raw) { const t = asText(raw).toLowerCase(); const m = t.match(/(x|ix|viii|vii|vi|iv|v|iii|ii|i)/g) || []; const out = []; const seen = new Set(); for (const k of m) if (!seen.has(k)) { seen.add(k); out.push(k); } return out; }
+    function criteriaHtml(raw) { const tokens = parseCriteriaTokens(raw); if (!tokens.length) return "n/a"; return tokens.map(t => `<a href="${CRITERIA_URL}" target="_blank" rel="noopener" title="${asText(criteriaTitles[t] || "UNESCO criterion")}">(${t})</a>`).join(" "); }
+    function getVisitStatus(siteId) {
+      if (!(connected && profile)) return "not_visited";
+      const latest = getLatestVisitEntry(siteId);
+      return latest ? (asText(latest.status) || "not_visited") : "not_visited";
+    }
+    const isVisited = (siteId) => getVisitStatus(siteId) === "visited";
+    function getMultipleThreshold() {
+      const n = Number(connected && profile && profile.settings && profile.settings.multipleThreshold);
+      if (!Number.isFinite(n) || n < 1) return 5;
+      return Math.floor(n);
+    }
+    function rebuildComponentIndexes() {
+      componentCountByRootId = new Map();
+      highVolumeComponentSiteIds = new Set();
+      if (!whsData || !Array.isArray(whsData.features)) return;
+      for (const f of whsData.features) {
+        const p = f.properties || {};
+        const scope = asText(p.site_scope);
+        const siteId = asText(p.site_id);
+        if (scope === "whs") {
+          const count = Number(p.component_count);
+          if (siteId && Number.isFinite(count) && count > 0) componentCountByRootId.set(siteId, count);
+        }
+      }
+      const threshold = getMultipleThreshold();
+      for (const f of whsData.features) {
+        const p = f.properties || {};
+        if (asText(p.site_scope) !== "component") continue;
+        const siteId = asText(p.site_id);
+        const parentId = asText(p.parent_site_id);
+        const parentCount = Number(componentCountByRootId.get(parentId) || 0);
+        if (siteId && parentCount > threshold) highVolumeComponentSiteIds.add(siteId);
+      }
+    }
+    function isHighVolumeComponent(siteId) {
+      return highVolumeComponentSiteIds.has(asText(siteId));
+    }
+    function shouldShowSite(siteId) {
+      const onlyVisited = !!(connected && profile && profile.settings && profile.settings.visitedOnly);
+      const visited = isVisited(siteId);
+      if (onlyVisited && !visited) return false;
+      if (!isHighVolumeComponent(siteId)) return true;
+      if (visited) return true;
+      if (explicitVisibleSiteIds.has(siteId)) return true;
+      if ((lastSearchedSiteIds || []).includes(siteId)) return true;
+      if (selectedSiteId === siteId) return true;
+      return false;
+    }
+    const markerStyle = (siteId) => {
+      const s = getVisitStatus(siteId);
+      if (s === "visited") return { radius: 5, color: "#0d6b43", weight: 1, fillColor: "#1f8a55", fillOpacity: 0.85 };
+      if (s === "pending") return { radius: 5, color: "#9a6a00", weight: 1, fillColor: "#d69c00", fillOpacity: 0.85 };
+      if (s === "wont_visit") return { radius: 5, color: "#666", weight: 1, fillColor: "#999", fillOpacity: 0.75 };
+      return { radius: 5, color: "#0a4f8a", weight: 1, fillColor: "#1f77b4", fillOpacity: 0.85 };
+    };
+    function clearSelection() {
+      selectedSiteId = null;
+      ui.detailPane.style.display = "none";
+      ui.detailPane.innerHTML = "";
+      const mode = asText(ui.siteListMode.value);
+      const shouldRestoreList = (selectionContext === "list") || (selectionContext === "search") || mode === "searched" || mode === "visited" || mode === "all" || mode === "multiple";
+      if (shouldRestoreList) renderSiteList(mode);
+      selectionContext = "";
+    }
+    function latestVisitDate(siteId) {
+      const v = getSiteVisits(siteId);
+      return v.length ? normalizeDateOnly(v[0].date) : "";
+    }
+    function renderSiteList(mode) {
+      if (!whsData || !Array.isArray(whsData.features)) return;
+      if (!mode) {
+        selectedSiteId = null;
+        ui.detailPane.style.display = "none";
+        ui.detailPane.innerHTML = "";
+        return;
+      }
+      let features = [];
+      if (mode === "visited") {
+        const ids = new Set();
+        if (connected && profile) {
+          for (const k of Object.keys(profile.siteVisits || {})) {
+            if (getVisitStatus(k) === "visited") ids.add(k);
+          }
+        }
+        features = whsData.features.filter((f) => ids.has(asText(f.properties && f.properties.site_id)));
+      } else if (mode === "multiple") {
+        features = whsData.features.filter((f) => isHighVolumeComponent(asText(f.properties && f.properties.site_id)));
+      } else if (mode === "searched") {
+        const ids = new Set(lastSearchedSiteIds || []);
+        features = whsData.features.filter((f) => ids.has(asText(f.properties && f.properties.site_id)));
+      } else {
+        features = whsData.features.filter((f) => !isHighVolumeComponent(asText(f.properties && f.properties.site_id))).slice(0, 1000);
+      }
+      features.sort((a, b) => {
+        const pa = a.properties || {};
+        const pb = b.properties || {};
+        const na = displayName(pa).toLowerCase();
+        const nb = displayName(pb).toLowerCase();
+        const da = dateSortKey(latestVisitDate(asText(pa.site_id)));
+        const db = dateSortKey(latestVisitDate(asText(pb.site_id)));
+        if (listSortBy === "date") {
+          if (listSortDir === "desc") return (db || "0000-00-00").localeCompare(da || "0000-00-00") || na.localeCompare(nb);
+          return (da || "9999-99-99").localeCompare(db || "9999-99-99") || na.localeCompare(nb);
+        }
+        if (listSortDir === "desc") return nb.localeCompare(na);
+        return na.localeCompare(nb);
+      });
+      ui.detailPane.style.display = "block";
+      if (!features.length) {
+        ui.detailPane.innerHTML = `<div class="site-table-head"><span>Site</span><span>Visited</span></div><p class="meta">No sites in this list.</p>`;
+        return;
+      }
+      const rows = features.map((f) => {
+        const p = f.properties || {};
+        const sid = asText(p.site_id);
+        const nm = displayName(p);
+        const d = formatVisitDateForDisplay(latestVisitDate(sid));
+        return `<div class="site-row-grid"><a href="#" class="plain-link site-pick" data-site-id="${sid}" dir="auto" title="${nm}"><span class="site-name-clip">${nm}</span></a><span class="meta" dir="ltr">${d || ""}</span></div>`;
+      }).join("");
+      const nameDir = listSortBy === "name" ? (listSortDir === "asc" ? "^" : "v") : "";
+      const dateDir = listSortBy === "date" ? (listSortDir === "asc" ? "^" : "v") : "";
+      ui.detailPane.innerHTML = `<div class="site-list-wrap"><div class="site-table-head"><a href="#" id="sort-name">Site (${features.length}) ${nameDir}</a><a href="#" id="sort-date">Visited ${dateDir}</a></div>${rows}</div>`;
+      const sortName = document.getElementById("sort-name");
+      const sortDate = document.getElementById("sort-date");
+      if (sortName) sortName.addEventListener("click", (e) => { e.preventDefault(); if (listSortBy === "name") listSortDir = listSortDir === "asc" ? "desc" : "asc"; else { listSortBy = "name"; listSortDir = "asc"; } renderSiteList(mode); });
+      if (sortDate) sortDate.addEventListener("click", (e) => { e.preventDefault(); if (listSortBy === "date") listSortDir = listSortDir === "asc" ? "desc" : "asc"; else { listSortBy = "date"; listSortDir = "desc"; } renderSiteList(mode); });
+      ui.detailPane.querySelectorAll(".site-pick").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const id = asText(btn.getAttribute("data-site-id"));
+          explicitVisibleSiteIds.add(id);
+          selectionContext = "list";
+          zoomToSite(id);
+        });
+      });
+    }
+    async function copySnapshot() {
+      if (typeof html2canvas !== "function") return alert("Snapshot image capture is unavailable in this browser.");
+      showLoading("Capturing snapshot...");
+      try {
+        const canvas = await html2canvas(document.getElementById("map"), { useCORS: true, backgroundColor: "#ffffff", logging: false });
+        const blob = await new Promise((resolve, reject) => {
+          canvas.toBlob((b) => b ? resolve(b) : reject(new Error("Snapshot image encoding failed.")), "image/png");
+        });
+        if (navigator.clipboard && window.ClipboardItem) {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+            alert("Snapshot image copied.");
+            return;
+          } catch {}
+        }
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `my-world-heritage-snapshot-${Date.now()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+        alert("Snapshot image downloaded.");
+      } catch {
+        alert("Snapshot image failed.");
+      } finally {
+        hideLoading();
+      }
+    }
+    function featureBySiteId(siteId) {
+      const wanted = asText(siteId).trim();
+      if (!wanted) return null;
+      const marker = markersBySiteId.get(wanted);
+      if (marker && marker.feature) return marker.feature;
+      return findFeatureBySiteId(wanted);
+    }
+    function collectVisitedReportRows() {
+      if (!(connected && profile)) return [];
+      const rows = [];
+      const seen = new Set();
+      const candidateIds = new Set(Object.keys(profile.siteVisits || {}));
+      for (const siteId of candidateIds) {
+        if (getVisitStatus(siteId) !== "visited") continue;
+        const feature = featureBySiteId(siteId);
+        if (!feature) continue;
+        const p = feature.properties || {};
+        const id = asText(p.site_id);
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        const latest = latestVisitDate(id);
+        rows.push({
+          siteId: id,
+          name: displayName(p),
+          country: asText(p.country),
+          status: formatStatusLabel(getVisitStatus(id)),
+          latestVisitRaw: latest,
+          latestVisitDisplay: formatVisitDateForReport(latest),
+          feature
+        });
+      }
+      rows.sort((a, b) => asText(a.name).localeCompare(asText(b.name)));
+      return rows;
+    }
+    function formatReportSiteId(siteId) {
+      return assertValidSiteId(siteId, "report site id");
+    }
+    function reportSiteIdHtml(siteId) {
+      return escapeHtml(formatReportSiteId(siteId)).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
+    }
+    function plotVisitedPointsOnProjection(ctx, rows, box) {
+      for (const row of rows) {
+        const f = row.feature;
+        if (!(f && f.geometry && Array.isArray(f.geometry.coordinates))) continue;
+        const lon = Number(f.geometry.coordinates[0]);
+        const lat = Number(f.geometry.coordinates[1]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+        const x = box.x + ((lon + 180) / 360) * box.w;
+        const y = box.y + ((90 - lat) / 180) * box.h;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = "#d62d20";
+        ctx.fill();
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+      }
+    }
+    function renderFallbackSummaryMap(rows, width = 1200, height = 520) {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      const bg = ctx.createLinearGradient(0, 0, 0, height);
+      bg.addColorStop(0, "#f6f8fb");
+      bg.addColorStop(1, "#e8edf3");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, width, height);
+      const mapRect = { x: width * 0.03, y: height * 0.08, w: width * 0.94, h: height * 0.84 };
+      const ocean = ctx.createLinearGradient(0, mapRect.y, 0, mapRect.y + mapRect.h);
+      ocean.addColorStop(0, "#86b0ca");
+      ocean.addColorStop(0.45, "#91b694");
+      ocean.addColorStop(1, "#c7d3df");
+      ctx.fillStyle = ocean;
+      ctx.fillRect(mapRect.x, mapRect.y, mapRect.w, mapRect.h);
+      const toXY = (lon, lat) => ([
+        mapRect.x + ((lon + 180) / 360) * mapRect.w,
+        mapRect.y + ((90 - lat) / 180) * mapRect.h
+      ]);
+      const drawLand = (points, fill = "#c8c9ad") => {
+        if (!Array.isArray(points) || points.length < 3) return;
+        ctx.beginPath();
+        points.forEach((pt, i) => {
+          const [x, y] = toXY(pt[0], pt[1]);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(83, 97, 89, 0.45)";
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      };
+      const landPolys = [
+        [[-169, 72], [-140, 72], [-125, 66], [-105, 56], [-98, 50], [-90, 44], [-82, 27], [-100, 16], [-111, 19], [-120, 26], [-135, 41], [-150, 57], [-165, 65]],
+        [[-82, 12], [-72, 7], [-66, -4], [-59, -16], [-54, -31], [-57, -45], [-66, -55], [-74, -49], [-80, -33], [-82, -17], [-84, -2]],
+        [[-11, 34], [5, 37], [18, 32], [32, 30], [43, 18], [49, 6], [45, -10], [36, -24], [18, -35], [2, -34], [-8, -20], [-11, -2], [-12, 18]],
+        [[-9, 36], [12, 44], [32, 52], [58, 58], [85, 63], [115, 56], [142, 49], [156, 44], [160, 31], [141, 17], [120, 10], [104, 6], [90, 10], [70, 21], [50, 25], [32, 25], [20, 34], [6, 44], [-5, 43]],
+        [[112, -12], [126, -12], [142, -19], [153, -28], [146, -40], [130, -41], [116, -34], [111, -23]],
+        [[-52, 60], [-39, 61], [-28, 72], [-39, 82], [-55, 80], [-63, 70]],
+        [[46, -12], [50, -16], [48, -24], [42, -23], [41, -17]]
+      ];
+      for (const poly of landPolys) drawLand(poly);
+      ctx.strokeStyle = "rgba(255,255,255,0.16)";
+      ctx.lineWidth = 0.75;
+      for (let lon = -150; lon <= 150; lon += 30) {
+        const x = mapRect.x + ((lon + 180) / 360) * mapRect.w;
+        ctx.beginPath();
+        ctx.moveTo(x, mapRect.y);
+        ctx.lineTo(x, mapRect.y + mapRect.h);
+        ctx.stroke();
+      }
+      for (let lat = -60; lat <= 60; lat += 30) {
+        const y = mapRect.y + ((90 - lat) / 180) * mapRect.h;
+        ctx.beginPath();
+        ctx.moveTo(mapRect.x, y);
+        ctx.lineTo(mapRect.x + mapRect.w, y);
+        ctx.stroke();
+      }
+      plotVisitedPointsOnProjection(ctx, rows, mapRect);
+      return { dataUrl: canvas.toDataURL("image/png"), mode: "fallback" };
+    }
+    function waitForTileLayerLoad(tileLayer, timeoutMs = 18000) {
+      return new Promise((resolve) => {
+        let done = false;
+        let timedOut = false;
+        let errorCount = 0;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          try { tileLayer.off("load", onLoad); } catch {}
+          try { tileLayer.off("tileerror", onTileError); } catch {}
+          resolve({ timedOut, errorCount });
+        };
+        const onLoad = () => finish();
+        const onTileError = () => { errorCount += 1; };
+        try { tileLayer.on("load", onLoad); } catch {}
+        try { tileLayer.on("tileerror", onTileError); } catch {}
+        setTimeout(() => {
+          timedOut = true;
+          finish();
+        }, timeoutMs);
+      });
+    }
+    async function waitForRenderedTiles(host, tileLayer, timeoutMs = 18000) {
+      const start = Date.now();
+      return new Promise((resolve, reject) => {
+        const step = () => {
+          const timedOut = (Date.now() - start) > timeoutMs;
+          const tiles = Array.from(host.querySelectorAll(".leaflet-tile"));
+          const allReady = tiles.length > 0 && tiles.every((t) => t instanceof HTMLImageElement && t.complete && t.naturalWidth > 0 && t.naturalHeight > 0);
+          const loading = tileLayer && typeof tileLayer.isLoading === "function" && tileLayer.isLoading();
+          const hasLoadingClass = !!host.querySelector(".leaflet-tile-loading");
+          if (allReady && !loading && !hasLoadingClass) {
+            resolve();
+            return;
+          }
+          if (timedOut) {
+            reject(new Error("Timed out waiting for full tile render."));
+            return;
+          }
+          requestAnimationFrame(step);
+        };
+        step();
+      });
+    }
+    function applyReportMapView(tmpMap, rows) {
+      tmpMap.setView([18, 0], 3, { animate: false });
+      for (const row of rows) {
+        const f = row && row.feature;
+        if (!(f && f.geometry && Array.isArray(f.geometry.coordinates))) continue;
+        const lon = Number(f.geometry.coordinates[0]);
+        const lat = Number(f.geometry.coordinates[1]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+        L.circleMarker([lat, lon], {
+          radius: 5,
+          color: "#ffffff",
+          weight: 1.2,
+          fillColor: "#d62d20",
+          fillOpacity: 0.95
+        }).addTo(tmpMap);
+      }
+    }
+    function createReportRenderHost(width, height) {
+      const host = document.createElement("div");
+      host.style.position = "fixed";
+      host.style.left = "0";
+      host.style.top = "0";
+      host.style.width = `${width}px`;
+      host.style.height = `${height}px`;
+      host.style.pointerEvents = "none";
+      host.style.zIndex = "-1";
+      host.style.background = "#eef2f7";
+      document.body.appendChild(host);
+      return host;
+    }
+    async function captureReportMap(width, height, rows) {
+      const host = createReportRenderHost(width, height);
+      let tmpMap = null;
+      try {
+        tmpMap = L.map(host, {
+          zoomControl: false,
+          attributionControl: false,
+          preferCanvas: true,
+          worldCopyJump: false,
+          fadeAnimation: false,
+          zoomAnimation: false,
+          markerZoomAnimation: false,
+          inertia: false
+        }).setView([18, 0], 3);
+        tmpMap.invalidateSize(true);
+        const tileLayer = L.tileLayer(REPORT_TILE_URL, {
+          minZoom: 1,
+          maxZoom: 8,
+          crossOrigin: "anonymous",
+          keepBuffer: 2,
+          updateWhenIdle: true,
+          noWrap: true
+        }).addTo(tmpMap);
+        applyReportMapView(tmpMap, rows);
+        const layerState = await waitForTileLayerLoad(tileLayer);
+        if (layerState.timedOut || layerState.errorCount > 0) throw new Error("Tile source returned incomplete tiles.");
+        await waitForRenderedTiles(host, tileLayer);
+        await new Promise((r) => setTimeout(r, 700));
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const canvas = await html2canvas(host, {
+          useCORS: true,
+          backgroundColor: "#eef2f7",
+          logging: false,
+          scale: 1
+        });
+        return canvas.toDataURL("image/png");
+      } finally {
+        try { if (tmpMap) tmpMap.remove(); } catch {}
+        host.remove();
+      }
+    }
+    async function renderTileSummaryMap(rows, width = 2048, height = 960) {
+      if (typeof html2canvas !== "function") throw new Error("html2canvas unavailable.");
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const hiResDataUrl = await captureReportMap(width, height, rows);
+          const img = await new Promise((resolve, reject) => {
+            const x = new Image();
+            x.onload = () => resolve(x);
+            x.onerror = () => reject(new Error("Failed to decode rendered map image."));
+            x.src = hiResDataUrl;
+          });
+          const out = document.createElement("canvas");
+          out.width = width;
+          out.height = height;
+          const outCtx = out.getContext("2d");
+          outCtx.drawImage(img, 0, 0, width, height);
+          return { dataUrl: out.toDataURL("image/png"), mode: "tile" };
+        } catch {
+          if (attempt < 3) {
+            await new Promise((r) => setTimeout(r, 500 * attempt));
+            continue;
+          }
+        }
+      }
+      throw new Error("No tile source could be captured.");
+    }
+    async function renderVisitedSummaryMap(rows) {
+      try {
+        return await renderTileSummaryMap(rows);
+      } catch {
+        return renderFallbackSummaryMap(rows);
+      }
+    }
+    async function exportVisitedSummaryReport() {
+      if (!(connected && profile)) return alert("Connect first.");
+      const rows = collectVisitedReportRows();
+      showLoading("Preparing summary report...");
+      try {
+        const mapImage = await renderVisitedSummaryMap(rows);
+        const now = new Date();
+        const generatedAtLocal = formatTimestampLocal(now);
+        const generatedAtLocalHtml = nbspHtml(generatedAtLocal);
+        const reportUserName = asText(profile.name || "user");
+        const reportTitle = buildAppTitle(reportUserName);
+        const reportTitleHtml = escapeHtml(reportTitle);
+        const reportLogoDataUrl = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 128 128\" role=\"img\" aria-label=\"My World Heritage mark\"><path d=\"M12 36 L64 10 L116 36 Z\" fill=\"#0a4f8a\"/><rect x=\"20\" y=\"44\" width=\"14\" height=\"52\" fill=\"#0a4f8a\"/><rect x=\"57\" y=\"44\" width=\"14\" height=\"52\" fill=\"#0a4f8a\"/><rect x=\"94\" y=\"44\" width=\"14\" height=\"52\" fill=\"#0a4f8a\"/><rect x=\"12\" y=\"102\" width=\"104\" height=\"12\" fill=\"#0a4f8a\"/></svg>');
+        const tableRows = rows.map((r) => {
+          const url = asText(r.feature && r.feature.properties && r.feature.properties.unesco_url);
+          const siteNameHtml = url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(r.name)}</a>` : escapeHtml(r.name);
+          return `<tr><td class="site-id">${reportSiteIdHtml(r.siteId)}</td><td>${siteNameHtml}</td><td class="visited-date">${nbspHtml(r.latestVisitDisplay || "")}</td><td>${escapeHtml(r.status)}</td><td class="country">${escapeHtml(r.country)}</td></tr>`;
+        }).join("");
+        const appUrl = "https://pekka-28.github.io/unesco/site-supabase/";
+        const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${reportTitleHtml}</title>
+<style>
+body{font:14px/1.4 sans-serif;margin:18px;color:#1f2b38;background:#f6f8fb}
+h1{margin:0}
+.meta{color:#45566b;margin:0}
+.head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:0 0 12px 0}
+.head-left{display:flex;align-items:flex-end;gap:12px}
+.head-left h1{margin:0 0 4px 0}
+.report-logo{width:62px;height:76px;display:block;flex:0 0 auto;object-fit:contain;object-position:center bottom;border:0 !important;background:transparent !important;box-shadow:none !important;border-radius:0}
+.head-meta{text-align:right}
+.card{background:#fff;border:1px solid #c9d4df;border-radius:10px;padding:12px;margin-bottom:14px}
+img{width:100%;height:auto;border:1px solid #c9d4df;border-radius:8px;background:#eef2f7;display:block}
+table{width:100%;border-collapse:collapse;background:#fff;table-layout:auto;border:1px solid #d7e0e8}
+th,td{border:0;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:transparent}
+.site-id{white-space:nowrap;width:1%}
+.visited-date{text-align:right;white-space:nowrap}
+.country{max-width:25em;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
+</style></head><body>
+<div class="head-row">
+<div class="head-left"><img class="report-logo" alt="My World Heritage symbol" src="${reportLogoDataUrl}"><h1>${reportTitleHtml}</h1></div>
+<p class="meta head-meta">${generatedAtLocalHtml} Visited sites ${rows.length} <a href="${appUrl}" target="_blank" rel="noopener">${escapeHtml(APP_NAME)}</a> <a href="${appUrl}" target="_blank" rel="noopener">(${appUrl})</a></p>
+</div>
+<div style="margin:0 0 14px 0;">
+<img alt="Visited sites world map" src="${mapImage.dataUrl}">
+</div>
+<div class="card">
+<h2 style="margin-top:0;">Visited sites</h2>
+<table><colgroup><col style="width:1%"><col><col style="width:11ch"><col style="width:12ch"><col style="width:25em"></colgroup><thead><tr><th class="site-id">Site</th><th>Name</th><th class="visited-date">Visited</th><th>Status</th><th>Country</th></tr></thead><tbody>${tableRows || '<tr><td colspan="5">No visited sites recorded.</td></tr>'}</tbody></table>
+</div>
+<div class="card">
+<h3 style="margin-top:0;">Table columns</h3>
+<p class="meta"><strong>Site</strong>: unique site identifier used by the application. <strong>WHS</strong> is the UNESCO site code; <strong>MWH</strong> is a My World Heritage identifier added to disambiguate sub-site identification.</p>
+<p class="meta"><strong>Name</strong>: site name, linked to UNESCO narrative page when available.</p>
+<p class="meta"><strong>Visited</strong>: most recent recorded visit date for the site.</p>
+<p class="meta"><strong>Status</strong>: latest visit status recorded for the site.</p>
+<p class="meta"><strong>Country</strong>: jurisdiction list provided by the dataset for the site.</p>
+</div>
+</body></html>`;
+        const blob = new Blob([html], { type: "text/html" });
+        const stamp = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}-${String(now.getUTCHours()).padStart(2, "0")}${String(now.getUTCMinutes()).padStart(2, "0")}`;
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `my-world-heritage-summary-${stamp}.html`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+      } catch (e) {
+        alert("Summary report failed: " + asText(e && e.message));
+      } finally {
+        hideLoading();
+      }
+    }
+    function renderDetail(feature) {
+      const p = feature.properties || {}; const siteId = asText(p.site_id); const name = displayName(p); const status = getVisitStatus(siteId); selectedSiteId = siteId;
+      const nativeName = detectNativeScriptName(p, name);
+      if (connected && profile && !profile.inspectedSiteIds.includes(siteId)) { profile.inspectedSiteIds.push(siteId); profile.usage.inspectCount = Number(profile.usage.inspectCount || 0) + 1; persistProfile(); }
+      const inscription = asText(p.inscription_date);
+      const note = asText(p.note || p.description);
+      const wiki = asText(p.wikipedia);
+      const wikiUrl = wiki && wiki.includes(":") ? `https://${wiki.replace(":", ".wikipedia.org/wiki/")}` : "";
+      const infoLines = [`<strong>Catalogue status:</strong> ${p.status === "retired" ? "Retired" : "Active"}`];
+      if (p.status === "retired") infoLines.push("Not matched in the latest source; retained for recording visits.");
+      if (inscription) infoLines.push(`<strong>Inscription date:</strong> ${inscription}`);
+      const scope = asText(p.site_scope);
+      if (scope === "whs") {
+        const componentCount = Number(p.component_count || 0);
+        if (componentCount > 1) infoLines.push(`<strong>Multiple individual sites:</strong> yes (${componentCount})`);
+      } else if (scope === "component") {
+        const parentId = asText(p.parent_site_id);
+        const parentCount = Number(componentCountByRootId.get(parentId) || 0);
+        if (parentId) {
+          if (parentCount > 0) infoLines.push(`<strong>Component of ${parentId}:</strong> ${parentCount} individual sites`);
+          else infoLines.push(`<strong>Component of:</strong> ${parentId}`);
+        }
+      }
+      if (wikiUrl) infoLines.push(`<strong>Wikipedia:</strong> <a href="${wikiUrl}" target="_blank" rel="noopener">${wiki}</a>`);
+      if (note) infoLines.push(`<strong>Notes:</strong> ${note}`);
+      const visits = getSiteVisits(siteId);
+      const visitRows = visits.length ? visits.map((v) => {
+        const d = formatVisitDateForDisplay(v.date) || "No date";
+        const s = formatStatusLabel(asText(v.status) || "not_visited");
+        const nFull = asText(v.note).trim();
+        const n = truncateText(nFull, 72);
+        return `<div class="visited-row" data-visit-id="${asText(v.id)}" style="display:flex; justify-content:space-between; gap:8px;"><div><span>${d}</span> <span class="meta">${s}</span>${n ? ` <span class="meta visit-note-clip" title="${nFull}">${n}</span>` : ""}</div><div><a href="#" class="plain-link visit-edit" title="Edit visit" data-visit-id="${asText(v.id)}">&#9998;</a> <a href="#" class="plain-link visit-delete" title="Delete visit" data-visit-id="${asText(v.id)}">&#128465;</a></div></div>`;
+      }).join("") : '<div class="meta">No recorded visits for this site.</div>';
+      ui.detailPane.style.display = "block";
+      ui.detailPane.innerHTML = `<h3 style="margin:0 0 6px 0;"><a href="${asText(p.unesco_url)}" target="_blank" rel="noopener">${name}</a></h3>${nativeName ? `<div dir="auto" style="margin:0 0 6px 0;">${nativeName}</div>` : ""}<div class="muted">${siteIdCaption(feature)}</div><p><strong>Criteria:</strong> ${criteriaHtml(p.whc_criteria)}</p>${infoLines.length ? `<p>${infoLines.join("<br>")}</p>` : ""}<hr><h4 style="margin:10px 0 6px 0;">Visit log</h4><div id="visit-log-list">${visitRows}</div><div class="row" style="margin-top:8px;"><input id="visit-date" class="field" type="text" placeholder="YYYY-MM-DD, YYYY-MM, or YYYY"></div><div class="row"><select id="visit-entry-status" class="field"><option value="visited">Visited</option><option value="pending">Pending</option><option value="wont_visit">Won't visit</option><option value="not_visited">Not visited</option></select></div><div class="row"><textarea id="visit-note" class="field" rows="3" placeholder="Note"></textarea></div><div class="row" style="display:flex; gap:8px;"><button id="visit-save" class="btn primary" type="button">Save</button><button id="visit-cancel-edit" class="btn" type="button" style="display:none;">Cancel</button></div>`;
+      const visitDate = document.getElementById("visit-date");
+      const visitEntryStatus = document.getElementById("visit-entry-status");
+      const visitNote = document.getElementById("visit-note");
+      const visitSave = document.getElementById("visit-save");
+      const visitCancel = document.getElementById("visit-cancel-edit");
+      let editingVisitId = "";
+      visitEntryStatus.value = status === "not_visited" ? "visited" : status;
+      visitDate.value = defaultVisitDateValue();
+      function resetVisitEditor() {
+        editingVisitId = "";
+        visitDate.value = defaultVisitDateValue();
+        visitEntryStatus.value = status === "not_visited" ? "visited" : status;
+        visitNote.value = "";
+        visitCancel.style.display = "none";
+      }
+      visitSave.addEventListener("click", () => {
+        if (!(connected && profile)) return alert("Connect first.");
+        const d = normalizeDateOnly(visitDate.value);
+        if (!d) return alert("Please provide a visit date.");
+        saveSiteVisit(siteId, { id: editingVisitId, date: d, status: visitEntryStatus.value, note: visitNote.value });
+        refreshMarkers();
+        renderDetail(feature);
+      });
+      visitCancel.addEventListener("click", () => { resetVisitEditor(); });
+      visitDate.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); visitSave.click(); } });
+      visitNote.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") return;
+        if (e.shiftKey) return;
+        e.preventDefault();
+        visitSave.click();
+      });
+      ui.detailPane.querySelectorAll(".visit-edit").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          const vid = asText(a.getAttribute("data-visit-id"));
+          const item = visits.find((v) => asText(v.id) === vid);
+          if (!item) return;
+          editingVisitId = vid;
+          visitDate.value = normalizeDateOnly(item.date);
+          visitEntryStatus.value = asText(item.status) || "visited";
+          visitNote.value = asText(item.note);
+          visitCancel.style.display = "inline-block";
+        });
+      });
+      ui.detailPane.querySelectorAll(".visit-delete").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          const vid = asText(a.getAttribute("data-visit-id"));
+          deleteSiteVisit(siteId, vid);
+          refreshMarkers();
+          renderDetail(feature);
+        });
+      });
+    }
+    function refreshMarkers() { for (const [siteId, marker] of markersBySiteId.entries()) marker.setStyle(markerStyle(siteId)); applyVisitedOnlyFilter(); }
+    function applyVisitedOnlyFilter() {
+      if (!layer) return;
+      layer.eachLayer(marker => {
+        const siteId = asText(marker.feature && marker.feature.properties && marker.feature.properties.site_id);
+        const show = shouldShowSite(siteId);
+        if (show) {
+          if (!map.hasLayer(marker)) marker.addTo(map);
+        } else {
+          if (map.hasLayer(marker)) map.removeLayer(marker);
+        }
+      });
+    }
+    function zoomToSite(siteId) {
+      const marker = markersBySiteId.get(siteId);
+      if (!marker) return;
+      explicitVisibleSiteIds.add(asText(siteId));
+      refreshMarkers();
+      const focus = searchFocusBySiteId.get(asText(siteId));
+      if (focus && Number.isFinite(focus.lat) && Number.isFinite(focus.lon)) map.setView([focus.lat, focus.lon], 12);
+      else {
+        const ll = marker.getLatLng();
+        map.setView([ll.lat, ll.lng], 12);
+      }
+      renderDetail(marker.feature);
+    }
+    function canonicalPlaceName(display) {
+      return asText(display).split(",")[0].trim();
+    }
+    function compactPlaceLabel(display) {
+      const raw = asText(display);
+      const canonical = canonicalPlaceName(raw);
+      const bits = raw.split(",").map((s) => s.trim()).filter(Boolean);
+      const tail = bits.length ? bits[bits.length - 1] : "";
+      if (!tail || tail.toLowerCase() === canonical.toLowerCase()) return canonical;
+      return `${canonical} (${tail})`;
+    }
+    function buildLocationMatchIndex(matches, indexByLabel) {
+      indexByLabel.clear();
+      if (!matches.length) return [];
+      const used = new Set();
+      const labels = [];
+      for (let i = 0; i < matches.length; i++) {
+        const r = matches[i];
+        const base = compactPlaceLabel(r.display_name) || `Match ${i + 1}`;
+        let label = base;
+        let n = 2;
+        while (used.has(label.toLowerCase())) {
+          label = `${base} [${n}]`;
+          n += 1;
+        }
+        used.add(label.toLowerCase());
+        indexByLabel.set(label.toLowerCase(), i);
+        labels.push(label);
+      }
+      return labels;
+    }
+    function renderLocationMatches(listEl, matches, indexByLabel) {
+      listEl.innerHTML = "";
+      const labels = buildLocationMatchIndex(matches, indexByLabel);
+      if (!labels.length) return;
+      for (const label of labels) {
+        const opt = document.createElement("option");
+        opt.value = label;
+        listEl.appendChild(opt);
+      }
+    }
+    function renderEnrolLocationSuggestions(containerEl, matches, indexByLabel) {
+      if (!containerEl) return;
+      const labels = buildLocationMatchIndex(matches, indexByLabel);
+      if (!labels.length) {
+        containerEl.style.display = "none";
+        containerEl.innerHTML = "";
+        return;
+      }
+      containerEl.style.display = "block";
+      containerEl.innerHTML = labels.map((label, i) => `<div class="combo-row" data-match-index="${i}">${escapeHtml(label)}</div>`).join("");
+    }
+    function resolveLocationMatchFromInput(inputValue, matches, indexByLabel) {
+      const key = asText(inputValue).trim().toLowerCase();
+      if (!key) return null;
+      const idx = indexByLabel.get(key);
+      if (Number.isFinite(idx) && matches[idx]) return matches[idx];
+      if (matches.length === 1) {
+        const one = matches[0];
+        const canon = canonicalPlaceName(one.display_name).toLowerCase();
+        if (canon === key) return one;
+      }
+      return null;
+    }
+    function setSelectedHome(lat, lon, label, updateInput = true) {
+      selectedHome = { lat, lon, label };
+      if (updateInput) ui.homeQuery.value = label;
+      ui.homeSelected.textContent = `Selected home location: ${label}`;
+      map.setView([lat, lon], 6);
+    }
+    function haversineKm(lat1, lon1, lat2, lon2) {
+      const toRad = (d) => (d * Math.PI) / 180;
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+      return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+    function getNearbySites(lat, lon, maxKm = 500) {
+      if (!whsData || !Array.isArray(whsData.features)) return [];
+      const rows = [];
+      for (const f of whsData.features) {
+        if (!f.geometry || f.geometry.type !== "Point") continue;
+        const flon = Number(f.geometry.coordinates[0]);
+        const flat = Number(f.geometry.coordinates[1]);
+        if (!Number.isFinite(flat) || !Number.isFinite(flon)) continue;
+        const d = haversineKm(lat, lon, flat, flon);
+        if (d <= maxKm) rows.push({ feature: f, distanceKm: d });
+      }
+      rows.sort((a, b) => a.distanceKm - b.distanceKm);
+      return rows;
+    }
+    function renderEnrolNearby(lat, lon) {
+      const near = getNearbySites(lat, lon, 500).slice(0, 10);
+      if (!near.length) {
+        ui.enrolNearbyList.innerHTML = '<div class="meta">No nearby sites found.</div>';
+        return;
+      }
+      ui.enrolNearbyList.innerHTML = '<ol style="margin:0; padding-left:20px;"></ol>';
+      const list = ui.enrolNearbyList.querySelector("ol");
+      for (const row of near) {
+        const p = row.feature.properties || {};
+        const id = asText(p.site_id);
+        const name = displayName(p);
+        const li = document.createElement("li");
+        li.className = "visited-row";
+        li.innerHTML = `<label><input type="checkbox" data-site-id="${id}"> <span dir="auto">${escapeHtml(name)}</span></label>`;
+        list.appendChild(li);
+      }
+    }
+    function setEnrolHome(lat, lon, label, updateInput = true) {
+      enrolSelectedHome = { lat, lon, label };
+      if (updateInput) ui.enrolHomeQuery.value = label;
+      ui.enrolHomeSelected.textContent = `Selected home location: ${label}`;
+    }
+    function applyHomeSelectionFromInput() {
+      const picked = resolveLocationMatchFromInput(ui.homeQuery.value, homeMatches, homeMatchIndexByLabel);
+      if (!picked) return false;
+      setSelectedHome(Number(picked.lat), Number(picked.lon), canonicalPlaceName(picked.display_name));
+      ui.locStatus.textContent = "Location selected.";
+      return true;
+    }
+    function applyEnrolSelectionFromInput() {
+      const picked = resolveLocationMatchFromInput(ui.enrolHomeQuery.value, enrolMatches, enrolMatchIndexByLabel);
+      if (!picked) return false;
+      setEnrolHome(Number(picked.lat), Number(picked.lon), canonicalPlaceName(picked.display_name));
+      ui.enrolLocStatus.textContent = "Location selected. Nearby sites listed.";
+      renderEnrolNearby(Number(picked.lat), Number(picked.lon));
+      return true;
+    }
+    async function searchHomeLocation() {
+      const q = asText(ui.homeQuery.value).trim();
+      if (!q) { ui.locStatus.textContent = "Enter a location to search."; return; }
+
+      if (applyHomeSelectionFromInput()) return;
+
+      ui.locStatus.textContent = "Searching...";
+      ui.homeMatchesList.innerHTML = "";
+      homeMatchIndexByLabel.clear();
+      homeMatches = [];
+
+      try {
+        showLoading("Loading ...");
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&q=${encodeURIComponent(q)}`);
+        if (!res.ok) return ui.locStatus.textContent = "Search failed.";
+        const results = await res.json();
+        if (!Array.isArray(results) || !results.length) return ui.locStatus.textContent = "No location matches found.";
+
+        homeMatches = results;
+        renderLocationMatches(ui.homeMatchesList, results, homeMatchIndexByLabel);
+        if (results.length === 1) {
+          setSelectedHome(Number(results[0].lat), Number(results[0].lon), canonicalPlaceName(results[0].display_name));
+          ui.locStatus.textContent = "Unique match found.";
+          return;
+        }
+        ui.locStatus.textContent = "Select one suggestion in the search field, then press Search.";
+      } catch (e) {
+        ui.locStatus.textContent = "Search failed: " + e.message;
+      } finally {
+        hideLoading();
+      }
+    }
+    async function searchEnrolHomeLocation() {
+      const q = asText(ui.enrolHomeQuery.value).trim();
+      if (!q) { ui.enrolLocStatus.textContent = "Enter a location to search."; return; }
+
+      if (applyEnrolSelectionFromInput()) return;
+
+      ui.enrolLocStatus.textContent = "Searching...";
+      renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, [], enrolMatchIndexByLabel);
+      enrolMatches = [];
+
+      try {
+        showLoading("Loading ...");
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&q=${encodeURIComponent(q)}`);
+        if (!res.ok) return ui.enrolLocStatus.textContent = "Search failed.";
+        const results = await res.json();
+        if (!Array.isArray(results) || !results.length) return ui.enrolLocStatus.textContent = "No location matches found.";
+        enrolMatches = results;
+
+        renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, results, enrolMatchIndexByLabel);
+        if (results.length === 1) {
+          const m = results[0];
+          const label = canonicalPlaceName(m.display_name);
+          setEnrolHome(Number(m.lat), Number(m.lon), label);
+          ui.enrolLocStatus.textContent = "Unique match found. Nearby sites listed.";
+          renderEnrolNearby(Number(m.lat), Number(m.lon));
+          renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, [], enrolMatchIndexByLabel);
+          return;
+        }
+        enrolSelectedHome = null;
+        ui.enrolHomeSelected.textContent = "";
+        ui.enrolNearbyList.innerHTML = '<div class="meta">Select one location match to list nearby sites.</div>';
+        ui.enrolLocStatus.textContent = "Select one match in the search control.";
+      } catch (e) {
+        ui.enrolLocStatus.textContent = "Search failed: " + e.message;
+      } finally {
+        hideLoading();
+      }
+    }
+    function saveEnrolment() {
+      const name = asText(ui.enrolUserName.value).trim();
+      if (!name) return alert("Please provide a user name.");
+      if (!enrolSelectedHome) return alert("Please select a home location.");
+      profile = defaultProfile();
+      profile.name = name;
+      profile.homeLat = enrolSelectedHome.lat;
+      profile.homeLon = enrolSelectedHome.lon;
+      profile.homeLabel = enrolSelectedHome.label;
+      const seeded = [];
+      ui.enrolNearbyList.querySelectorAll("input[type='checkbox']:checked").forEach((c) => {
+        const id = asText(c.getAttribute("data-site-id"));
+        if (id) seeded.push(id);
+      });
+      profile.siteVisits = profile.siteVisits || {};
+      for (const sid of Array.from(new Set(seeded)).sort()) {
+        profile.siteVisits[sid] = [{
+          id: crypto.randomUUID(),
+          date: "",
+          status: "visited",
+          note: "",
+          createdAt: nowIso(),
+          updatedAt: nowIso()
+        }];
+      }
+      connected = true;
+      manuallyDisconnected = false;
+      persistProfile();
+      ui.enrolOverlay.style.display = "none";
+      updateUserUi();
+      refreshMarkers();
+      map.setView([profile.homeLat, profile.homeLon], 6);
+      submitAdoptionSummary().catch(() => {});
+    }
+    function openEnrolment() {
+      ui.enrolOverlay.style.display = "flex";
+      ui.enrolUserName.value = "";
+      ui.enrolHomeQuery.value = "";
+      renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, [], enrolMatchIndexByLabel);
+      ui.enrolNearbyList.innerHTML = '<div class="meta">Search for a home location, then select one match to list nearby sites.</div>';
+      ui.enrolLocStatus.textContent = "";
+      ui.enrolHomeSelected.textContent = "";
+      enrolSelectedHome = null;
+      enrolMatches = [];
+    }
+    function openSettings(prefill = true) {
+      ui.settingsOverlay.style.display = "flex";
+      if (!(prefill && profile)) return;
+      ui.userName.value = asText(profile.name);
+      if (Number.isFinite(profile.homeLat) && Number.isFinite(profile.homeLon)) setSelectedHome(profile.homeLat, profile.homeLon, asText(profile.homeLabel || "Saved home"));
+      ui.visitedOnlySetting.checked = !!(profile.settings && profile.settings.visitedOnly);
+      ui.dateFormat.value = asText(profile.settings && profile.settings.dateFormat) || "y-m-d";
+      ui.lengthUnits.value = asText(profile.settings && profile.settings.lengthUnits) || "km";
+      ui.multipleThreshold.value = String(Number(profile.settings && profile.settings.multipleThreshold) > 0 ? Number(profile.settings.multipleThreshold) : 5);
+      ui.shareEnabled.checked = !!(profile.publishPreference && profile.publishPreference.enabled);
+      ui.shareInterval.value = Number((profile.publishPreference && profile.publishPreference.intervalDays) || 7);
+      ui.shareNone.checked = profile.publishPreference && profile.publishPreference.intervalDays == null;
+      ui.shareEndpoint.value = getUsageSummaryEndpoint();
+      ui.shareToken.value = getUsageSummaryToken();
+      renderSubmitStatus();
+    }
+    function loadSubmitStatus() {
+      try {
+        const parsed = JSON.parse(asText(localStorage.getItem(USAGE_SUBMIT_STATUS_KEY)) || "{}");
+        if (!parsed || typeof parsed !== "object") return null;
+        return parsed;
+      } catch {
+        return null;
+      }
+    }
+    function formatSubmitStatus(status) {
+      const at = asText(status && status.at);
+      const state = asText(status && status.state);
+      const message = asText(status && status.message);
+      if (!at && !state && !message) return "";
+      return `Last submission: ${at || "-"} | ${state || "unknown"} | ${message || "-"}`;
+    }
+    function normaliseIntervalDays(rawValue, fallback = 7) {
+      const n = Number(rawValue);
+      if (!Number.isFinite(n) || n <= 0) return fallback;
+      return Math.max(0.0001, n);
+    }
+    function renderSubmitStatus() {
+      if (!ui.shareSubmitStatus) return;
+      const status = loadSubmitStatus();
+      ui.shareSubmitStatus.textContent = formatSubmitStatus(status);
+    }
+    function recordSubmitStatus(state, message) {
+      const status = { at: nowIso(), state: asText(state), message: asText(message) };
+      localStorage.setItem(USAGE_SUBMIT_STATUS_KEY, JSON.stringify(status));
+      renderSubmitStatus();
+    }
+    function buildUsageSummary(eventType = "manual") {
+      profile.usage.pendingSummaries = profile.usage.pendingSummaries || {};
+      if (eventType !== "adoption") {
+        const pending = profile.usage.pendingSummaries.manual || profile.usage.pendingSummaries.periodic;
+        if (pending) return pending.summary;
+      }
+      if (profile.usage.pendingSummaries[eventType]) return profile.usage.pendingSummaries[eventType].summary;
+      let visitedSiteCount = 0;
+      if (profile && profile.siteVisits) {
+        for (const siteId of Object.keys(profile.siteVisits)) if (getVisitStatus(siteId) === "visited") visitedSiteCount += 1;
+      }
+      const summary = {
+        submission_id: crypto.randomUUID(),
+        submitted_at_utc: nowIso(),
+        magic_cookie: asText(profile && profile.magicCookie),
+        use_count_since_last_push: eventType === "adoption" ? 0 : Math.max(0, Number(profile && profile.usage && profile.usage.useCount || 0) - Number(profile && profile.usage && profile.usage.publishedUseCount || 0)),
+        visited_site_count: visitedSiteCount,
+        event_type: asText(eventType) || "manual",
+        client_version: APP_VERSION
+      };
+      profile.usage.pendingSummaries[eventType] = { summary, useCount: Number(profile.usage.useCount || 0) };
+      persistProfile();
+      return summary;
+    }
+    function isSummaryDue() {
+      if (!(connected && profile)) return false;
+      if (!(profile.publishPreference && profile.publishPreference.enabled)) return false;
+      const intervalDays = Number(profile.publishPreference.intervalDays);
+      if (!Number.isFinite(intervalDays) || intervalDays <= 0) return false;
+      const last = profile.publishPreference.lastPromptAt ? Date.parse(profile.publishPreference.lastPromptAt) : NaN;
+      if (!Number.isFinite(last)) return true;
+      return (Date.now() - last) >= intervalDays * 86400000;
+    }
+    function updateSummaryReminderUi() {
+      const due = isSummaryDue();
+      if (ui.summaryInboxBtn) ui.summaryInboxBtn.style.display = due ? "inline-flex" : "none";
+      if (ui.summaryInboxDot) ui.summaryInboxDot.style.display = due ? "block" : "none";
+    }
+    function startSummaryReminderWatch() {
+      if (summaryReminderTimer) return;
+      summaryReminderTimer = window.setInterval(() => {
+        updateSummaryReminderUi();
+      }, 15000);
+    }
+    function stopSummaryReminderWatch() {
+      if (!summaryReminderTimer) return;
+      window.clearInterval(summaryReminderTimer);
+      summaryReminderTimer = null;
+    }
+    function setSubmissionDialogContent(summary) {
+      const endpoint = getUsageSummaryEndpoint();
+      const destination = endpoint ? "Configured endpoint" : "Clipboard fallback";
+      ui.submitSummary.innerHTML = [
+        `<div><strong>Event</strong></div><div>${escapeHtml(asText(summary.event_type) || "manual")}</div>`,
+        `<div><strong>Timestamp (UTC)</strong></div><div>${escapeHtml(formatTimestampUtc(summary.submitted_at_utc))}</div>`,
+        `<div><strong>Uses since last summary</strong></div><div>${escapeHtml(String(summary.use_count_since_last_push))}</div>`,
+        `<div><strong>Visited site count</strong></div><div>${escapeHtml(String(summary.visited_site_count))}</div>`,
+        `<div><strong>Client version</strong></div><div>${escapeHtml(asText(summary.client_version || APP_VERSION))}</div>`,
+        `<div><strong>Destination</strong></div><div>${escapeHtml(destination)}</div>`
+      ].join("");
+    }
+    function setSubmissionDialogStatus(lines) {
+      const text = Array.isArray(lines) ? lines.map((x) => asText(x)).join("\n") : asText(lines);
+      ui.submitStatus.textContent = text || "";
+    }
+    function closeSubmissionDialog() {
+      if (submissionInProgress) return;
+      ui.submitOverlay.style.display = "none";
+      pendingSummaryDialog = null;
+    }
+    function openSubmissionDialog(summary) {
+      pendingSummaryDialog = { summary };
+      setSubmissionDialogContent(summary);
+      setSubmissionDialogStatus("Review and submit when ready.");
+      ui.submitSend.disabled = false;
+      ui.submitClose.disabled = false;
+      ui.submitOverlay.style.display = "flex";
+    }
+    async function runSubmissionDialogSend() {
+      if (!(pendingSummaryDialog && pendingSummaryDialog.summary)) return;
+      const summary = pendingSummaryDialog.summary;
+      submissionInProgress = true;
+      ui.submitSend.disabled = true;
+      ui.submitClose.disabled = true;
+      setSubmissionDialogStatus("Submitting usage summary...");
+      let timedOut = false;
+      const timeoutHandle = window.setTimeout(() => {
+        timedOut = true;
+        setSubmissionDialogStatus([
+          "Submission response timed out.",
+          "You may close this dialog and check workbook entries."
+        ]);
+        submissionInProgress = false;
+        ui.submitClose.disabled = false;
+      }, 20000);
+
+      let submitted = { ok: false, reason: "Submission timed out." };
+      try {
+        submitted = await submitUsageSummary(summary);
+      } finally {
+        if (!timedOut) window.clearTimeout(timeoutHandle);
+      }
+      if (timedOut) return;
+
+      profile.publishPreference = profile.publishPreference || {};
+      profile.publishPreference.lastPromptAt = nowIso();
+      let sent = submitted.ok === true && !submitted.unverified;
+      if (!sent) {
+        try { sent = await copySummaryToClipboard(summary); } catch {}
+      }
+      if (submitted.ok === true && !submitted.unverified) {
+        const pending = profile.usage.pendingSummaries && profile.usage.pendingSummaries[summary.event_type];
+        if (pending && pending.summary.submission_id === summary.submission_id) {
+          profile.usage.publishedUseCount = Math.max(Number(profile.usage.publishedUseCount || 0), pending.useCount);
+          delete profile.usage.pendingSummaries[summary.event_type];
+        }
+      }
+      persistProfile();
+      updateSummaryReminderUi();
+
+      const stats = submitted && submitted.stats ? submitted.stats : await fetchUsageStats();
+      const statsLine = formatStatsLine(stats);
+      const lines = [];
+      if (submitted.ok) {
+        if (submitted.duplicate) {
+          lines.push("A recent summary from this profile was already recorded.");
+          lines.push("No further action is required.");
+          recordSubmitStatus("duplicate", `Recent summary already recorded.${statsLine ? " " + statsLine : ""}`);
+        } else if (submitted.unverified) {
+          lines.push("Summary submitted.");
+          lines.push("Thank you for supporting My World Heritage.");
+          recordSubmitStatus("submitted_unverified", `Summary sent without direct confirmation.${statsLine ? " " + statsLine : ""}`);
+        } else {
+          lines.push("Summary received.");
+          lines.push("Thank you for supporting My World Heritage.");
+          recordSubmitStatus("submitted", `Summary received.${statsLine ? " " + statsLine : ""}`);
+        }
+      } else if (sent) {
+        lines.push("Direct submit failed.");
+        lines.push("Summary copied to clipboard for manual use.");
+        recordSubmitStatus("clipboard_fallback", `Direct submit failed (${asText(submitted.reason)}); copied to clipboard.`);
+      } else {
+        lines.push("Submission failed.");
+        lines.push(asText(submitted.reason) || "Unknown error.");
+        recordSubmitStatus("failed", `Submission failed (${asText(submitted.reason)}).`);
+      }
+      if (statsLine) {
+        lines.push("");
+        lines.push(statsLine);
+      }
+      setSubmissionDialogStatus(lines);
+      submissionInProgress = false;
+      ui.submitClose.disabled = false;
+    }
+    function saveSettings() {
+      const name = asText(ui.userName.value).trim();
+      if (!name) return alert("Please provide a user name.");
+      if (!selectedHome) return alert("Please select a home location.");
+      if (!profile) profile = defaultProfile();
+      profile.schemaVersion = PROFILE_SCHEMA_VERSION;
+      profile.name = name;
+      profile.homeLat = selectedHome.lat;
+      profile.homeLon = selectedHome.lon;
+      profile.homeLabel = selectedHome.label;
+      profile.siteVisits = profile.siteVisits || {};
+      profile.inspectedSiteIds = Array.from(new Set(profile.inspectedSiteIds || [])).sort();
+      profile.settings = profile.settings || {};
+      profile.settings.visitedOnly = !!ui.visitedOnlySetting.checked;
+      profile.settings.dateFormat = asText(ui.dateFormat.value) || "y-m-d";
+      profile.settings.lengthUnits = asText(ui.lengthUnits.value) || "km";
+      profile.settings.multipleThreshold = Math.max(1, Number(ui.multipleThreshold.value || 5));
+      profile.settings.usageSummaryEndpoint = asText(ui.shareEndpoint.value).trim();
+      profile.settings.usageSummaryToken = asText(ui.shareToken.value).trim();
+      profile.publishPreference = profile.publishPreference || {};
+      profile.publishPreference.enabled = !!ui.shareEnabled.checked;
+      profile.publishPreference.intervalDays = ui.shareNone.checked ? null : normaliseIntervalDays(ui.shareInterval.value, 7);
+      if (profile.publishPreference.consentAskedAtStartup == null) profile.publishPreference.consentAskedAtStartup = true;
+      profile.magicCookie = profile.magicCookie || randomCookie();
+      profile.usage = profile.usage || { firstUseAt: nowIso(), lastUseAt: nowIso(), useCount: 0, inspectCount: 0, publishedUseCount: 0 };
+      connected = true;
+      manuallyDisconnected = false;
+      persistProfile();
+      ui.settingsOverlay.style.display = "none";
+      updateUserUi();
+      rebuildComponentIndexes();
+      refreshMarkers();
+      renderSiteList(asText(ui.siteListMode.value));
+      applyScaleUnits();
+    }
+    function connectSilently() {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (!raw) {
+        connected = false;
+        profile = null;
+        stopSummaryReminderWatch();
+        updateUserUi();
+        openEnrolment();
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        const v = verifyProfile(parsed);
+        if (!v.ok) throw new Error(v.reason);
+        profile = parsed;
+        profile.siteVisits = profile.siteVisits || {};
+        delete profile.visitedSiteIds;
+        delete profile.siteStatuses;
+        profile.settings = profile.settings || {};
+        if (!profile.settings.dateFormat) profile.settings.dateFormat = "y-m-d";
+        if (!profile.settings.lengthUnits) profile.settings.lengthUnits = "km";
+        if (!(Number(profile.settings.multipleThreshold) > 0)) profile.settings.multipleThreshold = 5;
+        if (profile.settings.usageSummaryEndpoint == null) profile.settings.usageSummaryEndpoint = "";
+        if (profile.settings.usageSummaryToken == null) profile.settings.usageSummaryToken = "";
+        connected = true;
+        manuallyDisconnected = false;
+        profile.usage.useCount = Number(profile.usage.useCount || 0) + 1;
+        profile.usage.publishedUseCount = Number(profile.usage.publishedUseCount || 0);
+        profile.usage.lastUseAt = nowIso();
+        persistProfile();
+      } catch (e) {
+        connected = false;
+        profile = null;
+        alert("Stored profile is incompatible: " + e.message + ". Please import a compatible file or reset.");
+      }
+      updateUserUi();
+      rebuildComponentIndexes();
+      refreshMarkers();
+      applyScaleUnits();
+      ensureStartupConsentPrompt();
+      updateSummaryReminderUi();
+      startSummaryReminderWatch();
+      void maybePromptPublishSummary(false);
+    }
+    function disconnect() {
+      connected = false;
+      profile = null;
+      manuallyDisconnected = true;
+      stopSummaryReminderWatch();
+      updateUserUi();
+      refreshMarkers();
+      clearSelection();
+    }
+    function exportProfile() {
+      if (!connected || !profile) return alert("No connected profile to export.");
+      const payload = { app: "My World Heritage", schemaVersion: PROFILE_SCHEMA_VERSION, exportedAt: nowIso(), profile };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const safeUser = asText(profile.name || "User").trim().replace(/[\\/:*?"<>|]/g, "_") || "User";
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `My World Heritage - ${safeUser}.profile`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    }
+    function importProfileFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const obj = JSON.parse(asText(reader.result));
+          if (!(obj && obj.schemaVersion === PROFILE_SCHEMA_VERSION && obj.profile)) throw new Error("Unsupported import format");
+          const v = verifyProfile(obj.profile); if (!v.ok) throw new Error(v.reason);
+          localStorage.setItem(PROFILE_KEY, JSON.stringify(obj.profile));
+          connectSilently();
+        } catch (e) { alert("Import failed: " + e.message); }
+      };
+      reader.readAsText(file);
+    }
+    function parseWhsKeyQuery(query) {
+      const m = asText(query).trim().toLowerCase().match(/^(?:whs\s*)?(\d{1,6})$/);
+      if (!m) return "";
+      const normalized = m[1].replace(/^0+/, "");
+      return normalized || "0";
+    }
+    function rootWhsIdForProps(p) {
+      const id = asText(p && p.site_id).trim();
+      const parent = asText(p && p.parent_site_id).trim();
+      const whsDirect = id.match(WHS_ID_RE);
+      if (whsDirect) return whsDirect[1];
+      const mwhDirect = id.match(MWH_ID_RE);
+      if (mwhDirect) return mwhDirect[1];
+      const whsParent = parent.match(WHS_ID_RE);
+      if (whsParent) return whsParent[1];
+      throw new Error(`Invalid dataset id shape: site_id=${id || "<empty>"} parent_site_id=${parent || "<empty>"}`);
+    }
+    function buildWhsSearchResults(query) {
+      const q = query.toLowerCase().trim();
+      const whsKeyQuery = parseWhsKeyQuery(query);
+      const rows = [];
+      for (const f of whsData.features || []) {
+        const p = f.properties || {};
+        const name = displayName(p);
+        const id = asText(p.site_id);
+        const scope = asText(p.site_scope);
+        const parentId = asText(p.parent_site_id);
+        const rootWhsId = rootWhsIdForProps(p);
+        const country = asText(p.country).toLowerCase();
+        const nameNative = asText(p.name).toLowerCase();
+        const nameEnglish = asText(p.name_en).toLowerCase();
+        const aliasList = Array.isArray(p.aliases) ? p.aliases : [];
+        const aliases = aliasList.join(" ").toLowerCase();
+        const haystack = `${name.toLowerCase()} ${nameNative} ${nameEnglish} ${id.toLowerCase()} ${country} ${aliases} whs ${rootWhsId}`;
+        if (whsKeyQuery) {
+          if (!(rootWhsId === whsKeyQuery)) continue;
+        } else if (!haystack.includes(q)) continue;
+
+        let score = 0;
+        if (whsKeyQuery) score += rootWhsId === whsKeyQuery ? 300 : 0;
+        if (nameEnglish === q || nameNative === q) score += 100;
+        else if (nameEnglish.includes(q) || nameNative.includes(q)) score += 60;
+        if (country === q) score += 30;
+        else if (country.includes(q)) score += 15;
+        if (id === q) score += 90;
+        if (rootWhsId && rootWhsId === q) score += 110;
+        for (const a of aliasList) if (asText(a).toLowerCase().includes(q)) score += 50;
+
+        let matchedPoint = null;
+        const aliasPoints = Array.isArray(p.alias_points) ? p.alias_points : [];
+        for (const ap of aliasPoints) {
+          const aliasName = asText(ap && ap.name).toLowerCase();
+          if (!aliasName || !aliasName.includes(q)) continue;
+          const lat = Number(ap.lat); const lon = Number(ap.lon);
+          if (Number.isFinite(lat) && Number.isFinite(lon)) { matchedPoint = { lat, lon }; break; }
+        }
+
+        const subtitle = scope === "component" && parentId ? `Component ${id} of ${parentId}` : id;
+        rows.push({ type: "whs", feature: f, title: name || "Unnamed site", subtitle, score, matchedPoint });
+      }
+      rows.sort((a, b) => b.score - a.score || asText(a.title).localeCompare(asText(b.title)));
+      return rows;
+    }
+    async function buildGeoSearchResults(query) {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&q=${encodeURIComponent(query)}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.map(x => ({ type: "geo", lat: Number(x.lat), lon: Number(x.lon), bbox: Array.isArray(x.boundingbox) ? x.boundingbox.map(Number) : null, title: asText(x.display_name).split(",")[0], subtitle: asText(x.display_name) }));
+      } catch {
+        return [];
+      }
+    }
+    function findSitesInBBox(bbox) {
+      if (!bbox || bbox.length < 4 || !whsData || !Array.isArray(whsData.features)) return [];
+      const south = Number(bbox[0]); const north = Number(bbox[1]); const west = Number(bbox[2]); const east = Number(bbox[3]);
+      if (![south, north, west, east].every(Number.isFinite)) return [];
+      return whsData.features.filter((f) => {
+        if (!f.geometry || f.geometry.type !== "Point") return false;
+        const lon = Number(f.geometry.coordinates[0]);
+        const lat = Number(f.geometry.coordinates[1]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+        return lat >= south && lat <= north && lon >= west && lon <= east;
+      });
+    }
+    async function runSearch() {
+      const q = asText(ui.searchInput.value).trim(); if (!q) { lastSearchedSiteIds = []; searchFocusBySiteId.clear(); explicitVisibleSiteIds = new Set(); ui.searchResults.style.display = "none"; ui.searchResults.innerHTML = ""; refreshMarkers(); renderSiteList(asText(ui.siteListMode.value)); return; }
+      explicitVisibleSiteIds = new Set();
+      showLoading("Loading ...");
+      try {
+        const whsRows = buildWhsSearchResults(q);
+        const geoRows = await buildGeoSearchResults(q);
+        searchFocusBySiteId.clear();
+        for (const r of whsRows) {
+          const sid = asText(r.feature && r.feature.properties && r.feature.properties.site_id);
+          if (!sid || !r.matchedPoint) continue;
+          searchFocusBySiteId.set(sid, r.matchedPoint);
+        }
+        lastSearchedSiteIds = whsRows.map((r) => asText(r.feature && r.feature.properties && r.feature.properties.site_id)).filter(Boolean);
+        for (const sid of lastSearchedSiteIds) explicitVisibleSiteIds.add(sid);
+        refreshMarkers();
+        if (!lastSearchedSiteIds.length && geoRows.length && geoRows[0].bbox) {
+          const bboxMatches = findSitesInBBox(geoRows[0].bbox);
+          lastSearchedSiteIds = bboxMatches.map((f) => asText(f.properties && f.properties.site_id)).filter(Boolean);
+          for (const sid of lastSearchedSiteIds) explicitVisibleSiteIds.add(sid);
+          refreshMarkers();
+        }
+        const rows = [...whsRows.slice(0, 20), ...geoRows].slice(0, 24); ui.searchResults.innerHTML = "";
+        ui.siteListMode.value = "searched";
+        renderSiteList("searched");
+        if (whsRows.length === 1) {
+          const one = whsRows[0];
+          if (one.matchedPoint) map.setView([one.matchedPoint.lat, one.matchedPoint.lon], 10);
+          else {
+            const f = one.feature;
+            map.setView([Number(f.geometry.coordinates[1]), Number(f.geometry.coordinates[0])], 10);
+          }
+        } else if (rows.length === 1) {
+          const only = rows[0];
+          if (only.type === "geo") map.setView([only.lat, only.lon], 10);
+        }
+        for (const row of rows) { const div = document.createElement("div"); div.className = "result-row"; div.innerHTML = `<strong>${row.title}</strong><br><span class="result-meta">${row.subtitle}</span>`; div.addEventListener("click", () => { if (row.type === "whs") { const f = row.feature; const sid = asText(f && f.properties && f.properties.site_id); explicitVisibleSiteIds.add(sid); refreshMarkers(); selectionContext = "search"; if (row.matchedPoint) map.setView([row.matchedPoint.lat, row.matchedPoint.lon], 10); else map.setView([Number(f.geometry.coordinates[1]), Number(f.geometry.coordinates[0])], 10); renderDetail(f); } else { map.setView([row.lat, row.lon], 10); clearSelection(); } ui.searchResults.style.display = "none"; }); ui.searchResults.appendChild(div); }
+        ui.searchResults.style.display = rows.length ? "block" : "none";
+      } finally {
+        hideLoading();
+      }
+    }
+    function getUsageSummaryEndpoint() { return DEFAULT_USAGE_SUMMARY_ENDPOINT; }
+    function getUsageSummaryToken() { return ""; }
+    async function fetchUsageStats() {
+      const endpoint = getUsageSummaryEndpoint();
+      if (!endpoint) return null;
+      try {
+        const sep = endpoint.includes("?") ? "&" : "?";
+        const url = `${endpoint}${sep}stats=1`;
+        const res = await fetch(url, { method: "GET" });
+        if (!res.ok) return null;
+        const payload = await res.json();
+        if (!(payload && payload.ok && payload.stats)) return null;
+        return payload.stats;
+      } catch {
+        return null;
+      }
+    }
+    function formatStatsLine(stats) {
+      if (!stats || typeof stats !== "object") return "";
+      const encouragement = asText(stats.encouragement).trim();
+      if (encouragement) return encouragement;
+      const active = Number(stats.active_datasets || stats.unique_datasets || 0);
+      const avgVisited = Number(stats.average_visited_sites);
+      if (!Number.isFinite(active) || !Number.isFinite(avgVisited)) return "";
+      return `Recent usage: ${active} active users, average visited sites ${Math.round(avgVisited)}.`;
+    }
+    async function submitUsageSummary(summary) {
+      const endpoint = getUsageSummaryEndpoint();
+      if (!endpoint) return { ok: false, reason: "No endpoint configured." };
+      try {
+        const token = getUsageSummaryToken();
+        const payload = {
+          ...summary,
+          source: "my-world-heritage",
+          user_agent: asText(navigator.userAgent).slice(0, 512)
+        };
+        if (token) payload.token = token;
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: AbortSignal.timeout(18000),
+          body: JSON.stringify(payload)
+        });
+        const raw = await res.text();
+        let parsed = null;
+        try { parsed = raw ? JSON.parse(raw) : null; } catch {}
+        if (!res.ok) return { ok: false, reason: `HTTP ${res.status}`, detail: asText(raw).slice(0, 240) };
+        if (!parsed || parsed.ok !== true) return { ok: false, reason: asText(parsed && parsed.error) || "Endpoint did not confirm receipt." };
+        if (parsed.submission_id && parsed.submission_id !== summary.submission_id) return { ok: false, reason: "Endpoint acknowledged a different submission." };
+        return { ok: true, duplicate: !!(parsed && parsed.duplicate), detail: asText(raw).slice(0, 240), stats: parsed && parsed.stats ? parsed.stats : null };
+      } catch (e) {
+        const reason = asText(e && e.message) || "Submission failed.";
+        return { ok: false, reason: reason };
+      }
+    }
+    async function copySummaryToClipboard(summary) {
+      if (!navigator.clipboard) return false;
+      await navigator.clipboard.writeText(JSON.stringify(summary, null, 2));
+      return true;
+    }
+    async function maybePromptPublishSummary(force = false) {
+      if (!connected || !profile) return;
+      if (force) {
+        openSubmissionDialog(buildUsageSummary("manual"));
+        return;
+      }
+      if (!isSummaryDue()) return;
+      openSubmissionDialog(buildUsageSummary("periodic"));
+    }
+    async function submitAdoptionSummary() {
+      if (!(connected && profile)) return;
+      const summary = buildUsageSummary("adoption");
+      summary.use_count_since_last_push = 0;
+      const submitted = await submitUsageSummary(summary);
+      const stats = submitted && submitted.stats ? submitted.stats : await fetchUsageStats();
+      const statsLine = formatStatsLine(stats);
+      if (!submitted.ok) {
+        recordSubmitStatus("adoption_failed", `Adoption submission failed.${statsLine ? " " + statsLine : ""}`);
+        return;
+      }
+      if (!submitted.unverified) {
+        delete profile.usage.pendingSummaries.adoption;
+        persistProfile();
+      }
+      if (submitted.duplicate) {
+        recordSubmitStatus("adoption_duplicate", `Adoption summary already recently recorded.${statsLine ? " " + statsLine : ""}`);
+        return;
+      }
+      if (submitted.unverified) {
+        recordSubmitStatus("adoption_submitted_unverified", `Adoption summary sent without direct confirmation.${statsLine ? " " + statsLine : ""}`);
+        return;
+      }
+      recordSubmitStatus("adoption_submitted", `Adoption summary received.${statsLine ? " " + statsLine : ""}`);
+    }
+    function ensureStartupConsentPrompt() {
+      if (!connected || !profile) return;
+      profile.publishPreference = profile.publishPreference || { enabled: false, intervalDays: 7, lastPromptAt: null, consentAskedAtStartup: false };
+      if (profile.publishPreference.consentAskedAtStartup) return;
+      if (profile.publishPreference.enabled == null) profile.publishPreference.enabled = false;
+      if (profile.publishPreference.intervalDays == null) profile.publishPreference.intervalDays = 7;
+      profile.publishPreference.consentAskedAtStartup = true;
+      persistProfile();
+    }
+    function closeTransientUi() {
+      ui.helpOverlay.style.display = "none";
+      ui.settingsOverlay.style.display = "none";
+      ui.enrolOverlay.style.display = "none";
+      if (ui.submitOverlay.style.display !== "none") closeSubmissionDialog();
+      ui.userMenu.style.display = "none";
+      ui.searchResults.style.display = "none";
+      selectionContext = "";
+      if (ui.detailPane.style.display !== "none") clearSelection();
+    }
+    function wireUi() {
+      document.getElementById("search-btn").addEventListener("click", runSearch);
+      document.getElementById("copy-snapshot-btn").addEventListener("click", copySnapshot);
+      ui.summaryInboxBtn.addEventListener("click", () => { maybePromptPublishSummary(false); ui.userMenu.style.display = "none"; });
+      ui.submitSend.addEventListener("click", runSubmissionDialogSend);
+      ui.submitClose.addEventListener("click", closeSubmissionDialog);
+      ui.searchInput.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTransientUi(); if (e.key === "Enter") { e.preventDefault(); runSearch(); } });
+      ui.siteListMode.addEventListener("change", () => { renderSiteList(asText(ui.siteListMode.value)); });
+      ui.appTitleBtn.addEventListener("click", () => { ui.helpOverlay.style.display = "flex"; });
+      document.getElementById("help-close").addEventListener("click", () => { ui.helpOverlay.style.display = "none"; });
+      ui.userMenuToggle.addEventListener("click", () => { ui.userMenu.style.display = ui.userMenu.style.display === "block" ? "none" : "block"; });
+      window.addEventListener("click", (e) => { if (!document.getElementById("user-menu-wrap").contains(e.target)) ui.userMenu.style.display = "none"; });
+      document.getElementById("menu-connect").addEventListener("click", () => { connectSilently(); ui.userMenu.style.display = "none"; });
+      document.getElementById("menu-settings").addEventListener("click", () => { openSettings(true); ui.userMenu.style.display = "none"; });
+      document.getElementById("menu-export").addEventListener("click", () => { exportProfile(); ui.userMenu.style.display = "none"; });
+      document.getElementById("menu-import").addEventListener("click", () => { ui.importFile.click(); ui.userMenu.style.display = "none"; });
+      if (ui.menuSummary) ui.menuSummary.addEventListener("click", () => { exportVisitedSummaryReport(); ui.userMenu.style.display = "none"; });
+      if (ui.menuSubmit && flags.submitEnabled) ui.menuSubmit.addEventListener("click", () => { maybePromptPublishSummary(true); ui.userMenu.style.display = "none"; });
+      if (ui.menuReset && flags.resetEnabled) ui.menuReset.addEventListener("click", () => { if (!confirm("Reset local test data and reload?")) return; localStorage.removeItem(PROFILE_KEY); localStorage.removeItem(CENSUS_KEY); location.reload(); });
+      document.getElementById("menu-logout").addEventListener("click", () => { disconnect(); ui.userMenu.style.display = "none"; });
+      ui.importFile.addEventListener("change", () => { const f = ui.importFile.files && ui.importFile.files[0]; if (f) importProfileFile(f); ui.importFile.value = ""; });
+      document.getElementById("home-search").addEventListener("click", searchHomeLocation);
+      ui.homeQuery.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); searchHomeLocation(); } });
+      ui.homeQuery.addEventListener("change", () => { applyHomeSelectionFromInput(); });
+      document.getElementById("use-my-location").addEventListener("click", () => { if (!navigator.geolocation) { ui.locStatus.textContent = "Geolocation not supported."; return; } ui.locStatus.textContent = "Locating..."; navigator.geolocation.getCurrentPosition((pos) => { setSelectedHome(pos.coords.latitude, pos.coords.longitude, "Current device location"); ui.homeMatchesList.innerHTML = ""; homeMatchIndexByLabel.clear(); homeMatches = []; ui.locStatus.textContent = "Location set."; }, (err) => { ui.locStatus.textContent = "Location failed: " + err.message; }, { timeout: 10000, maximumAge: 300000 }); });
+      ui.shareInfoLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        ui.shareInfoBubble.style.display = ui.shareInfoBubble.style.display === "block" ? "none" : "block";
+      });
+      document.getElementById("enrol-home-search").addEventListener("click", searchEnrolHomeLocation);
+      ui.enrolHomeQuery.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); searchEnrolHomeLocation(); } });
+      ui.enrolHomeQuery.addEventListener("change", () => { applyEnrolSelectionFromInput(); });
+      document.getElementById("enrol-use-my-location").addEventListener("click", () => {
+        if (!navigator.geolocation) { ui.enrolLocStatus.textContent = "Geolocation not supported."; return; }
+        ui.enrolLocStatus.textContent = "Locating...";
+        navigator.geolocation.getCurrentPosition((pos) => {
+          setEnrolHome(pos.coords.latitude, pos.coords.longitude, "Current device location");
+          renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, [], enrolMatchIndexByLabel);
+          enrolMatches = [];
+          ui.enrolLocStatus.textContent = "Location selected. Nearby sites listed.";
+          renderEnrolNearby(pos.coords.latitude, pos.coords.longitude);
+        }, (err) => { ui.enrolLocStatus.textContent = "Location failed: " + err.message; }, { timeout: 10000, maximumAge: 300000 });
+      });
+      ui.enrolHomeSuggestions.addEventListener("click", (ev) => {
+        const row = ev.target && ev.target.closest ? ev.target.closest("[data-match-index]") : null;
+        if (!row) return;
+        const idx = Number(row.getAttribute("data-match-index"));
+        if (!Number.isFinite(idx) || !enrolMatches[idx]) return;
+        const match = enrolMatches[idx];
+        const label = compactPlaceLabel(match.display_name);
+        ui.enrolHomeQuery.value = label;
+        setEnrolHome(Number(match.lat), Number(match.lon), canonicalPlaceName(match.display_name), false);
+        ui.enrolLocStatus.textContent = "Location selected. Nearby sites listed.";
+        renderEnrolNearby(Number(match.lat), Number(match.lon));
+        renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, [], enrolMatchIndexByLabel);
+      });
+      document.getElementById("enrol-save").addEventListener("click", saveEnrolment);
+      document.getElementById("settings-save").addEventListener("click", saveSettings);
+      map.on("click", () => {
+        if (Date.now() < ignoreMapClickUntil) return;
+        clearSelection();
+      });
+      document.addEventListener("keydown", (ev) => { if (ev.key !== "Escape") return; closeTransientUi(); });
+      map.on("moveend", () => {
+        const c = map.getCenter();
+        localStorage.setItem(MAP_VIEW_KEY, JSON.stringify({ lat: c.lat, lon: c.lng, zoom: map.getZoom() }));
+      });
+    }
+    function updateExtractStatus(status) {
+      if (!status || typeof status !== "object") return;
+      ui.extractStatusResult.textContent = asText(status.result) || "Unknown";
+      ui.extractStatusSource.textContent = asText(status.source) || "-";
+      ui.extractStatusCount.textContent = asText(status.count) || "-";
+      ui.extractStatusInput.textContent = status.input_bytes == null ? "-" : `${status.input_bytes} bytes`;
+      ui.extractStatusSize.textContent = status.dataset_bytes == null ? "-" : `${status.dataset_bytes} bytes`;
+      ui.extractStatusDataAt.textContent = asText(status.most_recent_data) || "-";
+      ui.extractStatusAttemptAt.textContent = asText(status.most_recent_attempt) || "-";
+      ui.extractStatusRetry.textContent = status.retry_interval_days == null ? "-" : `every ${status.retry_interval_days} days`;
+    }
+    function renderAppVersion() {
+      if (!ui.appVersion) return;
+      ui.appVersion.textContent = APP_VERSION;
+    }
+
+    function bootData() {
+      showLoading("Loading ...");
+      fetch("../data/current/unesco_official_sites.json", { cache: "no-store" }).then(r => r.json()).then(statusData => {
+        updateExtractStatus(statusData && statusData.metadata && statusData.metadata.extract_status);
+      }).catch(() => {});
+      fetch("../data/current/unesco_official_sites.geojson", { cache: "no-store" }).then(r => r.json()).then(data => {
+        whsData = data;
+        updateExtractStatus(data && data.metadata && data.metadata.extract_status);
+        layer = L.geoJSON(data, {
+          pointToLayer: (feature, latlng) => L.circleMarker(latlng, markerStyle(asText(feature && feature.properties && feature.properties.site_id))),
+          onEachFeature: (feature, marker) => {
+            const siteId = asText(feature && feature.properties && feature.properties.site_id);
+            markersBySiteId.set(siteId, marker);
+            marker.bindTooltip(tooltipContent(feature), { direction: "top", opacity: 0.95 });
+            marker.on("click", (ev) => {
+              ignoreMapClickUntil = Date.now() + 250;
+              selectionContext = "map";
+              renderDetail(feature);
+              if (ev && ev.originalEvent) L.DomEvent.stop(ev.originalEvent);
+            });
+            marker.on("dblclick", (ev) => {
+              if (!(connected && profile)) return;
+              const current = getVisitStatus(siteId);
+              setVisitStatus(siteId, current === "visited" ? "not_visited" : "visited");
+              refreshMarkers();
+              if (selectedSiteId === siteId) renderDetail(feature);
+              if (ev && ev.originalEvent) L.DomEvent.stop(ev.originalEvent);
+            });
+          }
+        }).addTo(map);
+        rebuildComponentIndexes();
+        const savedViewRaw = localStorage.getItem(MAP_VIEW_KEY);
+        let restored = false;
+        if (savedViewRaw) {
+          try {
+            const saved = JSON.parse(savedViewRaw);
+            if (Number.isFinite(saved.lat) && Number.isFinite(saved.lon) && Number.isFinite(saved.zoom)) {
+              map.setView([saved.lat, saved.lon], saved.zoom);
+              restored = true;
+            }
+          } catch {}
+        }
+        if (!restored) {
+          if (layer.getLayers && layer.getLayers().length) map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+          else map.setView([20, 0], 2);
+        }
+        incrementCensusUse();
+        connectSilently();
+        refreshMarkers();
+        if (!connected && !localStorage.getItem(PROFILE_KEY)) openEnrolment();
+        hideLoading();
+      }).catch(err => { hideLoading(); ui.detailPane.style.display = "block"; ui.detailPane.innerHTML = `<p>Failed to load local data: ${asText(err)}</p>`; });
+    }
+    applyFeatureFlags();
+    wireUi();
+    renderAppVersion();
+    updateUserUi();
+    applyScaleUnits();
+    bootData();
+  </script>
+</body>
+</html>
