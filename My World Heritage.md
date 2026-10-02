@@ -1,5 +1,7 @@
-<!-- HERITAGE_MARK.md -->
-# <img src="site/icons/mwh-temple.svg" width="36" height="36" alt=""> A heritage symbol to share
+<!-- My World Heritage.md -->
+# <img src="site/icons/mwh-temple.svg" width="36" height="36" align="bottom" alt=""> A heritage symbol to share
+
+*2 October 2026*
 
 My World Heritage uses a simple temple silhouette to signify cultural places and artefacts. The project makes this artwork available to everyone through a public-domain dedication. You can use it on a map, in a collection catalogue, beside a museum entry, or in another application without asking this project for permission.
 
@@ -41,3 +43,11 @@ The following sources describe the official symbols and the dedication terms:
 2. [Can I use the World Heritage logo in brochures, ads or in other media?](https://whc.unesco.org/en/faq/16), UNESCO World Heritage Centre, accessed 2 October 2026.
 3. [Distinctive emblems of the 1954 Hague Convention and of its 1999 Second Protocol](https://www.unesco.org/en/heritage-armed-conflicts/emblem), UNESCO, 21 July 2026.
 4. [CC0 1.0 Universal legal code](https://creativecommons.org/publicdomain/zero/1.0/legalcode.en), Creative Commons, accessed 2 October 2026.
+
+# Colophon
+
+Published by the My World Heritage project on 2 October 2026. The artwork carries its public-domain declaration and machine-readable CC0 metadata within the SVG.
+
+The SHA-256 digest below identifies the exact bytes of [mwh-temple.svg](site/icons/mwh-temple.svg), encoded as UTF-8 with LF line endings. It identifies this artwork file, not the document or the other icon sizes. Recalculate it whenever the SVG changes.
+
+SHA-256: `8faa8acbdde2ca58147904411b8db249f2e8f551145af543931ca3f322fb5271`

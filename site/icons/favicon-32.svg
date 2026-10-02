@@ -1,6 +1,18 @@
 <!-- icons/favicon-32.svg 0.1.22 -->
-<!-- Original My World Heritage temple artwork: CC0 1.0 Universal, 2 October 2026. https://creativecommons.org/publicdomain/zero/1.0/ See https://github.com/pekka-28/unesco/blob/main/HERITAGE_MARK.md -->
+<!-- Original My World Heritage temple artwork: CC0 1.0 Universal, 2 October 2026. https://creativecommons.org/publicdomain/zero/1.0/ See https://github.com/pekka-28/unesco/blob/main/My%20World%20Heritage.md -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="My World Heritage mark">
+  <title>My World Heritage shared heritage mark</title>
+  <desc>Original temple artwork dedicated to the public domain under CC0 1.0 Universal on 2 October 2026. To the extent the My World Heritage project holds copyright and related rights in this artwork, it waives those rights under CC0, with its public licence fallback where a waiver is ineffective. Copying, modification and redistribution, including commercial use, require no permission or attribution. This declaration grants no rights in official emblems and implies no institutional endorsement. CC0 does not waive trademark or patent rights. Terms: https://creativecommons.org/publicdomain/zero/1.0/legalcode.en</desc>
+  <metadata>
+    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+      <cc:Work rdf:about="">
+        <dc:title>My World Heritage shared heritage mark</dc:title>
+        <dc:date>2026-10-02</dc:date>
+        <dc:rights>Public-domain dedication under CC0 1.0 Universal</dc:rights>
+        <cc:license rdf:resource="https://creativecommons.org/publicdomain/zero/1.0/"/>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
   <path d="M12 36 L64 10 L116 36 Z" fill="#0a4f8a"/>
   <rect x="20" y="44" width="14" height="52" fill="#0a4f8a"/>
   <rect x="57" y="44" width="14" height="52" fill="#0a4f8a"/>
