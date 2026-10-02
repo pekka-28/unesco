@@ -24,7 +24,7 @@ function harness(overrides={}) {
      return new Response(null,{status:204});
    }
    if(url.includes('/functions/v1/'))return overrides.workerFailure?Response.json({}, {status:503}):Response.json({accepted:true});
-   if(url.includes('/dispatches'))return new Response(null,{status:204});
+   if(url.includes('/actions/runs?'))return Response.json({workflow_runs:[]});
    throw new Error('Unexpected request');
  }});
  const request=(body,token='owner-token',origin='https://pekka-28.github.io')=>handler(new Request('https://db.test/functions/v1/owner-admin',{method:'POST',headers:{origin,...(token?{authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body)}));
@@ -56,12 +56,11 @@ test('read queries are bounded and cannot choose arbitrary SQL, entities or filt
  assert.equal((await h.request({action:'read',entity:'submissions',record_class:'test',offset:100})).status,200);
  assert.equal(h.calls.filter(c=>c.name==='admin_read').length,1);
 });
-test('commands require confirmation, are deduplicated and dispatch fixed main workflows',async()=>{
- const h=harness();assert.equal((await h.request({action:'refresh',id:operation})).status,400);
- assert.equal((await h.request({action:'refresh',id:operation,confirm:true,ref:'evil'})).status,200);
- assert.equal((await h.request({action:'refresh',id:operation,confirm:true})).status,409);
- const dispatch=h.calls.filter(c=>c.url?.includes('/dispatches'));assert.equal(dispatch.length,1);
- assert.deepEqual(JSON.parse(dispatch[0].options.body),{ref:'main'});
+test('mail commands require confirmation and duplicate IDs never send twice',async()=>{
+ const h=harness();assert.equal((await h.request({action:'test-mail',id:operation})).status,400);
+ assert.equal((await h.request({action:'test-mail',id:operation,confirm:true})).status,200);
+ assert.equal((await h.request({action:'test-mail',id:operation,confirm:true})).status,409);
+ assert.equal(h.calls.filter(c=>c.url?.includes('/functions/v1/')).length,1);
  assert.equal(h.records.get(operation).status,'succeeded');
 });
 test('uncertain delivery remains in the ledger and does not automatically resend',async()=>{
@@ -70,10 +69,20 @@ test('uncertain delivery remains in the ledger and does not automatically resend
  assert.equal((await h.request({action:'monthly-mail',id:operation,confirm:true})).status,409);
  assert.equal(h.calls.filter(c=>c.url?.includes('/functions/v1/')).length,1);
 });
-test('missing GitHub authorisation cannot dispatch workflows',async()=>{
- const h=harness({settings:{MWH_ADMIN_GITHUB_TOKEN:''}});
- assert.equal((await h.request({action:'refresh',id:operation,confirm:true})).status,503);
+test('even the owner cannot invoke site mutations, with or without a legacy GitHub credential',async()=>{
+ const h=harness();
+ for(const action of ['refresh','publish','probe','deploy','rerun','sql','import','update','delete','set-secret','set-owner']) {
+  assert.equal((await h.request({action,id:operation,confirm:true,query:'select 1'})).status,400);
+ }
  assert.equal(h.records.size,0);
+ assert(!h.calls.some(c=>c.url?.includes('api.github.com')||c.url?.includes('/functions/v1/')));
+});
+test('GitHub inspection only performs an unauthenticated GET of fixed workflow status',async()=>{
+ const h=harness();assert.equal((await h.request({action:'runs',path:'/dispatches',method:'POST'})).status,200);
+ const calls=h.calls.filter(c=>c.url?.includes('api.github.com'));
+ assert.equal(calls.length,1);assert.equal(calls[0].options.method,'GET');
+ assert.equal(calls[0].options.headers.Authorization,undefined);assert.equal(calls[0].options.body,undefined);
+ assert.equal(calls[0].url,'https://api.github.com/repos/pekka-28/unesco/actions/runs?branch=main&per_page=20');
 });
 test('database administration reads preserve table permissions and classify historical records',async()=>{
  const db=new PGlite();try{

@@ -1,0 +1,38 @@
+{
+  "repository": "pekka-28/unesco",
+  "actions": {
+    "enabled": true,
+    "allowed_actions": "selected",
+    "sha_pinning_required": true
+  },
+  "selected_actions": {
+    "github_owned_allowed": false,
+    "verified_allowed": false,
+    "patterns_allowed": [
+      "actions/checkout@*",
+      "actions/setup-node@*",
+      "actions/upload-artifact@*",
+      "actions/upload-pages-artifact@*",
+      "actions/configure-pages@*",
+      "actions/deploy-pages@*"
+    ]
+  },
+  "rulesets": [
+    {
+      "name": "Preserve main history",
+      "target": "branch",
+      "enforcement": "active",
+      "bypass_actors": [],
+      "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
+      "rules": [{"type": "deletion"}, {"type": "non_fast_forward"}]
+    },
+    {
+      "name": "Preserve ingestion tags",
+      "target": "tag",
+      "enforcement": "active",
+      "bypass_actors": [],
+      "conditions": {"ref_name": {"include": ["refs/tags/unesco-ingest/**/*", "refs/tags/unesco-ingest/*"], "exclude": []}},
+      "rules": [{"type": "deletion"}, {"type": "update"}]
+    }
+  ]
+}

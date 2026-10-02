@@ -1,6 +1,6 @@
 export {};
 type Json = null | boolean | number | string | Json[] | {[key:string]:Json};
-interface Reply {error?:string;data?:Json;access_token?:string;expires_in?:number;github_actions_configured?:boolean;message?:string;accepted?:boolean;id?:string;result?:Json}
+interface Reply {error?:string;data?:Json;access_token?:string;expires_in?:number;message?:string;accepted?:boolean;id?:string;result?:Json}
 const endpoint = 'https://fjqhgcegnphavatrchjb.supabase.co/functions/v1/owner-admin';
 const sessionKey = 'mwh_admin_session';
 function el<K extends keyof HTMLElementTagNameMap>(id:string,tag:K):HTMLElementTagNameMap[K] {
@@ -53,7 +53,6 @@ function render(data:Json):void {
 async function health():Promise<void>{
   const reply=await api({action:'read',entity:'status'});
   workspace.hidden=false;el('signin','section').hidden=true;offset=0;render(reply.data??null);
-  el('github-note','p').hidden=reply.github_actions_configured===true;
   message('Signed in as owner. Database query succeeded.');
 }
 async function query():Promise<void>{
@@ -88,9 +87,9 @@ document.querySelectorAll<HTMLButtonElement>('button[data-action]').forEach(butt
   button.onclick=()=>void task(async()=>{
     const action=button.dataset.action;
     if(!action)return;
-    if(!confirm(`${button.textContent}? This records an owner operation and may send mail or start a production workflow.`)){message('Cancelled.');return;}
+    if(!confirm(`${button.textContent}? This records an owner operation and may send mail.`)){message('Cancelled.');return;}
     const reply=await api({action,id:crypto.randomUUID(),confirm:true});
-    message(`Operation accepted. ${reply.id||''}\nCheck action history, workflow status or your mailbox for the result.`);
+    message(`Operation accepted. ${reply.id||''}\nCheck action history or your mailbox for the result.`);
   });
 });
 if(accessToken)void task(health);

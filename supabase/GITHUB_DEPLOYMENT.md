@@ -26,9 +26,9 @@ Errors and reported anomalies follow the process below. Documentation improvemen
 
 # Deployment scope
 
-All three active Edge Functions are explicitly enabled with their entrypoints in `config.toml`: `usage-summary`, `new-profile-notifications` and `monthly-report`. Their existing JWT settings are retained. Private mail endpoints continue to enforce their worker credential in application code. Database migrations retain the reporting tables, grants and retry scheduler.
+All four active Edge Functions are explicitly enabled with their entrypoints in `config.toml`: `usage-summary`, `new-profile-notifications`, `monthly-report` and `owner-admin`. Their existing JWT settings are retained. Private mail endpoints continue to enforce their worker credential in application code. Database migrations retain the reporting tables, grants and retry scheduler.
 
-The integration deploys new migrations and declared Edge Functions and Storage buckets. Other configuration areas, including Auth/API settings and production seed data, are not automatically applied by default. Existing mail credentials and Vault values remain operational state rather than repository contents. This switch does not enable the currently inactive monthly schedule.
+The integration deploys new migrations and declared Edge Functions and Storage buckets. Other configuration areas, including Auth/API settings and production seed data, are not automatically applied by default. Existing mail credentials and Vault values remain operational state rather than repository contents. The monthly schedule is active through its committed scheduling migration.
 
 # Retired deployment procedure
 
@@ -42,3 +42,7 @@ A failed integration deployment keeps the Issue open. Inspect its logs and corre
 
 1. [GitHub integration](https://supabase.com/docs/guides/deployment/branching/github-integration) (GitHub integration), Supabase, 2 October 2026.
 2. [Deployment and branching](https://supabase.com/docs/guides/deployment) (Deployment), Supabase, 2 October 2026.
+
+# Separation from owner administration
+
+The owner administration interface cannot dispatch or rerun workflows, refresh the catalogue, publish browser code or change the database/schema/configuration. It holds no GitHub credential or Supabase Management API token. Changes originate in the GitHub release process; native Supabase integration and GitHub Pages perform deployment. Operational owner mail, its delivery state and the action ledger remain separate from deployment. [Security policy](../SECURITY.md) records the enforcement and current assurance gaps, including the absence of branch protection observed on 3 October 2026.
