@@ -1,0 +1,46 @@
+name: Publish canonical application
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Update UNESCO Data, Local Name Maintenance]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: pages-${{ github.event_name == 'pull_request' && github.event.number || 'production' }}
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/pages-distribution.test.mjs
+      - run: mkdir -p .local && node scripts/build_pages.mjs .local/pages-dist
+      - uses: actions/upload-pages-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          path: .local/pages-dist
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/configure-pages@v5
+      - uses: actions/deploy-pages@v4
+        id: deployment

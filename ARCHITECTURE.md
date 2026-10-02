@@ -434,7 +434,7 @@ The detailed checks remain in [TEST_PLAN.md](TEST_PLAN.md). Local tests establis
 
 # Deployment sequence and known gaps
 
-The side-by-side [Supabase preview](https://pekka-28.github.io/unesco/site-supabase/?submit=1) is published. It shares the existing browser profile, visit history and current catalogue; the preview fixes reporting to Supabase even when stored settings contain a Google endpoint. The primary site remains available separately. Reload when switching versions so each reads the latest shared profile. Live preview testing increased the existing test profile from one to four visits without another new-profile notification.
+The canonical [Supabase application](https://pekka-28.github.io/unesco/site/) contains the latest client. The former `/site-supabase/` preview is a redirect only. Both addresses reach the same application and retain the existing browser profile and visit history. The Pages workflow publishes an explicit file allowlist; archived implementations, backend sources and build tooling remain outside the web distribution. See [Retired code](RETIRED_CODE.md).
 
 As last verified on 2 October 2026, the Supabase migration and Edge Function are deployed. Hosted permission and duplicate-receipt checks passed in a transaction that rolled back its test row. The read-only GitHub probe passed and its schedule is enabled. The broader catalogue changes and report workflows are not all live, and both application paths now force Supabase reporting and migrate saved endpoints.
 

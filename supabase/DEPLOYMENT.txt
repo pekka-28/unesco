@@ -1,3 +1,8 @@
+Canonical application - 2 October 2026
+Use https://pekka-28.github.io/unesco/site/ exclusively. The former preview
+redirects here. Browser identity and visits are unchanged. Only the explicit
+Pages file allowlist is published; see RETIRED_CODE.md for retirement details.
+
 Reporting update - 2 October 2026
 Migrations 202610020003 through 202610020006 are applied. All 42 spreadsheet rows
 are imported, with activity/test/synthetic classification and optional aliases.
