@@ -2,11 +2,8 @@ const OWNER = 'pekka@data.co.za';
 const ORIGIN = 'https://pekka-28.github.io';
 const PAGE = `${ORIGIN}/unesco/admin/`;
 const REPO = 'https://api.github.com/repos/pekka-28/unesco';
-export const workflows = {
-  refresh: 'update-unesco-data.yml', publish: 'pages.yml', probe: 'supabase-probe.yml'
-};
 const entities = new Set(['status','profiles','submissions','notifications','operations','schema']);
-const commands = new Set(['refresh','publish','probe','retry-notifications','test-mail','monthly-mail']);
+const commands = new Set(['retry-notifications','test-mail','monthly-mail']);
 
 export function createAdminHandler({env, rpc, send, request = fetch}) {
   const base = env('SUPABASE_URL');
@@ -19,15 +16,13 @@ export function createAdminHandler({env, rpc, send, request = fetch}) {
     const text = await response.text();
     return text ? JSON.parse(text) : null;
   }
-  async function github(path, body) {
-    const token = env('MWH_ADMIN_GITHUB_TOKEN');
-    if (body && !token) throw new Error('GitHub Actions authorisation is not configured');
-    const response = await request(`${REPO}${path}`, {method:body?'POST':'GET',
+  async function workflowStatus() {
+    // Public read only. This component has no GitHub credential or dispatch path.
+    const response = await request(`${REPO}/actions/runs?branch=main&per_page=20`, {method:'GET',
       headers:{Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',
-        'User-Agent':'My-World-Heritage-admin', ...(token?{Authorization:`Bearer ${token}`}:{})},
-      ...(body ? {body:JSON.stringify(body)}:{}), signal:AbortSignal.timeout(20000)});
+        'User-Agent':'My-World-Heritage-admin'}, signal:AbortSignal.timeout(20000)});
     if (!response.ok) throw new Error(`GitHub operation failed (${response.status})`);
-    return response.status === 204 ? {accepted:true} : response.json();
+    return response.json();
   }
   function isOwner(user) {
     return user?.id === env('MWH_ADMIN_USER_ID') && user?.email?.toLowerCase() === OWNER && Boolean(user.email_confirmed_at);
@@ -77,23 +72,21 @@ export function createAdminHandler({env, rpc, send, request = fetch}) {
         if (body.record_class && !['activity','test','synthetic'].includes(body.record_class)) return reply({error:'Invalid record class'},400);
         for (const date of [body.from,body.until]) if (date && (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)))) return reply({error:'Invalid date'},400);
         return reply({data:await rpc('admin_read',{p_entity:body.entity,p_offset:offset,p_profile:body.profile||null,
-          p_class:body.record_class||null,p_from:body.from||null,p_until:body.until||null}),github_actions_configured:Boolean(env('MWH_ADMIN_GITHUB_TOKEN'))});
+          p_class:body.record_class||null,p_from:body.from||null,p_until:body.until||null})});
       }
       if (body.action === 'runs') {
-        const data=await github('/actions/runs?branch=main&per_page=20');
+        const data=await workflowStatus();
         return reply({data:data.workflow_runs.map(r=>({id:r.id,name:r.name,status:r.status,conclusion:r.conclusion,created_at:r.created_at,url:r.html_url,commit:r.head_sha}))});
       }
       if (!commands.has(body.action)) return reply({error:'Unknown operation'},400);
-      if (workflows[body.action] && !env('MWH_ADMIN_GITHUB_TOKEN')) return reply({error:'GitHub Actions authorisation is not configured'},503);
       if (body.confirm !== true || typeof body.id !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.id)) return reply({error:'Confirmation and operation ID required'},400);
-      // A repeated request must never send another email or dispatch another run.
+      // A repeated request must never send another email.
       const prior=await api(`/rest/v1/admin_operations?id=eq.${body.id}&select=id,status`,undefined,key,'GET');
       if (prior.length) return reply({error:'Operation already recorded; inspect its status before retrying',data:prior},409);
       await api('/rest/v1/admin_operations',{id:body.id,actor:user.id,action:body.action});
       operation=body.id;
       let result;
-      if (workflows[body.action]) result=await github(`/actions/workflows/${workflows[body.action]}/dispatches`,{ref:'main'});
-      else {
+      {
         const monthly=body.action==='monthly-mail';
         const response=await request(`${base}/functions/v1/${monthly?'monthly-report':'new-profile-notifications'}`,{
           method:'POST',headers:{Authorization:`Bearer ${env('MWH_NOTIFICATION_TOKEN')}`,

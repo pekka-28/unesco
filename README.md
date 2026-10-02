@@ -48,3 +48,5 @@ Backend release procedure: [Supabase GitHub deployment](supabase/GITHUB_DEPLOYME
 First-party browser code lives in `site/src/*.ts`. `site/index.html` and the compatibility redirect are templates; build them before serving. Run `npm ci`, `npm run typecheck` and `node scripts/build_pages.mjs .local/pages-review`. Serve that output directory to preview the application. The compiler uses strict checking and rejects unused declarations; Pages publishes only compiled runtime files. See [verification instructions](TEST_PLAN.md).
 
 The owner interface is published at `/admin/`. Its operations, authentication boundaries and server configuration are documented in [Administration](ADMINISTRATION.md). The static sign-in page contains no private data or credentials; the owner API enforces access.
+
+The [security policy](SECURITY.md) inventories credentials, data and trust boundaries, and states the limits of security assurance. Administration cannot change the site; releases remain in GitHub and its native Supabase integration.

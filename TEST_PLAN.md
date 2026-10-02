@@ -27,3 +27,6 @@ Check missing and previous reporting addresses, preserved custom overrides and c
 Merge only after GitHub checks pass. Confirm Pages deployment and the native Supabase integration check; then verify the canonical page and public histogram. Confirm that the profile-name migration applied and the monthly cron job is active without displaying Vault secrets. Inspect `cron.job_run_details` and `net._http_response` for dispatch failures.
 
 The owner confirmed immediate and monthly Exchange delivery on 2 October 2026. Sending another delivery check requires an intentional invocation of `supabase/test_monthly_report.sql` in the dashboard SQL editor; it sends mail but creates no new-user event. Confirm that the report includes a site-register comparison or an explicit comparison failure.
+# Administration security regression
+
+Verify forbidden operations fail even for the owner and even when an obsolete GitHub token appears in a mocked environment. Verify GitHub status requests use only a fixed GET with no bearer credential. Preserve tests for wrong/anonymous identities and direct database permission denial. Check the published UI contains no refresh, publication, dispatch or SQL controls. The production verification records outcomes without printing tokens or private rows.

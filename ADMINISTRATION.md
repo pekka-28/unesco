@@ -17,7 +17,7 @@ The design assumes that an attacker knows every URL, schema, operation name and 
 | Database read RPCs and administration tables | PostgREST validates the server credential; PostgreSQL grants allow only the service role, with no ordinary authenticated or anonymous access |
 | Notification and monthly-report functions | Each function checks its worker bearer credential before querying data or requesting mail |
 | Exchange sender | Microsoft validates the notifier application credential; Exchange restricts its send permission to the owner mailbox |
-| GitHub workflow dispatch | GitHub validates the repository Actions credential and its permission to dispatch the named workflow |
+| GitHub inspection | Fixed public GET reads workflow status; no credential or mutation operation |
 | Production deployment | GitHub workflow permissions and the native Supabase integration authenticate the release services |
 
 Downstream services authenticate a delegated service identity, not the browser user's token. The administration API checks the owner before using that authority. Its service credentials stay in Supabase Secrets. The database grants do not independently identify the owner; they authorise the trusted server. Compromise of a server credential therefore requires credential revocation, regardless of the browser controls.
@@ -34,12 +34,12 @@ Supabase generates and verifies the single-use magic link. The browser removes i
 
 | Operation | Published interface | Administration control |
 | --- | --- | --- |
-| Refresh UNESCO catalogue | GitHub workflow dispatch | Refresh catalogue on `main` |
-| Rebuild and publish the website | GitHub workflow dispatch | Publish site on `main` |
-| Run the scheduled database probe | GitHub workflow dispatch | Run scheduled probe |
+| Refresh UNESCO catalogue | GitHub workflow dispatch | Excluded; GitHub maintenance only |
+| Rebuild and publish the website | GitHub workflow dispatch | Excluded; GitHub release only |
+| Run the scheduled database probe | GitHub workflow dispatch | Excluded; use the immediate read-only database probe here |
 | Check the database immediately | Supabase Data API RPC | Database status/probe |
 | Inspect pipeline and deployment status | GitHub Actions REST API | Latest 20 production runs |
-| Read workflow logs, artifacts and rerun failed jobs | GitHub Actions REST API | Workflow console link |
+| Read workflow logs/artifacts or rerun failed jobs | GitHub Actions REST API | Separate GitHub maintenance; no administration dispatch/rerun |
 | Query Profiles and latest activity | Supabase Data API RPC | Profiles query |
 | Query a record in Submissions | Supabase Data API RPC | Query by profile, class and UTC receipt dates |
 | Inspect Notifications and leases | Supabase Data API RPC | Notifications query |
@@ -51,7 +51,7 @@ Supabase generates and verifies the single-use magic link. The browser removes i
 | Test unattended Exchange delivery | Notification Edge Function | Send test email |
 | Send the monthly report and current-month check | Monthly-report Edge Function | Send monthly report check |
 | Investigate manual operations | Supabase Data API | Action history |
-| Run arbitrary SQL and inspect provider logs | Supabase Management API/SQL editor | Authenticated provider console links |
+| Run arbitrary SQL or inspect provider logs | Supabase Management API/SQL editor | Excluded from this interface |
 | Review/apply schema changes | GitHub pull requests/native Supabase integration | Reviewed migration process |
 | Import/correct historical records | Supabase Data/Management APIs | Reviewed maintenance change with reconciliation |
 | Change schedules, secrets or deployment configuration | Supabase Management API/GitHub REST API | Provider consoles and reviewed configuration |
@@ -59,34 +59,27 @@ Supabase generates and verifies the single-use magic link. The browser removes i
 | Track and resolve anomalies | GitHub Issues REST API | Issues link |
 | Compact Git history, inspect files, compile and test | Local Git/compiler/test tools | Local development; no hosted API equivalent |
 
-The site exposes named operational commands rather than a general shell. Destructive SQL, permission grants, secret rotation, forced Git changes and migration repair remain reviewed maintenance work. Routine administration credentials do not authorise those operations.
+The site permits bounded reads and three named mail commands only. It cannot change site content, catalogue, database schema, reporting history, accounts, secrets or release configuration. Backend releases proceed through GitHub and the native Supabase integration; GitHub Pages publishes the site. See [Security policy](SECURITY.md) for enforcement, the complete asset inventory and assurance limits. The server service-role credential remains broadly privileged; this is an explicit residual risk, not proof of capability isolation.
 
 # Queries and action records
 
 Queries return at most 100 rows, ordered consistently and paged by offset. **Profiles** shows the latest activity regardless of age. **Submissions** can include activity, test and synthetic records. UTC date boundaries apply to receipt times and the end is exclusive. Read models omit raw historical payloads and notification lease tokens. Live inserts can shift offset pagination; a download represents the current page, not a transactional backup.
 
-State-changing controls require confirmation and a fresh request ID. **Admin operations** records the actor, command, start time and completion state. Reusing an ID cannot repeat the operation. If a provider accepts work but the response fails, completion remains uncertain. Inspect workflow status or delivered mail before submitting a new request. Successful dispatch or Graph acceptance does not prove downstream completion.
+State-changing controls require confirmation and a fresh request ID. **Admin operations** records the actor, command, start time and completion state. Reusing an ID cannot repeat the operation. If a provider accepts work but the response fails, completion remains uncertain. Inspect delivered mail before submitting a new request. Graph acceptance does not prove inbox delivery.
 
 **Admin login gate** reserves the next permitted sign-in email time. It stores no link or session token. [Owner administration maintenance](supabase/migrations/202610030001_owner_administration.sql) creates both operational entities and the bounded read API. Supabase Auth owns administrator accounts separately from pseudonymous reporting **Profiles**.
 
 # Configuration
 
-The native GitHub integration deploys the migration and `owner-admin` function. The existing project URL, service-role credential, notification token and restricted Exchange sender are reused. *Table Administration configuration* lists the additional server settings; neither belongs in browser storage or Git.
+The native GitHub integration deploys the migration and `owner-admin` function. The existing project URL, service-role credential, notification token and restricted Exchange sender are reused. `MWH_ADMIN_USER_ID` pins the exact Supabase Auth owner UUID; the API also checks the confirmed owner email.
 
-*Table Administration configuration*
-
-| Setting | Purpose |
-| --- | --- |
-| `MWH_ADMIN_USER_ID` | Exact Supabase Auth owner UUID, also checked against the confirmed owner email |
-| `MWH_ADMIN_GITHUB_TOKEN` | Fine-grained GitHub credential restricted to `pekka-28/unesco` with Actions read/write |
-
-The deployment integration does not expose its GitHub App credential to Edge Functions. Enable the three workflow controls by creating a [fine-grained GitHub token](https://github.com/settings/personal-access-tokens/new), selecting only `pekka-28/unesco`, granting repository **Actions: read and write**, and setting an expiry. Save it as `MWH_ADMIN_GITHUB_TOKEN` in [Edge Function secrets](https://supabase.com/dashboard/project/fjqhgcegnphavatrchjb/functions/secrets). Do not grant Contents write, Administration or access to other repositories. Do not paste the token into chat. Without this setting, dispatch is denied; workflow status and owner database/mail controls still work.
+No GitHub credential is required or permitted for this interface. Workflow status uses a public read-only endpoint. The former `MWH_ADMIN_GITHUB_TOKEN` setting and dispatch support are retired; do not configure that token. Existing bookmark or console access does not grant release authority through this application.
 
 Replacing the owner requires an authenticated Supabase administrator to identify the exact Auth account and update `MWH_ADMIN_USER_ID`. Remove that setting to disable all owner API access and revoke the owner's Auth sessions. The API checks the configured UUID on every request; existing access tokens otherwise retain the provider's expiry semantics.
 
 # Validation
 
-Tests cover anonymous and wrong-owner rejection, unconfirmed email rejection, forged origins, link throttling, invalid filters, denied direct database access, confirmation, duplicate operation IDs, uncertain mail completion and missing GitHub permission. Strict TypeScript checks cover the browser source. Distribution tests ensure no backend source or secrets are published.
+Tests cover anonymous and wrong-owner rejection, unconfirmed email rejection, forged origins, link throttling, invalid filters, denied direct database access, confirmation, duplicate operation IDs, uncertain mail completion, forbidden owner mutations and credential-free read-only GitHub inspection. Strict TypeScript checks cover the browser source. Distribution tests ensure no backend source or secrets are published.
 
 Production validation must also check deployed anonymous denial, owner sign-in, read results and operational permissions. Mock tests cannot confirm real email receipt or the user's mailbox session.
 

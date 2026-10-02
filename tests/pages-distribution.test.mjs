@@ -20,6 +20,8 @@ test('distribution contains only the canonical runtime, current data and compati
   const html = await readFile(path.join(destination,'site/index.html'),'utf8');
   assert.match(html,/fjqhgcegnphavatrchjb\.supabase\.co\/functions\/v1\/usage-summary/);
   assert.doesNotMatch(html,/Supabase preview|extractWhsNumberFromSiteId/);
+  const admin = await readFile(path.join(destination,'admin/index.html'),'utf8');
+  assert.doesNotMatch(admin,/data-action="(?:refresh|publish|probe|deploy|sql)"|github-note|MWH_ADMIN_GITHUB_TOKEN/);
   await assert.rejects(buildPages(destination),/EEXIST/);
 });
 

@@ -234,3 +234,7 @@ flowchart TB
 *Figure Administration entity model*
 
 `admin_read(text, integer, text, text, timestamptz, timestamptz)` returns bounded read models for Profiles, Submissions, Notifications, operation history, columns and status. `admin_reserve_login()` atomically reserves a sign-in email interval. Both functions deny PUBLIC, anon and authenticated execution and grant it only to service_role. The owner API verifies the configured owner before using its server identity. [Administration](../ADMINISTRATION.md) specifies the authentication boundaries and operations.
+
+# Least-privilege maintenance
+
+[Least-privilege grants](migrations/202610030002_least_privilege.sql) removes provider-default TRUNCATE, TRIGGER and REFERENCES rights and narrows runtime INSERT/UPDATE to required columns. Profiles/login-gate access goes through fixed definer code. Accepted Submissions remain immutable to the runtime role. The grant and operation matrix, default-privilege scope and remaining coarse authority are in [Security policy](../SECURITY.md).

@@ -15,7 +15,7 @@ on:
     - cron: "17 3 1 * *"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: unesco-data-refresh
@@ -23,6 +23,8 @@ concurrency:
 
 jobs:
   refresh:
+    permissions:
+      contents: write
     runs-on: windows-latest
     env:
       SOURCE_URL: ${{ github.event.inputs.source_url || vars.UNESCO_SOURCE_URL || 'https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json' }}
@@ -30,7 +32,7 @@ jobs:
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
 
@@ -42,7 +44,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve previous catalogue commit' }
           "commit=$baseline" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
 
@@ -57,7 +59,7 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/fetch_unesco_official.ps1 `
-            -SourceUrl "${{ env.SOURCE_URL }}" `
+            -SourceUrl "$env:SOURCE_URL" `
             -RawOutputFile "data/staging/unesco_source_raw.txt"
 
       - name: Convert staged UNESCO source
@@ -68,10 +70,10 @@ jobs:
         run: |
           ./scripts/convert_unesco_source.ps1 `
             -InputFile "data/staging/unesco_source_raw.txt" `
-            -SourceUrl "${{ env.SOURCE_URL }}" `
+            -SourceUrl "$env:SOURCE_URL" `
             -OutputFile "data/current/unesco_official_sites.geojson" `
             -OutputJsonFile "data/current/unesco_official_sites.json" `
-            -RetryIntervalDays "${{ env.RETRY_DAYS }}" `
+            -RetryIntervalDays "$env:RETRY_DAYS" `
             -OverwriteExisting
 
       - name: Update extract status on fetch failure
@@ -82,8 +84,8 @@ jobs:
         run: |
           ./scripts/update_extract_status.ps1 `
             -InputJsonFile "data/current/unesco_official_sites.json" `
-            -RetryIntervalDays "${{ env.RETRY_DAYS }}" `
-            -SourceUrl "${{ env.SOURCE_URL }}" `
+            -RetryIntervalDays "$env:RETRY_DAYS" `
+            -SourceUrl "$env:SOURCE_URL" `
             -ErrorMessage "CI fetch failed"
 
       - name: Validate UNESCO canonical JSON
@@ -172,7 +174,7 @@ jobs:
 
       - name: Save full site register change report
         if: steps.register_report.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: site-register-changes
           path: |

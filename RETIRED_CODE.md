@@ -36,3 +36,7 @@ GitHub Pages uses the Actions publishing source. The workflow deploys after push
 The strict TypeScript build rejects unused local declarations and parameters. The audit removed the unused default-endpoint constant, empty token accessor and unreachable unverified-submission branches. There are no intentionally unused site functions. Leaflet and html2canvas remain third-party JavaScript libraries with TypeScript declarations; first-party browser code, including the redirect, is TypeScript.
 
 Full-clone catalogue snapshots and `backup_current_whs.ps1` are removed from the current tree. Annotated ingestion tags and Git history retain forensic versions without rewriting commits. The historical workbook importer is retired after the confirmed 42-row import. Routine SMTP owner reporting is replaced by Supabase/Exchange delivery. Maintenance scripts such as the catalogue comparator and probe are active repository tools, not browser code.
+
+# Administration release controls
+
+Issue 25 retires the administration refresh, publish and scheduled-probe buttons, their server dispatch paths and the GitHub token configuration. Authenticated owner calls cannot invoke those operations. The remaining GitHub client performs one fixed, credential-free status GET. Immediate database inspection and named owner-mail operations remain active.
