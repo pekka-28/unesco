@@ -1,39 +1,66 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import { readFileSync } from 'node:fs';
-const html = readFileSync(new URL('../site/index.html', import.meta.url), 'utf8');
-const endpoint = 'https://fjqhgcegnphavatrchjb.supabase.co/functions/v1/usage-summary';
-function environment(raw) {
-  const stored = new Map([['mwh_profile', raw], ['mwh_usage_summary_endpoint','https://old.example/exec'], ['mwh_usage_summary_token','old-token']]);
-  const ctx = vm.createContext({ DEFAULT_USAGE_SUMMARY_ENDPOINT:endpoint, PROFILE_KEY:'mwh_profile',
-    localStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value),removeItem:key=>stored.delete(key)},
-    nowIso:()=> '2026-10-02T00:00:00Z', randomCookie:()=> '0123456789abcdef', PROFILE_SCHEMA_VERSION:1 });
-  vm.runInContext(html.slice(html.indexOf('    function getUsageSummaryEndpoint()'),html.indexOf('    async function fetchUsageStats()')),ctx);
-  return {stored,ctx};
+import {readFileSync} from 'node:fs';
+const html=readFileSync(new URL('../site/index.html',import.meta.url),'utf8');
+const key='mwh_usage_summary_endpoint';
+const current='https://fjqhgcegnphavatrchjb.supabase.co/functions/v1/usage-summary';
+const previous=html.match(/previous: "([^"]+)"/)[1];
+function environment(raw, saved=null, endpoints={current,previous}) {
+ const stored=new Map([['mwh_profile',raw],['mwh_usage_summary_token','old-token']]);
+ if(saved!==null) stored.set(key,saved);
+ const ctx=vm.createContext({USAGE_SUMMARY_ENDPOINTS:endpoints,DEFAULT_USAGE_SUMMARY_ENDPOINT:endpoints.current,
+  USAGE_ENDPOINT_STORAGE_KEY:key,PROFILE_KEY:'mwh_profile',profile:null,
+  localStorage:{getItem:k=>stored.get(k)??null,setItem:(k,v)=>stored.set(k,v),removeItem:k=>stored.delete(k)},
+  nowIso:()=> '2026-10-02T00:00:00Z', randomCookie:()=> '0123456789abcdef',PROFILE_SCHEMA_VERSION:1});
+ vm.runInContext(html.slice(html.indexOf('    function getUsageSummaryEndpoint()'),html.indexOf('    async function fetchUsageStats()')),ctx);
+ return {stored,ctx};
 }
-test('cutover preserves visits, identity and pending receipt while migrating settings',()=>{
-  const old={name:'Test',magicCookie:'0123456789abcdef',homeLat:1,settings:{dateFormat:'y-m-d',usageSummaryEndpoint:'https://old.example/exec',usageSummaryToken:'old-token'},siteVisits:{a:[{date:'2020',note:'keep'}]},usage:{pendingSummaries:{manual:{summary:{submission_id:'pending-id'},useCount:3}}}};
-  const {stored,ctx}=environment(JSON.stringify(old)); ctx.migrateStoredUsageSettings();
-  const expected=structuredClone(old); expected.settings.usageSummaryEndpoint=endpoint; expected.settings.usageSummaryToken='';
+const makeProfile=endpoint=>({magicCookie:'unchanged',settings:{usageSummaryEndpoint:endpoint,usageSummaryToken:'obsolete'},siteVisits:{a:[{date:'2020',note:'keep'}]},usage:{pendingSummaries:{manual:{summary:{submission_id:'pending'}}}}});
+
+test('startup fills missing/empty settings and migrates only the exact previous endpoint',()=>{
+ for(const saved of [null,'','  ',previous]){
+  const old=makeProfile(previous),{stored,ctx}=environment(JSON.stringify(old),saved);
+  ctx.migrateStoredUsageSettings();
+  const expected=structuredClone(old);expected.settings.usageSummaryEndpoint=current;expected.settings.usageSummaryToken='';
   assert.deepEqual(JSON.parse(stored.get('mwh_profile')),expected);
-  assert.equal(stored.get('mwh_usage_summary_endpoint'),endpoint); assert.equal(stored.has('mwh_usage_summary_token'),false);
-  stored.set('mwh_usage_summary_endpoint','https://old.example/again');
-  assert.equal(ctx.getUsageSummaryEndpoint(),endpoint); assert.equal(ctx.getUsageSummaryToken(),'');
-  ctx.migrateStoredUsageSettings(); assert.deepEqual(JSON.parse(stored.get('mwh_profile')),expected);
+  assert.equal(stored.get(key),current);assert.equal(ctx.getUsageSummaryEndpoint(),current);
+  assert.equal(stored.has('mwh_usage_summary_token'),false);
+ }
 });
-test('unreadable profile is preserved and new profiles default to Supabase',()=>{
-  const {stored,ctx}=environment('{unreadable'); ctx.migrateStoredUsageSettings();
-  assert.equal(stored.get('mwh_profile'),'{unreadable');
-  vm.runInContext(html.slice(html.indexOf('    function defaultProfile()'),html.indexOf('    function incrementCensusUse()')),ctx);
-  assert.equal(ctx.defaultProfile().settings.usageSummaryEndpoint,endpoint);
+test('custom settings survive startup and reload; clearing local storage restores current',()=>{
+ const custom='https://custom.example/report';
+ for(const saved of [null,custom]){
+  const {stored,ctx}=environment(JSON.stringify(makeProfile(custom)),saved);
+  ctx.migrateStoredUsageSettings();ctx.migrateStoredUsageSettings();
+  assert.equal(ctx.getUsageSummaryEndpoint(),custom);assert.equal(stored.get(key),custom);
+  assert.equal(JSON.parse(stored.get('mwh_profile')).settings.usageSummaryEndpoint,custom);
+  stored.set(key,'');ctx.migrateStoredUsageSettings();assert.equal(ctx.getUsageSummaryEndpoint(),current);
+ }
 });
-test('saving imported profiles also migrates the destination',()=>{
-  const {stored,ctx}=environment('{}');
-  ctx.profile={settings:{usageSummaryEndpoint:'https://old.example/import',usageSummaryToken:'old'},magicCookie:'unchanged',siteVisits:{a:[]}};
-  const start=html.indexOf('    function persistProfile()'); vm.runInContext(html.slice(start,html.indexOf('\n',start)),ctx);
-  ctx.persistProfile(); const saved=JSON.parse(stored.get('mwh_profile'));
-  assert.equal(saved.settings.usageSummaryEndpoint,endpoint); assert.equal(saved.settings.usageSummaryToken,'');
-  assert.equal(saved.magicCookie,'unchanged'); assert.deepEqual(saved.siteVisits,{a:[]});
-  assert.doesNotMatch(html,/script\.google\.com|no-cors|sendBeacon/);
+test('a future release migrates regular settings and preserves overrides',()=>{
+ const next={current:'https://next.example/usage',previous:current};
+ for(const saved of [current,'https://custom.example/usage']){
+  const {stored,ctx}=environment(JSON.stringify(makeProfile(saved)),saved,next);
+  ctx.migrateStoredUsageSettings();
+  assert.equal(stored.get(key),saved===current?next.current:saved);
+ }
+});
+test('unreadable profiles are preserved; a new profile inherits the browser endpoint',()=>{
+ const {stored,ctx}=environment('{unreadable','https://custom.example/usage');ctx.migrateStoredUsageSettings();
+ assert.equal(stored.get('mwh_profile'),'{unreadable');
+ vm.runInContext(html.slice(html.indexOf('    function defaultProfile()'),html.indexOf('    function incrementCensusUse()')),ctx);
+ assert.equal(ctx.defaultProfile().settings.usageSummaryEndpoint,'https://custom.example/usage');
+});
+test('saving or importing a profile persists its override; blank/previous reset to current',()=>{
+ for(const value of ['',previous,'https://custom.example/import']){
+  const {stored,ctx}=environment('{}',current);ctx.profile=makeProfile(value);
+  const start=html.indexOf('    function persistProfile()');vm.runInContext(html.slice(start,html.indexOf('\n',start)),ctx);
+  ctx.persistProfile();const saved=JSON.parse(stored.get('mwh_profile'));
+  assert.equal(saved.settings.usageSummaryEndpoint,value===''||value===previous?current:value);
+  assert.equal(stored.get(key),saved.settings.usageSummaryEndpoint);
+  assert.equal(saved.magicCookie,'unchanged');assert.deepEqual(saved.siteVisits,makeProfile(value).siteVisits);
+  assert.equal(saved.usage.pendingSummaries.manual.summary.submission_id,'pending');
+ }
+ assert.doesNotMatch(html,/no-cors|sendBeacon/);
 });

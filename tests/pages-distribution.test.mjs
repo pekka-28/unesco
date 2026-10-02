@@ -18,7 +18,7 @@ test('distribution contains only the canonical runtime, current data and compati
   assert.deepEqual(actual.filter(f=>f.startsWith('site-supabase/')),['site-supabase/index.html']);
   const html = await readFile(path.join(destination,'site/index.html'),'utf8');
   assert.match(html,/fjqhgcegnphavatrchjb\.supabase\.co\/functions\/v1\/usage-summary/);
-  assert.doesNotMatch(html,/script\.google\.com|Supabase preview|extractWhsNumberFromSiteId/);
+  assert.doesNotMatch(html,/Supabase preview|extractWhsNumberFromSiteId/);
   await assert.rejects(buildPages(destination),/EEXIST/);
 });
 

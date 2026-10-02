@@ -373,7 +373,7 @@ Database migration tools may separately require the database password. Do not tr
 
 ### Google integration retirement and cutover
 
-The application submits exclusively to Supabase. New profiles default to the Supabase URL. During cutover, the client forces this destination regardless of old overrides, rewrites both browser-local and profile settings, clears obsolete tokens, and migrates imported profiles without changing identity, visits or pending receipt IDs. The server field is read-only. Reload previously opened tabs to apply the change. The old Apps Script implementation is removed from the working tree and retained in Git history. See [cutover and historical-import instructions](backend/usage_summary_backend/README.md).
+Supabase is the default reporting service. The client tracks the current and previous standard endpoint URLs. At startup, absent or empty saved settings default to current, and an exact previous-address match migrates to current. Custom addresses remain unchanged. The resolved value is persisted in browser local storage and the profile. Settings allow editing the endpoint; clearing it and saving restores current. Imported profiles retain custom addresses. Identity, visits and pending receipt IDs are preserved. The previous Google URL is a migration marker only; the Apps Script implementation remains retired in Git history. See [reporting settings and historical-import instructions](backend/usage_summary_backend/README.md).
 
 Before cutover:
 
@@ -464,3 +464,7 @@ Always show the histogram, without a minimum reporting population. With no activ
 Publish only the canonical application, its referenced assets, current catalogue files and compatibility redirects. Exclude archived code, historical snapshots, backend source, scripts and tests from the web distribution. Record retired components in `RETIRED_CODE.md`. Track errors and reported anomalies in GitHub Issues, link fixes to their issues and close them after deployment verification. Documentation improvements use pull requests directly and do not require Issues.
 
 Deploy Supabase migrations and declared Edge Functions from `main` through the native Supabase GitHub integration. Keep its deployment evidence separate from Pages publication. Issue closure requires successful deployment and verification; routine operator CLI deployment is retired.
+
+# Startup help
+
+After 60 seconds without pointer presses, keyboard input, touch or wheel interaction following startup, open the My World Heritage colophon/help dialog once. Do not cover another open dialog or open it in a hidden tab. User interaction cancels this startup prompt; closing help does not restart it. Manual opening remains available from the application title. The tooling list identifies Supabase statistics collection and GitHub Pages site hosting.

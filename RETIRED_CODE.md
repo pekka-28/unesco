@@ -9,7 +9,7 @@ The following components are retired:
 
 - **Supabase preview application and duplicate assets:** removed from `site-supabase/`. Its `index.html` is an active compatibility redirect, preserving query parameters and fragments. It contains no profile, mapping or submission logic.
 - **Preview generator:** `scripts/build_supabase_preview.mjs` removed. The canonical source already contained the same application logic; comparison confirmed only preview branding and self-links differed.
-- **Google Sheets backend:** `backend/usage_summary_backend/google_apps_script/` was removed in PR #3. The client has no Google submission path. Browser endpoint migration remains active to handle returning users. The separately hosted Apps Script deployment and digest require the owner's Google access to disable; their remote retirement has not been verified.
+- **Google Sheets backend:** `backend/usage_summary_backend/google_apps_script/` was removed in PR #3. The client has no Google submission path. The unconditional endpoint override is retired. Browser endpoint migration remains active for empty settings and the exact previous standard address; custom overrides are preserved. The former Google URL is retained solely as a migration marker. The separately hosted Apps Script deployment and digest require the owner's Google access to disable; their remote retirement has not been verified.
 - **Overpass pipeline:** `archive/overpass_legacy/` is explicitly historical and excluded from the web distribution. Its README records the replacement by the official UNESCO pipeline on 28 March 2026.
 - **Unused site-number helper:** `extractWhsNumberFromSiteId` removed after confirming it has no references in the application.
 
