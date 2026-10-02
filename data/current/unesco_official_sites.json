@@ -3,7 +3,7 @@
   "metadata": {
     "generator": "scripts/convert_unesco_source.ps1",
     "source_url": "https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json",
-    "generated_at": "2026-10-02T22:20:42Z",
+    "generated_at": "2026-10-02T23:15:36Z",
     "site_count": 6650,
     "extract_status": {
       "result": "success",
@@ -11,10 +11,10 @@
       "count": 6650,
       "input_bytes": 24200626,
       "dataset_bytes": 12018678,
-      "most_recent_data": "2026-10-02T22:20:42Z",
-      "most_recent_attempt": "2026-10-02T22:20:42Z",
+      "most_recent_data": "2026-10-02T23:15:36Z",
+      "most_recent_attempt": "2026-10-02T23:15:36Z",
       "retry_interval_days": 30,
-      "note_fragment": "WHS extract status: success. Source: https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json. Count: 6650. Input size: 24200626 bytes. Dataset size: 12018678 bytes. Most recent data: 2026-10-02T22:20:42Z. Most recent attempt: 2026-10-02T22:20:42Z. Retry interval: every 30 days."
+      "note_fragment": "WHS extract status: success. Source: https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json. Count: 6650. Input size: 24200626 bytes. Dataset size: 12018678 bytes. Most recent data: 2026-10-02T23:15:36Z. Most recent attempt: 2026-10-02T23:15:36Z. Retry interval: every 30 days."
     },
     "unmapped_source_ids": [
       "WHS 1758",
