@@ -19,11 +19,33 @@ Permitted mail operations necessarily update delivery leases, attempts, completi
 
 # Security assurance
 
-Authentication at the executing component and freedom from obscurity are necessary, but **not sufficient to assure security, even assuming no implementation errors**. They establish who may request an operation and which operations the interface exposes. They do not prove the caller's device is uncompromised, that a mailbox or bearer credential has not been stolen, that an authorised maintainer or dependency is trustworthy, or that a provider remains available.
+Mailbox and credential theft are outside this project's security assessment by owner decision. Their prevention, account recovery and general account MFA are provider/account responsibilities, not additional application requirements. The inventory below retains credential locations and authority so that permissions can be reviewed; it does not expand this scope. No additional application second factor is required for the current bounded read and mail operations.
 
-The narrower claim is conditional: with trustworthy providers and release inputs, correctly configured grants, confidential credentials and an uncompromised owner mailbox/device, the intended interfaces deny unauthorised private access and expose no administration operation that changes the site. Tests substantiate particular boundaries; they are not a proof that all attacks are impossible.
+The assessment covers positive authorisation, least privilege and the material damage one compromised application component could cause. Reading private reporting records, destroying or rewriting history, changing deployed code or schema, and unrestricted sending are material effects. A component's available runtime authority remains in scope even when credential theft as an initial attack is excluded.
 
-This release does not establish capability isolation of the administration server from the database. Supabase supplies project-wide privileged runtime credentials. The service role bypasses row-level security, though it still needs SQL object grants; this release reduces those grants. The database connection credential carries broader database authority. Their absence from browser output and the server operation allowlist protect the intended interface; they do not eliminate damage after server or credential compromise. Stronger isolation requires a separately scoped service identity or broker and a review of provider-injected credentials. [Supabase API-key documentation](https://supabase.com/docs/guides/getting-started/api-keys) describes the service-role boundary.
+Authentication at the executing component and freedom from obscurity are necessary, but **not sufficient to assure containment, even assuming correct implementation**. Shared authority can exceed a component's purpose by design. With trustworthy providers and release inputs and correctly configured grants, the intended interfaces deny unauthorised private access and expose no administration operation that changes the site. That interface guarantee is narrower than containment after arbitrary code execution in a server function.
+
+This release does not establish capability isolation of the administration server from the database. Supabase supplies project-wide privileged runtime credentials. The service role bypasses row-level security, though it still needs SQL object grants; this release reduces those grants. The database connection credential carries broader database authority. Their absence from browser output and the server operation allowlist protect the intended interface; they do not eliminate damage after server compromise. Stronger isolation requires a separately scoped service identity or broker that cannot access the wider provider-injected credentials. [Supabase API-key documentation](https://supabase.com/docs/guides/getting-started/api-keys) describes the service-role boundary.
+
+# Independent change boundary
+
+Irreversible maintenance operations must be available only through the separate GitHub change process and its authorised deployment integration, never through the administration application. This includes destructive schema/data migrations and changes that expand runtime permissions. Catalogue and site releases use the same maintenance boundary even when reversible. Exceptional provider recovery remains separately authorised and recorded; routine operation must not gain a second deployment path.
+
+GitHub applies its account controls and prompts for renewed authentication for selected high-impact web actions, including changing repository rulesets. Its [sudo-mode documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/sudo-mode) does not establish a fresh second-factor check for every push, merge, deployment or authorised API call. The independent barrier here is the absence of GitHub mutation authority from the application, together with repository release controls. A confirmation button or a second request using the same application identity would not supply that independence.
+
+*Table Material impact boundaries* distinguishes restrictions already enforced from the remaining containment work.
+
+*Table Material impact boundaries*
+
+| Entry point | Maximum intended effect | Independent barrier and remaining gap |
+| --- | --- | --- |
+| Public visitor/reporting API | Read public assets/aggregates and append validated voluntary reports | Private reads and destructive SQL rights denied; fabricated reports and resource abuse still need containment |
+| Authenticated administration API | Read bounded private views; send the three named owner-mail requests | Forbidden mutations rejected at the executing API; no GitHub mutation or Management API token; no release trigger |
+| Compromised Edge Function runtime | Should remain confined to its own reads and operational writes | Not yet assured: project-wide Auth, database and mail authority can exceed that purpose; runtime separation is a priority |
+| Catalogue generation in GitHub | Produce validated catalogue data | Current write-authorised job is too broad; isolate generation from publication before treating it as confined |
+| GitHub release and native Supabase integration | Publish code/data and apply reviewed migrations, including destructive changes | Separate from application login; history rules enforced, but mandatory PR checks/review still require implementation |
+
+A Pages environment approval would gate Pages publication only. It would not gate migrations applied by the native Supabase integration. Required checks and change approval must therefore protect the production branch consumed by both release services. Do not claim an independent human approval where the proposer and approver are the same identity. Additional application MFA should be reconsidered only if a future proposal introduces dangerous operations; this policy currently prohibits those operations altogether.
 
 # Executing components and authority
 
@@ -113,7 +135,7 @@ Database recovery uses forward corrective migrations through GitHub and the nati
 
 Release checks must verify private endpoints reject missing/invalid credentials, wrong/unconfirmed users cannot access owner operations, direct database calls lack ordinary-client grants, authenticated owner requests cannot invoke forbidden mutations, GitHub inspection sends only a credential-free GET, and the published page has no mutation controls. Preserve evidence in the issue. Do not put credentials or private row contents in test output.
 
-The remaining hardening decisions are branch protection compatible with catalogue automation, narrower server privileges, stronger browser-origin isolation, Auth defaults, dependency integrity, account MFA verification, abuse controls and tested recovery. None is silently claimed complete. Security defects belong in GitHub Issues; do not publish exploit secrets or private data when reporting them.
+The remaining hardening decisions are branch protection compatible with catalogue automation, narrower server privileges, stronger browser-origin isolation, unused Auth capabilities, dependency integrity, abuse controls and tested recovery. Prioritise restrictions that prevent one application compromise from causing material damage. Account MFA verification and credential-theft prevention are outside this assessment. None of the remaining controls is silently claimed complete. Security defects belong in GitHub Issues; do not publish exploit secrets or private data when reporting them.
 
 # Positive authorisation by operation
 
@@ -173,7 +195,7 @@ The remaining hardening decisions are branch protection compatible with catalogu
 | Secret scanning | Provider-pattern scanning and push protection enabled | Retain; consider non-provider patterns/validity checks where available |
 | Dependency updates | Security updates disabled | Add dependency-update configuration; enable repository alerts/security updates and review resulting PRs |
 | Code scanning | Not verified | Recommend CodeQL for JavaScript/TypeScript and workflow checks with minimal read/security-events permissions |
-| Account protection | MFA/recovery controls not verified | Verify MFA/passkeys and recovery for repository owner, Supabase and Microsoft; review collaborators/App installations |
+| Account protection | GitHub/provider account controls remain separate | Mailbox/credential theft and general MFA verification are outside project scope; retain provider protections without claiming per-operation step-up |
 | Integration scope | Configured repository/project connection | Verify selected-repository installation scope; no administration-site PAT |
 | Operational tokens | Local operator session has broad maintenance authority | Replace with expiring, repository/project-scoped credentials per task; do not reuse them in hosted applications |
 
@@ -196,7 +218,7 @@ The next release-process improvement is to separate generation from publication:
 | GitHub Actions write | Can dispatch/rerun/cancel workflows beyond a single named action | Removed entirely from administration; use only separate maintenance identities when explicitly needed |
 | Job token scope | Every step/action in a write-authorised job shares its effective authority | Read-only jobs reduced; split fetch/convert from mutation jobs to narrow remaining exposure |
 | Native deployment integration | Can apply arbitrary code and migrations present in an authorised release | Trust release review and provider identity; integration permission is not a safe subset of SQL operations |
-| Mailbox-scoped Application Mail.Send | Restricts sender mailbox, not recipient or permitted message content | Fixed recipient/content policy in workers; compromised credential could send other mail from that mailbox |
+| Mailbox-scoped Application Mail.Send | Restricts sender mailbox, not recipient or permitted message content | Fixed recipient/content policy in workers; compromised sending runtime could send other mail from that mailbox |
 | Shared worker token | Authorises both monthly and notification workers, not one named owner command | Private server storage; split worker credentials if independent component compromise must be contained |
 | Owner bearer token | Authorises all allowed owner reads/mail operations until expiry/rejection | Narrow operation set, short-lived provider token, no refresh persistence; no per-operation MFA or cryptographic transaction approval |
 | Shared Pages origin | Other same-origin code can interact with browser storage/windows despite different paths | Admin CSP reduces loaded code; separate origin is the stronger isolation option |
