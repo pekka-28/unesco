@@ -461,6 +461,6 @@ Always show the histogram, without a minimum reporting population. With no activ
 
 # Distribution and issue tracking
 
-Publish only the canonical application, its referenced assets, current catalogue files and compatibility redirects. Exclude archived code, historical snapshots, backend source, scripts and tests from the web distribution. Record retired components in `RETIRED_CODE.md`. Track reported anomalies in GitHub Issues, link fixes to their issues and close them after deployment verification.
+Publish only the canonical application, its referenced assets, current catalogue files and compatibility redirects. Exclude archived code, historical snapshots, backend source, scripts and tests from the web distribution. Record retired components in `RETIRED_CODE.md`. Track errors and reported anomalies in GitHub Issues, link fixes to their issues and close them after deployment verification. Documentation improvements use pull requests directly and do not require Issues.
 
 Deploy Supabase migrations and declared Edge Functions from `main` through the native Supabase GitHub integration. Keep its deployment evidence separate from Pages publication. Issue closure requires successful deployment and verification; routine operator CLI deployment is retired.

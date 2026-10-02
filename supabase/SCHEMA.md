@@ -3,9 +3,9 @@
 
 My World Heritage is a map-based companion for recording visits to UNESCO World Heritage sites. Its Requirements define the product and privacy boundaries [1]; its Architecture describes the components [2]. This schema specifies the Supabase monitoring store and database APIs that accept voluntary usage summaries, calculate aggregate activity and arrange owner notifications. Personal profiles, names, locations and individual visit histories remain in the browser. Supabase-managed Vault, Cron and HTTP extension tables support operations but are not application entities.
 
-# Bachman notation
+# Application entity model
 
-*Figure Bachman legend* follows the parent Style guide [6]. An open circle marks the many side. A plain line represents a one-to-one dependency. A dashed annotation line records non-identifying association or provenance, without implying key inheritance. The visible line from an invisible point identifies an independent entity.
+The entity model uses the Bachman notation shown in *Figure Bachman legend*. An open circle marks the many side. A plain line represents a one-to-one dependency. A dashed annotation line records non-identifying association or provenance, without implying key inheritance. The visible line from an invisible point identifies an independent entity.
 
 ```mermaid
 %%{init: {"themeCSS": "marker circle { fill: #ffffff !important; stroke: #333333 !important; }"}}%%
@@ -30,9 +30,7 @@ flowchart TB
 
 *Figure Bachman legend*
 
-# Application schema
-
-*Figure Supabase monitoring schema* shows application dependencies: a known profile has many submissions and at most one new-profile notification; a notification requires its first accepted submission. A submission can exist without a notification, including after historical baselining. Solid lines express those dependencies, not a claim that every relationship has a SQL foreign key. *Table DDL traceability* identifies how each is enforced. *Table Monitoring entities* summarises the entities; *Table Known usage profiles*, *Table Usage submissions* and *Table New-profile notifications* define their columns. All sample values are synthetic. PK denotes primary key, FK foreign key and UQ unique constraint; a dash means none of these.
+*Figure Application entity model* shows database entity dependencies. Each record in **Profiles** can have many records in **Submissions** and at most one in **Notifications**. Each row in **Notifications** requires the first accepted report in **Submissions** for its row in **Profiles**. A row in **Submissions** can exist without a corresponding row in **Notifications**, including after historical baselining. Solid lines express these dependencies; their database enforcement is identified in *Table Schema maintenance*.
 
 ```mermaid
 %%{init: {"themeCSS": "marker circle { fill: #ffffff !important; stroke: #333333 !important; }"}}%%
@@ -40,9 +38,9 @@ flowchart TB
   classDef entity fill:#ffffff,stroke:#333333,color:#111111,font-size:11px
   classDef point fill:transparent,stroke:transparent,color:transparent
   PROFILE_SOURCE(( ))
-  Profiles["Known usage profiles"]
-  Submissions["Usage submissions"]
-  Notifications["New-profile notifications"]
+  Profiles["Profiles"]
+  Submissions["Submissions"]
+  Notifications["Notifications"]
   PROFILE_SOURCE --- Profiles
   Profiles --o Submissions
   Profiles --- Notifications
@@ -51,19 +49,21 @@ flowchart TB
   class PROFILE_SOURCE point
 ```
 
-*Figure Supabase monitoring schema*
+*Figure Application entity model*
 
-The model separates repeated reports from the single notification caused by a profile's first accepted report. That submission is a required parent of the notification, not merely a provenance annotation. The current trigger creates them in one transaction; the SQL does not yet declare a notification-to-submission foreign key. Receipt and notification primary keys are separate identities, while the unique queue profile key limits each profile to one alert.
+**Submissions** retains repeated reports; **Notifications** retains the single alert caused by the first accepted report for each row in **Profiles**. The current trigger creates the first report and its notification in one transaction. The SQL does not yet declare a foreign key from **Notifications** to **Submissions**. Their primary keys are separate identities, while the unique profile key in **Notifications** limits each profile to one alert.
+
+*Table Monitoring entities* summarises **Profiles**, **Submissions** and **Notifications**. Their columns are defined in *Table Profiles*, *Table Submissions* and *Table Notifications*. All sample values are synthetic. PK denotes primary key, FK foreign key and UQ unique constraint; a dash means none of these.
 
 *Table Monitoring entities*
 
 | Entity | SQL table | Purpose |
 | --- | --- | --- |
-| Known usage profiles | `public.known_usage_profiles` | Remember previously seen profiles, including any migration baseline |
-| Usage submissions | `public.usage_submissions` | Retain accepted reports and support idempotent receipts and aggregate reporting |
-| New-profile notifications | `public.new_profile_notifications` | Queue one alert per newly seen profile and track delivery/retries |
+| **Profiles** | `public.known_usage_profiles` | Remember previously seen profiles, including any migration baseline |
+| **Submissions** | `public.usage_submissions` | Retain accepted reports and support idempotent receipts and aggregate reporting |
+| **Notifications** | `public.new_profile_notifications` | Queue one alert per newly seen profile and track delivery/retries |
 
-*Table Known usage profiles*
+*Table Profiles*
 
 | Column | PostgreSQL type | Key | Sample data |
 | --- | --- | --- | --- |
@@ -71,7 +71,7 @@ The model separates repeated reports from the single notification caused by a pr
 | `first_received_at` | timestamptz, not null | — | `2026-10-02T02:00:00Z` |
 | `reporting_alias` | text, not null | — | `Visitor A` |
 
-*Table Usage submissions*
+*Table Submissions*
 
 | Column | PostgreSQL type | Key | Sample data |
 | --- | --- | --- | --- |
@@ -88,7 +88,7 @@ The model separates repeated reports from the single notification caused by a pr
 | `legacy_source` | text, nullable | — | `my-world-heritage` |
 | `reporting_alias` | text, not null | — | `Visitor A` |
 
-*Table New-profile notifications*
+*Table Notifications*
 
 | Column | PostgreSQL type | Key | Sample data |
 | --- | --- | --- | --- |
@@ -108,11 +108,11 @@ The model separates repeated reports from the single notification caused by a pr
 
 # Constraints and access
 
-The declared foreign key is `new_profile_notifications.magic_cookie` to `known_usage_profiles.magic_cookie`. `usage_submissions.magic_cookie` and `new_profile_notifications.submission_id` have no declared foreign keys. The accepted-submission trigger maintains the registry and creates the first notification atomically; baselining historical profiles before import suppresses retrospective alerts.
+**Notifications** references **Profiles** through the declared foreign key from `new_profile_notifications.magic_cookie` to `known_usage_profiles.magic_cookie`. `usage_submissions.magic_cookie` and `new_profile_notifications.submission_id` have no declared foreign keys. The accepted-submission trigger maintains the registry and creates the first notification atomically; baselining historical profiles before import suppresses retrospective alerts.
 
-Usage and visited counts must be non-negative and are mandatory for `activity` records. Historical `test` and `synthetic` records can preserve missing counts as null. Public submission event types remain `adoption`, `manual` or `periodic`; the database also retains the historical synthetic event `patch`. `record_class` defaults to `activity`, and the public ingest API does not let clients set this classification. `legacy_source` retains a historical diagnostic source label. `usage_stats` includes only `activity` records [7]. Receipt time defaults to the server clock for new reports; historical import preserves the original receipt time.
+Usage and visited counts must be non-negative and are mandatory for `activity` records. Historical `test` and `synthetic` records can preserve missing counts as null. Public submission event types remain `adoption`, `manual` or `periodic`; the database also retains the historical synthetic event `patch`. `record_class` defaults to `activity`, and the public ingest API does not let clients set this classification. `legacy_source` retains a historical diagnostic source label. `usage_stats` includes only `activity` records [6]. Receipt time defaults to the server clock for new reports; historical import preserves the original receipt time.
 
-The optional `reporting_alias` is limited to 80 characters without control characters. It is stored with the report, profile registry and first-notification snapshot, and included in the initial owner email when supplied [8]. The client offers a separate reporting-alias field and does not automatically share the required local display name. An empty field omits the alias from new submissions; it does not erase historical reports or their recorded aliases. Historical aliases come from the owner-supplied workbook.
+The optional `reporting_alias` is limited to 80 characters without control characters. It is stored in **Submissions**, **Profiles** and **Notifications**, and included in the initial owner email when supplied [7]. The client offers a separate reporting-alias field and does not automatically share the required local display name. An empty field omits the alias from new submissions; it does not erase historical reports or their recorded aliases. Historical aliases come from the owner-supplied workbook.
 
 All three tables enable row-level security and deny direct access to anonymous and authenticated browser roles. Edge Functions use the server-held service role for their restricted database operations. Monthly reporting reads aggregates through `usage_stats`; it has no separate application table. The monthly delivery check and first-profile email were confirmed received by the owner on 2 October 2026; recurring monthly scheduling remains inactive.
 
@@ -156,32 +156,32 @@ Some form of claim coordination is necessary with these concurrent delivery path
 
 # Usage histogram
 
-The Usage summary pane shows exactly ten equal-width buckets from the minimum reported visit count to one above the maximum integer count. Lower bounds are inclusive and upper bounds exclusive. Even a single observed value produces ten buckets. Each profile contributes only its latest `activity` record across the full stored history. Records classified as test or synthetic do not contribute [9].
+The Usage summary pane shows exactly ten equal-width buckets from the minimum reported visit count to one above the maximum integer count. Lower bounds are inclusive and upper bounds exclusive. Even a single observed value produces ten buckets. Each profile contributes only its latest `activity` record across the full stored history. Records classified as test or synthetic do not contribute [8].
 
-There is no minimum reporting population. The chart always displays ten buckets, with zero heights when no activity records exist [10]. For non-empty populations, bar heights are normalised to the tallest bar; the API omits absolute bucket counts, aliases and profile identifiers. The chart has no numeric frequency axis, count labels or count tooltips. Relative shapes still communicate distribution; this is not a formal anonymity guarantee.
+There is no minimum reporting population. The chart always displays ten buckets, with zero heights when no activity records exist [9]. For non-empty populations, bar heights are normalised to the tallest bar; the API omits absolute bucket counts, aliases and profile identifiers. The chart has no numeric frequency axis, count labels or count tooltips. Relative shapes still communicate distribution; this is not a formal anonymity guarantee.
 
-# DDL traceability
+# Schema maintenance
 
-The executable DDL lives in ordered SQL migration files under `supabase/migrations/`. They define the tables, constraints, functions, grants and trigger; the scheduler migration also installs extension dependencies and registers its job. *Table DDL traceability* maps this specification to exact SQL object names so a reviewer can follow the implementation without relying on shifting line numbers. No consolidated schema file supersedes these migrations.
+Schema changes are maintained as ordered SQL migration scripts under `supabase/migrations/`. These scripts contain the SQL data definition language (DDL) statements that install and evolve the store. They define the tables, constraints, functions, grants and trigger; the scheduler migration also installs extension dependencies and registers its job. *Table Schema maintenance* maps this specification to exact SQL object names so a reviewer can follow the implementation without relying on shifting line numbers. No consolidated schema file supersedes these migrations.
 
-*Table DDL traceability*
+*Table Schema maintenance*
 
-| Schema element | DDL file | Definition/enforcement |
+| Schema element | Script | Definition/enforcement |
 | --- | --- | --- |
-| Usage submissions and column/check constraints | [Usage store DDL](migrations/202610010001_usage_summary.sql) | `CREATE TABLE public.usage_submissions` |
-| Known usage profiles | [Notification DDL](migrations/202610020001_new_profile_notifications.sql) | `CREATE TABLE public.known_usage_profiles` and initial baseline insert |
-| New-profile notifications and queue fields | [Notification DDL](migrations/202610020001_new_profile_notifications.sql) | `CREATE TABLE public.new_profile_notifications` |
-| Profile → notification, at most one | [Notification DDL](migrations/202610020001_new_profile_notifications.sql) | Queue `magic_cookie` is not null, unique and references the profile primary key |
-| Profile → submissions, one-to-many | [Notification DDL](migrations/202610020001_new_profile_notifications.sql) | `enqueue_new_profile_notification` inserts the registry entry; no submission-to-profile foreign key is declared |
-| First submission → notification, at most one | [Notification DDL](migrations/202610020001_new_profile_notifications.sql) | `usage_new_profile` inserts the notification with `new.submission_id`; no foreign key or unique constraint on notification `submission_id` is declared |
-| Acceptance and aggregate APIs | [Usage store DDL](migrations/202610010001_usage_summary.sql) | `accept_usage`, `usage_stats` and their execute grants |
-| Claim/completion APIs | [Notification DDL](migrations/202610020001_new_profile_notifications.sql) | `claim_new_profile_notifications`, `finish_new_profile_notification` and their execute grants |
-| Scheduled dispatch API and retry job | [Scheduler DDL](migrations/202610020002_notification_retry_schedule.sql) | `dispatch_new_profile_notifications`, `cron.schedule` and extension creation |
-| Table privacy | [Usage store DDL](migrations/202610010001_usage_summary.sql), [notification DDL](migrations/202610020001_new_profile_notifications.sql) | Row-level security plus table/function grants and revocations |
-| Historical classification and activity-only aggregates | [Classification DDL](migrations/202610020003_historical_report_classes.sql) | `record_class`, `legacy_source`, conditional count constraint, historical `patch` event, replacement `usage_stats` |
-| Optional reporting alias and adoption email snapshot | [Alias DDL](migrations/202610020004_optional_reporting_alias.sql) | Alias columns/checks on all three tables; replacements for `accept_usage` and `enqueue_new_profile_notification` |
-| Histogram sampling and binning | [Histogram DDL](migrations/202610020005_usage_histogram.sql) | Initial `usage_histogram`, restricted execute grant and normalised bucket heights |
-| Always-visible histogram | [Always-visible histogram DDL](migrations/202610020006_always_show_histogram.sql) | Replaces the three-argument function with `usage_histogram()`; removes the age filter and floor and returns empty bins |
+| **Submissions** and column/check constraints | [Usage reporting store](migrations/202610010001_usage_summary.sql) | `CREATE TABLE public.usage_submissions` |
+| **Profiles** | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `CREATE TABLE public.known_usage_profiles` and initial baseline insert |
+| **Notifications** and queue fields | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `CREATE TABLE public.new_profile_notifications` |
+| **Profiles** to **Notifications**, at most one | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | Queue `magic_cookie` is not null, unique and references the profile primary key |
+| **Profiles** to **Submissions**, one-to-many | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `enqueue_new_profile_notification` inserts the registry entry; no submission-to-profile foreign key is declared |
+| First report in **Submissions** to **Notifications**, at most one | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `usage_new_profile` inserts the notification with `new.submission_id`; no foreign key or unique constraint on notification `submission_id` is declared |
+| Acceptance and aggregate APIs | [Usage reporting store](migrations/202610010001_usage_summary.sql) | `accept_usage`, `usage_stats` and their execute grants |
+| Claim/completion APIs | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `claim_new_profile_notifications`, `finish_new_profile_notification` and their execute grants |
+| Scheduled dispatch API and retry job | [Notification retry scheduling](migrations/202610020002_notification_retry_schedule.sql) | `dispatch_new_profile_notifications`, `cron.schedule` and extension creation |
+| Table privacy | [Usage reporting store](migrations/202610010001_usage_summary.sql), [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | Row-level security plus table/function grants and revocations |
+| Historical classification and activity-only aggregates | [Historical report classification](migrations/202610020003_historical_report_classes.sql) | `record_class`, `legacy_source`, conditional count constraint, historical `patch` event, replacement `usage_stats` |
+| Optional reporting alias and adoption email snapshot | [Optional reporting aliases](migrations/202610020004_optional_reporting_alias.sql) | Alias columns/checks on all three tables; replacements for `accept_usage` and `enqueue_new_profile_notification` |
+| Histogram sampling and binning | [Initial visited-site histogram](migrations/202610020005_usage_histogram.sql) | Initial `usage_histogram`, restricted execute grant and normalised bucket heights |
+| Always-visible histogram | [All-profile histogram](migrations/202610020006_always_show_histogram.sql) | Replaces the three-argument function with `usage_histogram()`; removes the age filter and floor and returns empty bins |
 
 The missing foreign keys are an implementation limitation, not evidence that the relationships are optional. Current ingest maintains them through its trigger. Administrative imports must preserve them explicitly. A later integrity migration could enforce them declaratively; this documentation correction does not silently change the live database schema.
 
@@ -197,11 +197,10 @@ The project specifications and implementation references are:
 
 1. [My World Heritage requirements](../Requirements.md) (Requirements), My World Heritage project, 2 October 2026.
 2. [System architecture](../ARCHITECTURE.md) (Architecture), My World Heritage project, 2 October 2026.
-3. [Usage-summary migration](migrations/202610010001_usage_summary.sql) (Usage store DDL), My World Heritage project, 1 October 2026.
-4. [New-profile-notification migration](migrations/202610020001_new_profile_notifications.sql) (Notification DDL), My World Heritage project, 2 October 2026.
-5. [Supabase retry scheduler](migrations/202610020002_notification_retry_schedule.sql) (Scheduler DDL), My World Heritage project, 2 October 2026.
-6. [Parent Style guide](../../Style%20guide.md) (Style guide), Project workspace, 2 October 2026.
-7. [Historical report classifications](migrations/202610020003_historical_report_classes.sql) (Classification DDL), My World Heritage project, 2 October 2026.
-8. [Optional reporting alias](migrations/202610020004_optional_reporting_alias.sql) (Alias DDL), My World Heritage project, 2 October 2026.
-9. [Usage histogram](migrations/202610020005_usage_histogram.sql) (Histogram DDL), My World Heritage project, 2 October 2026.
-10. [Always-visible histogram](migrations/202610020006_always_show_histogram.sql) (Always-visible histogram DDL), My World Heritage project, 2 October 2026.
+3. [Usage reporting store](migrations/202610010001_usage_summary.sql) (Reporting store), My World Heritage project, 1 October 2026.
+4. [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) (Notifications), My World Heritage project, 2 October 2026.
+5. [Notification retry scheduling](migrations/202610020002_notification_retry_schedule.sql) (Retry scheduling), My World Heritage project, 2 October 2026.
+6. [Historical report classifications](migrations/202610020003_historical_report_classes.sql) (Report classification), My World Heritage project, 2 October 2026.
+7. [Optional reporting alias](migrations/202610020004_optional_reporting_alias.sql) (Reporting aliases), My World Heritage project, 2 October 2026.
+8. [Initial visited-site histogram](migrations/202610020005_usage_histogram.sql) (Initial histogram), My World Heritage project, 2 October 2026.
+9. [All-profile histogram](migrations/202610020006_always_show_histogram.sql) (Histogram), My World Heritage project, 2 October 2026.

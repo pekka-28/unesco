@@ -271,7 +271,7 @@ flowchart TB
 
 # Data ownership and contracts
 
-The [Supabase monitoring schema](supabase/SCHEMA.md) provides a Bachman diagram, its separate legend and column definitions for the three application tables. It distinguishes declared foreign keys from associations maintained by the reporting logic.
+The [Supabase monitoring schema](supabase/SCHEMA.md) provides the application entity model for **Profiles**, **Submissions** and **Notifications**, with a Bachman legend and column definitions. It distinguishes declared foreign keys from associations maintained by the reporting logic.
 
 *Table Data ownership* defines the authoritative content and lifecycle of the stores in *Figure Databases and stores*.
 
