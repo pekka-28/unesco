@@ -1,128 +1,26 @@
-<!-- README.md 0.1.6 -->
+﻿<!-- README.md -->
 # Usage summary backend
 
-This backend accepts pseudonymised usage summaries from the web app and sends periodic email digests.
+The application submits exclusively to `https://fjqhgcegnphavatrchjb.supabase.co/functions/v1/usage-summary`. Supabase stores pseudonymous summaries and sends email through Exchange Online. The owner confirmed the initial-profile alert and monthly delivery check on 2 October 2026. Automatic monthly scheduling remains inactive.
 
-## Backend model
+# Browser cutover
 
-- Ingest endpoint: Google Apps Script web app (`doPost`).
-- Storage: Google Sheet tab `submissions`.
-- Digest email: Apps Script trigger calling `sendPeriodicDigest`.
+Open [My World Heritage](https://pekka-28.github.io/unesco/site/?submit=1) in your usual browser and reload with Ctrl+F5. The preview address remains available and shares the same browser storage.
 
-## Setup
+The application updates `mwh_usage_summary_endpoint` and the profile's `settings.usageSummaryEndpoint` automatically, clears obsolete tokens and forces requests to Supabase during the transition. Imported profiles are updated when saved. Identity, visits, notes, publication counters and pending receipt IDs are preserved. Settings show the server address as read-only. Use the user menu's Submit action; no manual server edit is required.
 
-1. Create a new Google Sheet for telemetry.
-2. Open Extensions > Apps Script.
-3. Paste `google_apps_script/Code.gs`.
-4. Set script properties:
-- `MWH_REPORT_EMAIL`: destination email address.
-- `MWH_REPORT_DAYS`: digest window in days (for example `7`).
-- `MWH_ALLOWED_SPREADSHEET_ID`: allowed workbook id.
-- `MWH_ALLOWED_SPREADSHEET_NAME`: optional exact workbook name check.
-- `MWH_INGEST_TOKEN`: optional shared token required for ingest.
-- `MWH_MIN_INTERVAL_SECONDS`: optional minimum interval per dataset cookie (default `30`).
-- `MWH_MAX_SUBMISSIONS_PER_COOKIE_PER_HOUR`: optional per-cookie hourly cap (default `12`).
-- `MWH_MAX_PAYLOAD_BYTES`: optional payload-size cap (default `4096`).
-- `MWH_DUPLICATE_TTL_SECONDS`: optional duplicate suppression window (default `3600`).
-- `MWH_STATS_WINDOW_DAYS`: optional stats/encouragement window in days (default `14`).
+Close or reload older tabs before submitting. Previously loaded JavaScript cannot be updated until reloaded. The forcing guard can be removed later if configurable servers are reintroduced; retain the settings migration.
 
-Script-managed property:
+# Historical Google Sheets records
 
-- `MWH_LAST_DIGEST_AT`: maintained automatically by `sendPeriodicDigest`.
+The Apps Script implementation is removed from the current tree; Git retains its history. A read-only export attempt on 2 October 2026 returned HTTP 401. No historical rows have been imported.
 
-For your workbook:
+Open [the historical usage workbook](https://docs.google.com/spreadsheets/d/1b8hW31Cxd-HBGY1T27cnTeFwvmp5w-mHCSNqpk3SvGQ/edit), select the `submissions` tab, and download it as CSV. Supply the export privately with the spreadsheet's configured time zone so displayed timestamps can be interpreted correctly. Do not commit the raw export.
 
-- `MWH_ALLOWED_SPREADSHEET_ID=1b8hW31Cxd-HBGY1T27cnTeFwvmp5w-mHCSNqpk3SvGQ`
-- `MWH_ALLOWED_SPREADSHEET_NAME=My World Heritage usage`
-5. Deploy as web app:
-- Execute as: `Me`.
-- Who has access: `Anyone`.
-6. Run `installDailyDigestTrigger` once.
-7. Copy the deployed web app URL.
+Before importing, validate timestamps, profile keys, event types and counts; strip user-agent, token and other non-reporting columns. Preserve original receipt dates and use deterministic identifiers so rerunning cannot duplicate rows. Baseline historical profiles in `known_usage_profiles` in the same transaction before inserting submissions, preventing retrospective new-user emails. Reconcile already-present submissions and report imported, duplicate and rejected counts. Retain the original sheet as evidence.
 
-## OAuth scope tightening
+In the bound Apps Script project, disable the old digest trigger and archive its web-app deployment after cutover. This requires the owner's Google access; it has not been performed by the repository change.
 
-Enable the manifest in Apps Script and set scopes from `google_apps_script/appsscript.json`:
+# Implementation
 
-- `https://www.googleapis.com/auth/spreadsheets.currentonly`
-- `https://www.googleapis.com/auth/script.send_mail`
-- `https://www.googleapis.com/auth/script.scriptapp`
-
-This narrows spreadsheet access to the current bound sheet context.
-
-## Payload contract
-
-Use `usage_summary.schema.json` as the contract for submissions.
-
-Current primary fields:
-
-- `submitted_at_utc` (ISO 8601 timestamp, UTC)
-- `magic_cookie` (pseudonymous dataset key)
-- `use_count_since_last_push`
-- `visited_site_count`
-- `event_type` (`periodic`, `manual`, `adoption`)
-- `client_version` (app version string, for divergence tracking)
-
-## App integration
-
-Set the endpoint URL in the application Settings field `Usage summary endpoint URL`.
-If `MWH_INGEST_TOKEN` is set, also configure `Usage summary token` in application Settings.
-When a user approves a summary prompt:
-
-- If endpoint submission succeeds, the summary is sent directly.
-- If endpoint submission fails or is missing, the app falls back to clipboard copy.
-- App can request encouraging aggregate stats via `GET /exec?stats=1`.
-- Stats window is backend-controlled via `MWH_STATS_WINDOW_DAYS` (not client-supplied).
-
-Stats query response (`doGet`):
-
-- `window_days`
-- `active_datasets` (unique magic cookies in window)
-- `unique_datasets` (same as `active_datasets`)
-- `average_visited_sites` (average of latest `visited_site_count` per active dataset in window)
-- `encouragement` (backend-owned text message based on active users and average visited sites)
-- `submissions` (window total; diagnostic only)
-
-## Configuration guidance
-
-Soft dependencies (recommended):
-
-- Set `MWH_STATS_WINDOW_DAYS` to about twice `MWH_REPORT_DAYS` (for example `14` and `7`).
-- Keep `MWH_DUPLICATE_TTL_SECONDS >= MWH_MIN_INTERVAL_SECONDS`.
-- Keep `MWH_MAX_SUBMISSIONS_PER_COOKIE_PER_HOUR` above expected legitimate retry volume, but low enough to damp scripted burst traffic.
-
-Hard dependencies (required):
-
-- Workbook binding must be configured (`MWH_ALLOWED_SPREADSHEET_ID`; optional strict-name check with `MWH_ALLOWED_SPREADSHEET_NAME`).
-- Endpoint must be deployed as web app with access `Anyone`.
-- If `MWH_INGEST_TOKEN` is configured, frontend token must match.
-- Required Apps Script scopes must remain as documented in this file.
-
-## Workbook structure note
-
-- A formal Sheets table object is optional; the script appends rows by position and does not require a table object.
-- Recommended worksheet headers now include `client_version` as the final column.
-
-## Backend self-tests
-
-These functions are for Apps Script editor runs only and are not exposed through the web app endpoint (`doGet`/`doPost`):
-
-- `backendSelfTestDryRun`: validates workbook binding, payload shape, and token configuration without writing a row.
-- `backendSelfTestAppend`: runs dry-run checks and appends one test row (`source=backend-self-test`).
-
-Use these before frontend tests to confirm backend readiness.
-
-## Accessing collected data
-
-- Open the Google Sheet used by the Apps Script project.
-- Read collected submissions in the `submissions` worksheet.
-- Filter by `received_at_utc`, `submitted_at_utc`, or `magic_cookie` for trend analysis.
-- Use File > Download to export as CSV/XLSX for local analysis.
-- Owner digest emails are sent to `MWH_REPORT_EMAIL` by `sendPeriodicDigest`.
-
-`token_used` values:
-
-- `yes`: request included a token field.
-- `no`: request did not include a token field.
-
-
+The active service lives under `supabase/`. See [deployment instructions](../../supabase/DEPLOYMENT.txt) and [Exchange setup](../../supabase/EXCHANGE_SETUP.md). `usage_summary.schema.json` describes the submission contract.
