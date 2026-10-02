@@ -69,7 +69,7 @@ A record in **Submissions** represents an accepted report. A record in **Notific
 | --- | --- | --- | --- |
 | `magic_cookie` | text, not null | PK | `0123456789abcdef` |
 | `first_received_at` | timestamptz, not null | — | `2026-10-02T02:00:00Z` |
-| `reporting_alias` | text, not null | — | `Visitor A` |
+| `name` | text, not null | — | `Visitor A` |
 
 *Table Submissions*
 
@@ -86,7 +86,7 @@ A record in **Submissions** represents an accepted report. A record in **Notific
 | `payload` | jsonb, not null | — | `{"submission_id":"sample-receipt-1","submitted_at_utc":"2026-10-02T01:59:59Z","magic_cookie":"0123456789abcdef","use_count_since_last_push":3,"visited_site_count":4,"event_type":"manual","client_version":"0.2.1"}` |
 | `record_class` | text, not null | — | `activity` |
 | `legacy_source` | text, nullable | — | `my-world-heritage` |
-| `reporting_alias` | text, not null | — | `Visitor A` |
+| `name` | text, not null | — | `Visitor A` |
 
 *Table Notifications*
 
@@ -104,7 +104,7 @@ A record in **Submissions** represents an accepted report. A record in **Notific
 | `lease_until` | timestamptz, nullable | — | `null` |
 | `sent_at` | timestamptz, nullable | — | `2026-10-02T02:00:01Z` |
 | `last_error` | text, nullable | — | `null` |
-| `reporting_alias` | text, not null | — | `Visitor A` |
+| `name` | text, not null | — | `Visitor A` |
 
 # Constraints and access
 
@@ -112,9 +112,9 @@ A record in **Notifications** references a record in **Profiles** through the de
 
 Usage and visited counts must be non-negative and are mandatory for `activity` records. Historical `test` and `synthetic` records can preserve missing counts as null. Public submission event types remain `adoption`, `manual` or `periodic`; the database also retains the historical synthetic event `patch`. `record_class` defaults to `activity`, and the public ingest API does not let clients set this classification. `legacy_source` retains a historical diagnostic source label. `usage_stats` includes only `activity` records [6]. Receipt time defaults to the server clock for new reports; historical import preserves the original receipt time.
 
-The optional `reporting_alias` is limited to 80 characters without control characters. It is stored in **Submissions**, **Profiles** and **Notifications**, and included in the initial owner email when supplied [7]. The client offers a separate reporting-alias field and does not automatically share the required local display name. An empty field omits the alias from a new record in **Submissions**; it does not erase existing records or their recorded aliases. Historical aliases come from the owner-supplied workbook.
+The existing profile **Name** is sent as `name`, limited to 80 characters without control characters, and stored in **Submissions**, **Profiles** and **Notifications**. The initial owner email includes Name when supplied. There is no separate reporting-alias attribute or fallback. A record in **Submissions** retains its received name. Migration `202610020007_profile_name.sql` renames the former column; historical payloads and applied migrations remain forensic evidence.
 
-All three tables enable row-level security and deny direct access to anonymous and authenticated browser roles. Edge Functions use the server-held service role for their restricted database operations. Monthly reporting reads aggregates through `usage_stats`; it has no separate application table. The monthly delivery check and first-profile email were confirmed received by the owner on 2 October 2026; recurring monthly scheduling remains inactive.
+All three tables enable row-level security and deny direct access to anonymous and authenticated browser roles. Edge Functions use the server-held service role for their restricted database operations. Monthly reporting reads aggregates through `usage_stats`; it has no separate application table. The monthly delivery check and first-profile email were confirmed received by the owner on 2 October 2026; Supabase schedules the combined monthly report at 08:00 Africa/Johannesburg on the first.
 
 # Database APIs
 
@@ -179,7 +179,7 @@ Schema changes are maintained as ordered SQL migration scripts under `supabase/m
 | Scheduled dispatch API and retry job | [Notification retry scheduling](migrations/202610020002_notification_retry_schedule.sql) | `dispatch_new_profile_notifications`, `cron.schedule` and extension creation |
 | Table privacy | [Usage reporting store](migrations/202610010001_usage_summary.sql), [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | Row-level security plus table/function grants and revocations |
 | Historical classification and activity-only aggregates | [Historical report classification](migrations/202610020003_historical_report_classes.sql) | `record_class`, `legacy_source`, conditional count constraint, historical `patch` event, replacement `usage_stats` |
-| Optional reporting alias and adoption email snapshot | [Optional reporting aliases](migrations/202610020004_optional_reporting_alias.sql) | Alias columns/checks on all three tables; replacements for `accept_usage` and `enqueue_new_profile_notification` |
+| Historical alias introduction (superseded by profile Name) | [Optional reporting aliases](migrations/202610020004_optional_reporting_alias.sql) | Alias columns/checks on all three tables; replacements for `accept_usage` and `enqueue_new_profile_notification` |
 | Histogram sampling and binning | [Initial visited-site histogram](migrations/202610020005_usage_histogram.sql) | Initial `usage_histogram`, restricted execute grant and normalised bucket heights |
 | Always-visible histogram | [All-profile histogram](migrations/202610020006_always_show_histogram.sql) | Replaces the three-argument function with `usage_histogram()`; removes the age filter and floor and returns empty bins |
 
@@ -204,3 +204,9 @@ The project specifications and implementation references are:
 7. [Optional reporting alias](migrations/202610020004_optional_reporting_alias.sql) (Reporting aliases), My World Heritage project, 2 October 2026.
 8. [Initial visited-site histogram](migrations/202610020005_usage_histogram.sql) (Initial histogram), My World Heritage project, 2 October 2026.
 9. [All-profile histogram](migrations/202610020006_always_show_histogram.sql) (Histogram), My World Heritage project, 2 October 2026.
+
+# Subsequent maintenance scripts
+
+[Profile Name](migrations/202610020007_profile_name.sql) renames the name column in **Submissions**, **Profiles** and **Notifications** and replaces their acceptance/notification functions. It provides no alias compatibility path. The historical receipt payload remains unchanged.
+
+[Monthly report scheduling](migrations/202610020008_monthly_reporting_schedule.sql) installs `dispatch_monthly_report()` and the `mwh-monthly-report` cron job. The postgres-owned dispatcher reads the existing private notifier credential from Vault and invokes the monthly Edge Function. This adds no application entity. The owner mail includes aggregate usage and a site-register comparison derived from GitHub history.

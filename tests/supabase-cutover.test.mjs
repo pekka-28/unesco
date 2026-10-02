@@ -1,8 +1,9 @@
+import {siteHtml, siteFunction} from '../scripts/site_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
-const html=readFileSync(new URL('../site/index.html',import.meta.url),'utf8');
+const html=siteHtml();
 const key='mwh_usage_summary_endpoint';
 const current='https://fjqhgcegnphavatrchjb.supabase.co/functions/v1/usage-summary';
 const previous=html.match(/previous: "([^"]+)"/)[1];
@@ -55,7 +56,7 @@ test('unreadable profiles are preserved; a new profile inherits the browser endp
 test('saving or importing a profile persists its override; blank/previous reset to current',()=>{
  for(const value of ['',previous,'https://custom.example/import']){
   const {stored,ctx}=environment('{}',current);ctx.profile=makeProfile(value);
-  const start=html.indexOf('    function persistProfile()');vm.runInContext(html.slice(start,html.indexOf('\n',start)),ctx);
+  vm.runInContext(siteFunction('persistProfile'),ctx);
   ctx.persistProfile();const saved=JSON.parse(stored.get('mwh_profile'));
   assert.equal(saved.settings.usageSummaryEndpoint,value===''||value===previous?current:value);
   assert.equal(stored.get(key),saved.settings.usageSummaryEndpoint);

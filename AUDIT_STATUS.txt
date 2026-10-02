@@ -1,0 +1,62 @@
+Conversation audit — 3 October 2026
+
+Tracked work
+  Issue 18: strict TypeScript browser source and unused-code checks.
+  Issue 19: unfinished monitoring, catalogue retention and obsolete instructions.
+  Issue 20: transnational component country inheritance (Slovakia/Carnuntum).
+  Issue 21: duplicate Reporting alias replaced by the existing User name.
+
+Implemented in this change
+  First-party browser logic and the compatibility redirect use strict TypeScript.
+  Build checks reject unused locals/parameters, any declarations, type suppression
+  and handwritten inline JavaScript. Third-party libraries retain their upstream
+  JavaScript with TypeScript declarations. No unused site function is reserved.
+  Removed the unused default constant, empty token accessor and unreachable
+  unverified-receipt branches. All submissions require a matching receipt ID.
+  Name supplies the name submission field and initial notification. The separate
+  alias input, setting and database columns are retired. No alias fallback exists.
+  Country attribution uses official component State Party records. Parent
+  properties retain their full country list. Unknown new transnational components
+  never inherit that list; maintain data/component_countries.json from the cited
+  UNESCO maps tables when their references change.
+  Full-clone history files and the snapshot helper are removed from the current
+  tree. Existing Git commits remain intact; refreshes create annotated ingestion
+  tags. Stable component IDs and active/retired records survive later refreshes.
+  Supabase Cron schedules the monthly Exchange email at 08:00 Johannesburg on
+  the first. The mail combines previous-month activity and site-register changes.
+  GitHub retains detailed refresh artifacts and runs the non-deterministic probe;
+  it needs no outgoing-mail credentials. Native Supabase GitHub deployment remains
+  the release path. CLI deployment is not used.
+  TEST_PLAN.md and current reporting documents replace obsolete Google/SMTP steps.
+
+Earlier requests already implemented
+  Canonical /site/ publication, retained browser storage and /site-supabase/ redirect.
+  Saved current/previous reporting endpoints, custom override and clear-to-default.
+  One-time inactive-startup help, hosting/statistics credits and component links.
+  Histogram in My World Heritage: last activity per profile regardless of age,
+  ten data-scaled buckets, integral labels, no display threshold or count axis.
+  Selected unvisited site remains visible during its selection zoom.
+  Immediate first-profile and monthly Exchange delivery were confirmed by owner.
+  All 42 workbook rows imported in Johannesburg time, with test/noise classification.
+  Requirements, architecture levels/legend/captions and database entity model exist;
+  ordered maintenance migrations provide schema traceability.
+  My World Heritage.md contains the illustrated mark, date and colophon. SVGs embed
+  the CC0 declaration; the published main SVG hash was verified. Logo tooltip links
+  to that document. Documentation improvements do not require GitHub Issues.
+
+External follow-up
+  The old remote Apps Script web deployment and digest trigger cannot be inspected
+  or disabled with the available GitHub/Supabase access. Their retirement still
+  requires the owner's Google account. This is not an application dependency.
+  Google references remain only in retirement/import evidence, historic migrations
+  and the exact previous-endpoint marker needed to migrate existing settings.
+  Observe the first scheduled monthly run on 1 November 2026. Prior delivery tests
+  confirm the mail transport, not a future scheduled execution.
+
+Validation
+  Strict compilation and the no-any/unused-code checks pass. Automated tests cover
+  database permissions, name/notifications, receipts, histogram, settings, timing,
+  country search, register changes and monthly boundary selection. Browser checks
+  preserve stored visits and exercise the built application with mocked receipts.
+  Release completion also requires successful Pages/native Supabase checks and
+  read-only confirmation of migrations and the active monthly cron job.

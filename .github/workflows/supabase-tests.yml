@@ -19,5 +19,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: npm ci
+      - run: npm run typecheck
       - run: npm install --prefix .local --no-save --package-lock=false @electric-sql/pglite@0.5.8
-      - run: node --test tests/startup-help.test.mjs tests/site-selection.test.mjs tests/usage-histogram.test.mjs tests/reporting-alias.test.mjs tests/supabase-cutover.test.mjs tests/usage-summary.test.mjs tests/monthly-report.test.mjs tests/database.test.mjs tests/new-profile-notifications.test.mjs
+      - run: node --test tests/*.test.mjs

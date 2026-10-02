@@ -6,6 +6,7 @@ const stats = { submissions: 4, active_datasets: 2, adoption: 1, manual: 2, peri
 function setup() {
   const queries = [], messages = [];
   const handler = createMonthlyHandler({ env: () => 'private-test-token',
+    register: async () => '\nSite register changes\nAdded: 1\n',
     rpc: async (name, body) => { queries.push({name, body}); return stats; },
     send: async mail => { messages.push(mail); },
     now: () => new Date('2026-10-02T02:30:00Z'), id: () => 'test-id' });
@@ -22,6 +23,7 @@ test('regular report uses the previous Johannesburg month and fixed owner', asyn
   assert.equal(response.status,202);
   assert.deepEqual(queries,[{name:'usage_stats',body:{start_at:'2026-08-31T22:00:00.000Z',end_at:'2026-09-30T22:00:00.000Z'}}]);
   assert.equal(messages[0].to,'pekka@data.co.za');
+  assert.match(messages[0].text,/Site register changes/);
   assert.match(messages[0].text,/2026-09/); assert.doesNotMatch(messages[0].text,/current month to date/);
 });
 test('manual check adds a separately labelled current-month snapshot without writes', async () => {

@@ -1,8 +1,9 @@
+import {siteHtml, siteFunction} from '../scripts/site_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
-const html=readFileSync(new URL('../site/index.html',import.meta.url),'utf8');
+const html=siteHtml();
 function setup({visible=true,dialog=false}={}) {
  const listeners=new Map();let callback,delay,cancelled=false,loads=0;
  const ctx=vm.createContext({ui:{helpOverlay:{style:{display:'none'}}},loadUsageHistogram:()=>{loads++;},

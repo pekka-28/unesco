@@ -1,5 +1,7 @@
 // Publish only runtime files; never recursively copy the repository.
-import {copyFile, mkdir, lstat} from 'node:fs/promises';
+import {copyFile, mkdir, lstat, writeFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {siteHtml} from './site_source.mjs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 export const files = [
@@ -13,13 +15,16 @@ export const files = [
 ];
 export async function buildPages(destination) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  execFileSync(process.execPath, [path.join(root, 'node_modules/typescript/bin/tsc'), '--project', path.join(root, 'tsconfig.json'), '--noEmit'], {stdio:'inherit'});
   // Refuse an existing output directory so stale files cannot survive a build.
   await mkdir(destination);
   for (const file of files) {
     const source = path.join(root, file), target = path.join(destination, file);
     if (!(await lstat(source)).isFile()) throw new Error(`Not a regular file: ${file}`);
     await mkdir(path.dirname(target), {recursive:true});
-    await copyFile(source, target);
+    if (file === 'site/index.html') await writeFile(target, siteHtml());
+    else if (file === 'site-supabase/index.html') await writeFile(target, siteHtml('redirect'));
+    else await copyFile(source, target);
   }
   console.log(`Published allowlist: ${files.length} files`);
 }

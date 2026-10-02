@@ -37,8 +37,8 @@ flowchart TD
   P3[My World Heritage web app]
   P4[Supabase usage-summary Edge Function]
   P5[GitHub database probe]
-  P6[Monthly usage report and SMTP]
-  P7[Site-register change report and SMTP]
+  P6[Supabase monthly reporting and Exchange]
+  P7[Site-register change report]
 
   A1 --> P1
   P1 --> P2
@@ -172,7 +172,7 @@ Usage telemetry is optional, pseudonymous, and aggregate-only:
 - Use Supabase as the replacement for Google Apps Script/Sheets submission storage; no Supabase account is required for app users.
 - Reuse the same submission identifier and payload on retry. A duplicate accepted submission must acknowledge the existing row without creating another.
 - Advance publication counters only after a valid acceptance acknowledgement, and only to the usage total captured in that submission. Clipboard copies, unverified dispatch and failures do not count as accepted submissions.
-- Do not store local profile names, home locations, individual visits, visit notes, browser user-agent strings or submission tokens in the monitoring database. An explicitly optional reporting alias may be shared, stored and included in the initial owner notification. Preserve owner-supplied historical aliases during import.
+- Send the existing profile User name as `name` in monitoring submissions and initial owner notifications. Do not introduce a separate reporting alias. Exclude home locations, individual visits, visit notes, browser user-agent strings and submission tokens from monitoring storage.
 
 ## Data formats and storage
 
@@ -231,7 +231,7 @@ Table 2. Application components and imported services.
 | `html2canvas` | External library | Snapshot/report rendering support | Client-side capture helper |
 | Supabase Edge Function and Postgres | Monitoring backend | Usage-summary ingest, durable receipts, aggregate statistics and new-profile alert queue | `supabase/`; deployed, browser test and Exchange acceptance verified; published-site cutover pending |
 | GitHub Actions database probe | Availability and activity check | Read-only database query with randomised timing | `.github/workflows/supabase-probe.yml`; live verification passed and schedule enabled |
-| GitHub Actions and SMTP | Owner reporting | Monthly user-activity email and separate site-register change email | Monthly report at 08:00 Africa/Johannesburg on the first; register report after each successful refresh push |
+| Supabase and Exchange 365 | Owner reporting | Monthly user-activity and site-register email | 08:00 Africa/Johannesburg on the first |
 | GitHub Pages | Hosting platform | Public static site delivery | Production hosting |
 | UNESCO dataset artifacts | Repository data | Current and historical WHS records | Application data source |
 
@@ -289,7 +289,7 @@ Last verified on 2 October 2026:
 - Supabase CLI applied the usage-summary migration and deployed the Edge Function. The allowed origin is `https://pekka-28.github.io`; a further migration dry run found no pending changes.
 - Hosted RLS, restricted grants, service-role insertion, duplicate receipts and statistics passed verification; the temporary test row was rolled back.
 - The live read-only database probe passed locally and in [GitHub Actions](https://github.com/pekka-28/unesco/actions/runs/36935189208), and scheduled probing is enabled.
-- The monthly Exchange delivery check and first-profile alert are confirmed received. Recurring monthly scheduling and the separate register-report delivery still require activation/verification.
+- The monthly Exchange delivery check and first-profile alert are confirmed received. The combined monthly report runs through Supabase cron.
 - Publish only the canonical `/site/` application, with Supabase reporting. The retired `/site-supabase/` entry redirects here without changing browser identity or visit history.
 - The new-profile queue, immediate background dispatch and Supabase retry worker are deployed. The owner confirmed an interactive Exchange 365 test email. Exchange accepted the unattended Supabase delivery test and browser-triggered new-profile alert on 2 October 2026; the owner confirmed inbox receipt of both messages. The isolated browser test verified adoption, a manual visit-count update and profile persistence against live Supabase. It used local site files at the permitted Pages origin; the Supabase-only cutover adds automatic settings migration.
 
@@ -341,15 +341,11 @@ The probe is a best-effort availability/activity check. It does not guarantee th
 
 Immediate alerts use the owner's Exchange 365 mailbox through Microsoft Graph. Keep the notifier's application authorisation in Supabase Secrets and restrict its Exchange send permission to the sender mailbox. GitHub credentials and Supabase Auth emails do not participate in this delivery path.
 
-**Immediate new-profile alert:** after accepting the first report for a previously unseen pseudonymous profile, Supabase queues one owner email to `pekka@data.co.za` in the same database transaction. Begin delivery immediately after acceptance, without delaying the browser acknowledgement or waiting for the monthly report. Any first event type qualifies; a repeated adoption event is not a new profile. Existing profiles at migration time must not generate retrospective alerts. Deduplicate by profile identifier, retain failures for retry and prevent simultaneous workers from sending the same queued alert. Supabase runs both the immediate delivery and retry scheduler; GitHub is not involved. Include first-receipt time, report type, visited-site count and the optional reporting alias when supplied, without profile identifiers or individual visits. A new profile does not prove a new unique person. Provider acceptance followed by an interrupted acknowledgement can still cause a duplicate email on retry; SMTP cannot guarantee exactly-once delivery.
+**Immediate new-profile alert:** after accepting the first report for a previously unseen pseudonymous profile, Supabase queues one owner email to `pekka@data.co.za` in the same database transaction. Begin delivery immediately after acceptance, without delaying the browser acknowledgement or waiting for the monthly report. Any first event type qualifies; a repeated adoption event is not a new profile. Existing profiles at migration time must not generate retrospective alerts. Deduplicate by profile identifier, retain failures for retry and prevent simultaneous workers from sending the same queued alert. Supabase runs both the immediate delivery and retry scheduler; GitHub is not involved. Include first-receipt time, report type, visited-site count and the existing profile Name when supplied, without profile identifiers or individual visits. A new profile does not prove a new unique person. Provider acceptance followed by an interrupted acknowledgement can still cause a duplicate email on retry; SMTP cannot guarantee exactly-once delivery.
 
-Both report types go to `pekka@data.co.za` using GitHub Actions and configured SMTP delivery. They are separate from submission acceptance and must not alter usage data.
+The monthly owner report goes to `pekka@data.co.za` through Supabase and Exchange 365 at 08:00 Africa/Johannesburg on the first. It covers the previous Johannesburg calendar month using server receipt times, including zero-activity months. Include accepted submissions, active profiles, report-type counts, reported uses and the average visited-site count from each profile's latest submission in the period. Exclude names, profile identifiers and individual visit details from the aggregate report.
 
-**Monthly user-activity report:** `.github/workflows/monthly-usage-email.yml` targets 08:00 Africa/Johannesburg on the first of each month. It covers the preceding Johannesburg calendar month using server receipt times, including zero-activity months. Include accepted submissions, active pseudonymous profiles, adoption/manual/periodic event counts, reported uses and average visited-site count from each profile's latest submission in the period. Explain that these are voluntary reports, not a count of all users or unique people. Exclude individual identifiers and visit details. Store the preview artifact for 30 days. Gate the workflow on `MWH_MONTHLY_REPORT_ENABLED=true`; manual runs default to preview-only.
-
-**Site-register change report:** the dataset-refresh workflow sends a separate report after each successful validation, commit and push, including unchanged refreshes and manual refresh runs. Compare the preceding canonical catalogue with the committed result by stable site ID. Report additions, newly retired entries, reactivations, changed attributes and unexpected removals, separating roots and components. Ignore formatting, generation timestamps and record ordering. Include source roots without usable coordinates when that metadata is available. List up to 40 entries per category in the email and retain the full text/JSON report artifact for 90 days. Git remains the permanent forensic record. Register additions are not necessarily new UNESCO inscriptions, and retirements are not proof of official delisting. A successful push does not itself prove that the separate Pages deployment completed.
-
-The site-register report must work independently of Supabase and the monthly-report enable switch. Failed refreshes continue to use the existing failure-alert path. Missing SMTP configuration must be visible; no workflow may claim that an email was sent when it was not. Manual reruns can resend mail; exactly-once SMTP delivery is not guaranteed.
+Include site-register changes in the same email. Compare canonical catalogue commits immediately before the period boundaries by stable site ID, reporting additions, retirements, reactivations, changed attributes and removals. Ignore formatting, ordering and generation timestamps. Link the Git comparison for forensic detail. If history is unavailable, report that failure explicitly while still sending activity statistics. Each successful refresh also saves its detailed change report as a GitHub artifact; Git retains the permanent record. No GitHub SMTP credentials or mail workflow are required.
 
 ### Authentication and operational configuration
 
@@ -360,14 +356,11 @@ Table 5. Supabase and GitHub configuration.
 | Setting | Location | Purpose and handling |
 | --- | --- | --- |
 | `SUPABASE_URL` | Hosted Edge Function environment and GitHub Actions secret | Project URL; the only Supabase configuration supplied to the probe job. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server-side Edge Function environment; GitHub secret for monthly reporting | Private database operations. Never expose in browser code, probe configuration, commits or logs. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side Edge Function environment | Private database operations. Never expose in browser code, probe configuration, commits or logs. |
 | `MWH_ALLOWED_ORIGIN` | Edge Function configuration | Application origin; current default is `https://pekka-28.github.io`. |
 | `MWH_INGEST_TOKEN` | Optional Edge Function secret and matching app setting | Optional submission gate. A browser-held token is not a strong anti-abuse boundary. |
 | `SUPABASE_ACCESS_TOKEN` | Agent connection/local environment or separate GitHub deployment secret | Scoped Management API/CLI access; not used by the probe or for app submissions. |
-| `MWH_SUPABASE_PROBE_ENABLED` | GitHub repository variable | Enable scheduled probes only after a successful live query. Currently `false`. |
-| `MWH_MONTHLY_REPORT_ENABLED` | GitHub repository variable | Enable the monthly user-activity workflow after configuration and delivery verification. |
-| `MWH_ALERT_SMTP_SERVER`, `MWH_ALERT_SMTP_PORT`, `MWH_ALERT_SMTP_USERNAME`, `MWH_ALERT_SMTP_PASSWORD` | GitHub Actions secrets | SMTP connection and authentication shared by owner reports and refresh alerts. |
-| `MWH_ALERT_MAIL_FROM`, `MWH_ALERT_MAIL_TO` | GitHub Actions secrets | Sender and refresh-failure recipient. Set the latter to the owner address for the existing alert configuration gate; the two report workflows target the owner explicitly. |
+| `MWH_SUPABASE_PROBE_ENABLED` | GitHub repository variable | Scheduled probes are enabled following a successful live query. |
 
 Database migration tools may separately require the database password. Do not treat a scoped management token as limiting a direct SQL connection authenticated with that password. Detailed setup steps and required deployment permissions belong in the deployment guide.
 
@@ -375,13 +368,13 @@ Database migration tools may separately require the database password. Do not tr
 
 Supabase is the default reporting service. The client tracks the current and previous standard endpoint URLs. At startup, absent or empty saved settings default to current, and an exact previous-address match migrates to current. Custom addresses remain unchanged. The resolved value is persisted in browser local storage and the profile. Settings allow editing the endpoint; clearing it and saving restores current. Imported profiles retain custom addresses. Identity, visits and pending receipt IDs are preserved. The previous Google URL is a migration marker only; the Apps Script implementation remains retired in Git history. See [reporting settings and historical-import instructions](backend/usage_summary_backend/README.md).
 
-Before cutover:
+Cutover verification and remaining external retirement:
 
 1. Apply the prepared SQL migration and deploy the Edge Function to the designated project.
 2. Verify CORS and all three event types from the real Pages origin, confirmed database receipts, retry/concurrency behaviour, rejected requests without counter advance and denial of direct client table/RPC access.
 3. Switch the default endpoint and handle old overrides in profiles/localStorage. Keep ordinary profile and visit features usable when reporting is unavailable.
 4. Verify one manual GitHub database probe, then enable its schedule. Verify the monthly report preview and delivery before enabling its schedule, and separately verify register-report delivery.
-5. Disable the legacy Apps Script digest trigger to avoid duplicate owner reports. Keep the old Sheet as historical evidence. Historical import is authorised once the owner supplies the private export and spreadsheet time zone: preserve dates, reconcile duplicates, strip excluded fields and baseline existing profiles before inserting so no retrospective alerts are sent.
+5. Disable the legacy Apps Script digest trigger to avoid duplicate owner reports. Keep the old Sheet as historical evidence. All 42 exported rows have been imported using Africa/Johannesburg timestamps, retaining test and synthetic classifications and suppressing retrospective alerts.
 
 ## History (retired paths)
 
@@ -447,7 +440,7 @@ Release readiness requires:
 - Working profile lifecycle without mandatory backend dependency.
 - Verified Supabase submission receipts, durable retry handling and private database access from the real application deployment.
 - A successful live read-only database probe before scheduled probing is enabled; randomized timing must not introduce writes or require probe credentials.
-- Verified monthly user-activity and separate site-register email delivery, with reporting failures visible and the Google digest disabled after cutover.
+- Verified combined monthly user-activity and site-register email delivery, with reporting failures visible and the Google digest disabled after cutover.
 - Accurate distinction between prepared code, published workflows and verified live services.
 - Synchronised requirements and implemented feature set.
 

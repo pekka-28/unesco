@@ -1,3 +1,4 @@
+import {siteHtml} from '../scripts/site_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp, readdir, readFile} from 'node:fs/promises';
@@ -23,7 +24,7 @@ test('distribution contains only the canonical runtime, current data and compati
 });
 
 test('retired preview redirects without touching storage, retaining query and fragment', async () => {
-  const html = await readFile(new URL('../site-supabase/index.html',import.meta.url),'utf8');
+  const html = siteHtml('redirect');
   const code = html.match(/<script>([\s\S]*?)<\/script>/)[1];
   let target;
   vm.runInNewContext(code,{URL,window:{location:{href:'https://pekka-28.github.io/unesco/site-supabase/index.html?submit=1#saved',search:'?submit=1',hash:'#saved',replace:value=>target=value}}});

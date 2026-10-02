@@ -1,7 +1,7 @@
 <!-- RETIRED_CODE.md -->
 # Retired code and distribution
 
-[Issue #5](https://github.com/pekka-28/unesco/issues/5) tracks consolidation on 2 October 2026. The only active browser application is [My World Heritage](https://pekka-28.github.io/unesco/site/), sourced from `site/index.html`, with Supabase reporting.
+[Issue #5](https://github.com/pekka-28/unesco/issues/5) tracks consolidation on 2 October 2026. The only active browser application is [My World Heritage](https://pekka-28.github.io/unesco/site/), compiled from `site/src/app.ts` into the `site/index.html` template, with Supabase reporting.
 
 # Retired components
 
@@ -30,3 +30,9 @@ The inventory and reference checks confirm removal of known retired and unrefere
 # Publication
 
 GitHub Pages uses the Actions publishing source. The workflow deploys after pushes to `main` and after successful catalogue-maintenance workflows, including updates committed by `GITHUB_TOKEN`. Pull requests validate the distribution without deploying it. The setup follows [GitHub's custom Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
+
+# Audit retirements
+
+The strict TypeScript build rejects unused local declarations and parameters. The audit removed the unused default-endpoint constant, empty token accessor and unreachable unverified-submission branches. There are no intentionally unused site functions. Leaflet and html2canvas remain third-party JavaScript libraries with TypeScript declarations; first-party browser code, including the redirect, is TypeScript.
+
+Full-clone catalogue snapshots and `backup_current_whs.ps1` are removed from the current tree. Annotated ingestion tags and Git history retain forensic versions without rewriting commits. The historical workbook importer is retired after the confirmed 42-row import. Routine SMTP owner reporting is replaced by Supabase/Exchange delivery. Maintenance scripts such as the catalogue comparator and probe are active repository tools, not browser code.
