@@ -13,11 +13,9 @@ Close or reload older tabs before submitting. Previously loaded JavaScript canno
 
 # Historical Google Sheets records
 
-The Apps Script implementation is removed from the current tree; Git retains its history. A read-only export attempt on 2 October 2026 returned HTTP 401. No historical rows have been imported.
+The Apps Script implementation is removed from the current tree; Git retains its history. On 2 October 2026, all 42 rows from the supplied workbook were imported: 26 activity, 3 test and 13 synthetic records. Original receipt times use the confirmed Africa/Johannesburg time zone. Test and synthetic records remain distinguishable and are excluded from activity statistics. Historical profiles were baselined before insertion; no retrospective notification was created.
 
-Open [the historical usage workbook](https://docs.google.com/spreadsheets/d/1b8hW31Cxd-HBGY1T27cnTeFwvmp5w-mHCSNqpk3SvGQ/edit), select the `submissions` tab, and download it as CSV. Supply the export privately with the spreadsheet's configured time zone so displayed timestamps can be interpreted correctly. Do not commit the raw export.
-
-Before importing, validate timestamps, profile keys, event types and counts; strip user-agent, token and other non-reporting columns. Preserve original receipt dates and use deterministic identifiers so rerunning cannot duplicate rows. Baseline historical profiles in `known_usage_profiles` in the same transaction before inserting submissions, preventing retrospective new-user emails. Reconcile already-present submissions and report imported, duplicate and rejected counts. Retain the original sheet as evidence.
+The original workbook and import audit remain private and excluded from Git. Optional aliases were retained where supplied. The browser now provides a separate optional reporting alias, included in future first-profile notifications. See the [schema and DDL traceability](../../supabase/SCHEMA.md) and `scripts/prepare_legacy_usage_import.py` for the import rules.
 
 In the bound Apps Script project, disable the old digest trigger and archive its web-app deployment after cutover. This requires the owner's Google access; it has not been performed by the repository change.
 

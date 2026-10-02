@@ -1,3 +1,13 @@
+Reporting update - 2 October 2026
+Migrations 202610020003 through 202610020006 are applied. All 42 spreadsheet rows
+are imported, with activity/test/synthetic classification and optional aliases.
+The usage-summary and notification functions are deployed. The histogram uses
+each profile's latest activity report across all history, with ten relative-height
+buckets, no population threshold and no frequency labels. MWH_HISTOGRAM_MIN_PROFILES
+is removed. The existing 14-day headline statistics retain their separate period.
+All 26 focused tests pass. Browser checks preserve stored identity/history and
+verify both the histogram and temporary selected-marker visibility.
+
 Supabase-only cutover, 2026-10-02
 Both site paths force Supabase and automatically migrate saved reporting settings.
 Reload with Ctrl+F5 in the existing browser; no manual endpoint change is needed.

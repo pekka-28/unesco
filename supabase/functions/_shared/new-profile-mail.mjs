@@ -3,10 +3,11 @@ export function renderNewProfileMail(row) {
     to: 'pekka@data.co.za',
     subject: 'My World Heritage - new user report',
     text: `A new pseudonymous profile has reported to My World Heritage.\n\n` +
+      (row.reporting_alias ? `Reporting alias: ${row.reporting_alias}\n` : '') +
       `First received: ${row.first_received_at}\n` +
       `First report type: ${row.event_type}\nVisited sites reported: ${row.visited_count}\n\n` +
       `This is the first accepted report from this profile, not a verified unique person.\n` +
-      `No profile identifier, name, location or individual visit is included.\n`
+      `No profile identifier, location or individual visit is included.\n`
   };
 }
 

@@ -10,6 +10,12 @@
     "visited_site_count"
   ],
   "properties": {
+    "reporting_alias": {
+      "type": "string",
+      "maxLength": 80,
+      "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$",
+      "description": "Optional alias explicitly shared in monitoring reports and the initial owner notification."
+    },
     "submission_id": {
       "type": "string",
       "pattern": "^[a-fA-F0-9-]{32,64}$",

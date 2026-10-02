@@ -1,11 +1,11 @@
 <!-- SCHEMA.md -->
 # Supabase monitoring schema
 
-This document describes the three application tables installed by the usage-summary and new-profile-notification migrations. The database holds pseudonymous reporting summaries and delivery state; profiles, names, locations and individual visit histories remain in browser storage. Supabase-managed Vault, Cron and HTTP extension tables support operations and are outside this application schema.
+My World Heritage is a map-based companion for recording visits to UNESCO World Heritage sites. Its Requirements define the product and privacy boundaries [1]; its Architecture describes the components [2]. This schema specifies the Supabase monitoring store and database APIs that accept voluntary usage summaries, calculate aggregate activity and arrange owner notifications. Personal profiles, names, locations and individual visit histories remain in the browser. Supabase-managed Vault, Cron and HTTP extension tables support operations but are not application entities.
 
 # Bachman notation
 
-*Figure Bachman legend* follows the parent Style guide. An open circle marks the many side. A plain line represents a one-to-one dependency. A dashed annotation line records non-identifying association or provenance, without implying key inheritance. The visible line from an invisible point identifies an independent entity.
+*Figure Bachman legend* follows the parent Style guide [6]. An open circle marks the many side. A plain line represents a one-to-one dependency. A dashed annotation line records non-identifying association or provenance, without implying key inheritance. The visible line from an invisible point identifies an independent entity.
 
 ```mermaid
 %%{init: {"themeCSS": "marker circle { fill: #ffffff !important; stroke: #333333 !important; }"}}%%
@@ -32,7 +32,7 @@ flowchart TB
 
 # Application schema
 
-*Figure Supabase monitoring schema* separates accepted submissions, the registry of previously seen profiles, and the delivery queue. A profile can have many submissions but at most one new-profile notification. Only the notification-to-profile association has a declared foreign key; the dashed links use stored values and trigger logic. A notification may be absent for a baselined historical profile. *Table Monitoring entities* summarises the entities; *Table Known usage profiles*, *Table Usage submissions* and *Table New-profile notifications* define their columns. All sample values are synthetic. PK denotes primary key, FK foreign key and UQ unique constraint; a dash means none of these.
+*Figure Supabase monitoring schema* shows application dependencies: a known profile has many submissions and at most one new-profile notification; a notification requires its first accepted submission. A submission can exist without a notification, including after historical baselining. Solid lines express those dependencies, not a claim that every relationship has a SQL foreign key. *Table DDL traceability* identifies how each is enforced. *Table Monitoring entities* summarises the entities; *Table Known usage profiles*, *Table Usage submissions* and *Table New-profile notifications* define their columns. All sample values are synthetic. PK denotes primary key, FK foreign key and UQ unique constraint; a dash means none of these.
 
 ```mermaid
 %%{init: {"themeCSS": "marker circle { fill: #ffffff !important; stroke: #333333 !important; }"}}%%
@@ -40,22 +40,20 @@ flowchart TB
   classDef entity fill:#ffffff,stroke:#333333,color:#111111,font-size:11px
   classDef point fill:transparent,stroke:transparent,color:transparent
   PROFILE_SOURCE(( ))
-  SUBMISSION_SOURCE(( ))
   Profiles["Known usage profiles"]
   Submissions["Usage submissions"]
   Notifications["New-profile notifications"]
   PROFILE_SOURCE --- Profiles
-  SUBMISSION_SOURCE --- Submissions
-  Profiles -. reported by .-o Submissions
+  Profiles --o Submissions
   Profiles --- Notifications
-  Submissions -. first-report provenance .- Notifications
+  Submissions --- Notifications
   class Profiles,Submissions,Notifications entity
-  class PROFILE_SOURCE,SUBMISSION_SOURCE point
+  class PROFILE_SOURCE point
 ```
 
 *Figure Supabase monitoring schema*
 
-The model makes repeated reporting and one-time profile notification distinct. Submissions retain their own receipt identities; notifications retain their own delivery identities. The unique profile key in the queue enforces the one-notification limit. The diagram shows application associations as well as the declared foreign key, without implying that PostgreSQL enforces the dashed links.
+The model separates repeated reports from the single notification caused by a profile's first accepted report. That submission is a required parent of the notification, not merely a provenance annotation. The current trigger creates them in one transaction; the SQL does not yet declare a notification-to-submission foreign key. Receipt and notification primary keys are separate identities, while the unique queue profile key limits each profile to one alert.
 
 *Table Monitoring entities*
 
@@ -71,6 +69,7 @@ The model makes repeated reporting and one-time profile notification distinct. S
 | --- | --- | --- | --- |
 | `magic_cookie` | text, not null | PK | `0123456789abcdef` |
 | `first_received_at` | timestamptz, not null | — | `2026-10-02T02:00:00Z` |
+| `reporting_alias` | text, not null | — | `Visitor A` |
 
 *Table Usage submissions*
 
@@ -80,11 +79,14 @@ The model makes repeated reporting and one-time profile notification distinct. S
 | `received_at` | timestamptz, not null | — | `2026-10-02T02:00:00Z` |
 | `submitted_at` | timestamptz, not null | — | `2026-10-02T01:59:59Z` |
 | `magic_cookie` | text, not null | — | `0123456789abcdef` |
-| `use_count` | integer, not null | — | `3` |
-| `visited_count` | integer, not null | — | `4` |
+| `use_count` | integer, nullable for non-activity records | — | `3` |
+| `visited_count` | integer, nullable for non-activity records | — | `4` |
 | `event_type` | text, not null | — | `manual` |
 | `client_version` | text, not null | — | `0.2.1` |
 | `payload` | jsonb, not null | — | `{"submission_id":"sample-receipt-1","submitted_at_utc":"2026-10-02T01:59:59Z","magic_cookie":"0123456789abcdef","use_count_since_last_push":3,"visited_site_count":4,"event_type":"manual","client_version":"0.2.1"}` |
+| `record_class` | text, not null | — | `activity` |
+| `legacy_source` | text, nullable | — | `my-world-heritage` |
+| `reporting_alias` | text, not null | — | `Visitor A` |
 
 *Table New-profile notifications*
 
@@ -102,20 +104,104 @@ The model makes repeated reporting and one-time profile notification distinct. S
 | `lease_until` | timestamptz, nullable | — | `null` |
 | `sent_at` | timestamptz, nullable | — | `2026-10-02T02:00:01Z` |
 | `last_error` | text, nullable | — | `null` |
+| `reporting_alias` | text, not null | — | `Visitor A` |
 
 # Constraints and access
 
 The declared foreign key is `new_profile_notifications.magic_cookie` to `known_usage_profiles.magic_cookie`. `usage_submissions.magic_cookie` and `new_profile_notifications.submission_id` have no declared foreign keys. The accepted-submission trigger maintains the registry and creates the first notification atomically; baselining historical profiles before import suppresses retrospective alerts.
 
-Usage and visited counts must be non-negative. Submission event types are `adoption`, `manual` or `periodic`. Receipt time defaults to the server clock. The receipt primary key prevents duplicate IDs; the acceptance function also checks that a repeated ID has the same sanitised payload. Queue claims use leases and row locks; a successful send followed by a lost acknowledgement can still cause a duplicate email.
+Usage and visited counts must be non-negative and are mandatory for `activity` records. Historical `test` and `synthetic` records can preserve missing counts as null. Public submission event types remain `adoption`, `manual` or `periodic`; the database also retains the historical synthetic event `patch`. `record_class` defaults to `activity`, and the public ingest API does not let clients set this classification. `legacy_source` retains a historical diagnostic source label. `usage_stats` includes only `activity` records [7]. Receipt time defaults to the server clock for new reports; historical import preserves the original receipt time.
+
+The optional `reporting_alias` is limited to 80 characters without control characters. It is stored with the report, profile registry and first-notification snapshot, and included in the initial owner email when supplied [8]. The client offers a separate reporting-alias field and does not automatically share the required local display name. An empty field omits the alias from new submissions; it does not erase historical reports or their recorded aliases. Historical aliases come from the owner-supplied workbook.
 
 All three tables enable row-level security and deny direct access to anonymous and authenticated browser roles. Edge Functions use the server-held service role for their restricted database operations. Monthly reporting reads aggregates through `usage_stats`; it has no separate application table. The monthly delivery check and first-profile email were confirmed received by the owner on 2 October 2026; recurring monthly scheduling remains inactive.
 
-# Sources
+# Database APIs
 
-The implementation sources are:
+Table definitions alone do not specify the API. *Table Database APIs* documents the SQL functions used by the Edge Functions and scheduler. The public browser interface appears separately in *Table HTTP interfaces*. Only `usage-summary` accepts browser requests; browsers cannot call the SQL APIs directly. SQL exceptions roll back their transaction; the ingest Edge Function maps rate limits to HTTP 429 and other database failures to HTTP 503.
 
-- [Usage-summary migration](migrations/202610010001_usage_summary.sql)
-- [New-profile-notification migration](migrations/202610020001_new_profile_notifications.sql)
-- [Supabase retry scheduler](migrations/202610020002_notification_retry_schedule.sql)
-- [Parent Style guide](../../Style%20guide.md), Entity relationships section
+*Table Database APIs*
+
+| SQL signature | Caller | Result | Effect |
+| --- | --- | --- | --- |
+| `accept_usage(p jsonb)` | Service role | JSON with `ok`, `duplicate`, `submission_id` | Atomically accepts a validated summary, records its receipt and runs the new-profile trigger; identical retries reuse the receipt |
+| `usage_stats(start_at timestamptz, end_at timestamptz)` | Service role | JSON counts and average | Reads reports received in the half-open interval `[start_at, end_at)`; returns submissions, active profiles, latest-per-profile average visited count, reported uses and event-type counts |
+| `usage_histogram()` | Service role | Visibility flag and ten relative-height buckets | Uses each profile's latest activity report; always returns ten buckets and never returns exact bucket counts |
+| `claim_new_profile_notifications(p_submission_id text = null, p_limit integer = 10)` | Service role | Set of notification rows | Claims due, unsent, unleased/expired rows, optionally for one submission; clamps batch size to 1–10, increments attempts and assigns five-minute leases |
+| `finish_new_profile_notification(p_id uuid, p_lease_token uuid, p_success boolean)` | Service role | Boolean | Updates only an unsent row with the matching claim token; records success or retry backoff, clears the lease, and returns whether a row matched |
+| `dispatch_new_profile_notifications()` | PostgreSQL scheduler owner | HTTP request ID or null | Reads the private URL/token from Vault and requests the worker only when due rows exist; returns null when work or configuration is absent |
+| `enqueue_new_profile_notification()` | `usage_new_profile` trigger | Trigger row | After a submission insert, records an unseen profile and queues its single notification in the same transaction |
+
+*Table HTTP interfaces*
+
+| Method and function path | Access | Request | Response |
+| --- | --- | --- | --- |
+| `POST /functions/v1/usage-summary` | Public, permitted browser origin | Validated summary JSON under the byte limit | Accepted receipt, validation error, rate limit or retryable service failure |
+| `GET /functions/v1/usage-summary?stats=1` | Public, permitted browser origin | No body | Coarse active-profile count and average visited sites for the last 14 days |
+| `GET /functions/v1/usage-summary?histogram=1` | Public, permitted browser origin | No body | Ten data-scaled buckets and relative heights from each known profile's latest activity report, regardless of age; empty populations produce ten empty buckets |
+| `GET /functions/v1/usage-summary` | Public | No body | Service/version status |
+| `OPTIONS /functions/v1/usage-summary` | Permitted browser origin | CORS preflight | HTTP 204 and allowed methods/headers |
+| `POST /functions/v1/new-profile-notifications` | Private worker bearer token | Empty JSON body | Delivery batch result; `x-mwh-delivery-test: true` sends only the authorised test mail |
+| `POST /functions/v1/monthly-report` | Private worker bearer token | Empty JSON body | HTTP 202 after Exchange acceptance; `x-mwh-report-test: true` adds a labelled month-to-date check |
+
+The accepted summary contains a stable submission ID, UTC submission time, pseudonymous profile key, use count, visited-site count, event type, client version and optional reporting alias. The Edge Function sanitises the input before calling `accept_usage`; the SQL function is not a public validation boundary. An identical ID/payload is accepted before rate limiting; a conflicting payload for an existing ID raises an error. Per profile, new reports are limited to one per 30 seconds and 12 per rolling hour. The payload allow-list excludes the local profile name, locations, visits, notes, tokens and browser user agents.
+
+# Delivery leases
+
+The immediate sender and the minute-by-minute retry worker can claim the same alert concurrently. `claim_new_profile_notifications` locks candidate rows with `FOR UPDATE SKIP LOCKED`, writes a random `lease_token` and a `lease_until` time five minutes ahead, then commits. The lease keeps ownership visible while the worker makes the external Exchange request without holding a database transaction open.
+
+If the worker crashes, another worker can reclaim the row after expiry. Reclaiming replaces the token, so a late completion from the previous worker cannot overwrite the new claim. `finish_new_profile_notification` checks the stored token, rather than independently checking lease expiry. Normal completion clears the lease. Failures set `available_at` using exponential backoff capped at one hour.
+
+Some form of claim coordination is necessary with these concurrent delivery paths. This lease is useful because it combines exclusion during sending with recovery after a crash. Five minutes is an operational timeout, not a business rule. It does not guarantee exactly-once delivery: Exchange may accept a message before a lost acknowledgement or worker crash, leaving a later retry able to resend it.
+
+# Usage histogram
+
+The Usage summary pane shows exactly ten equal-width buckets from the minimum reported visit count to one above the maximum integer count. Lower bounds are inclusive and upper bounds exclusive. Even a single observed value produces ten buckets. Each profile contributes only its latest `activity` record across the full stored history. Records classified as test or synthetic do not contribute [9].
+
+There is no minimum reporting population. The chart always displays ten buckets, with zero heights when no activity records exist [10]. For non-empty populations, bar heights are normalised to the tallest bar; the API omits absolute bucket counts, aliases and profile identifiers. The chart has no numeric frequency axis, count labels or count tooltips. Relative shapes still communicate distribution; this is not a formal anonymity guarantee.
+
+# DDL traceability
+
+The executable DDL lives in ordered SQL migration files under `supabase/migrations/`. They define the tables, constraints, functions, grants and trigger; the scheduler migration also installs extension dependencies and registers its job. *Table DDL traceability* maps this specification to exact SQL object names so a reviewer can follow the implementation without relying on shifting line numbers. No consolidated schema file supersedes these migrations.
+
+*Table DDL traceability*
+
+| Schema element | DDL file | Definition/enforcement |
+| --- | --- | --- |
+| Usage submissions and column/check constraints | [Usage store DDL](migrations/202610010001_usage_summary.sql) | `CREATE TABLE public.usage_submissions` |
+| Known usage profiles | [Notification DDL](migrations/202610020001_new_profile_notifications.sql) | `CREATE TABLE public.known_usage_profiles` and initial baseline insert |
+| New-profile notifications and queue fields | [Notification DDL](migrations/202610020001_new_profile_notifications.sql) | `CREATE TABLE public.new_profile_notifications` |
+| Profile → notification, at most one | [Notification DDL](migrations/202610020001_new_profile_notifications.sql) | Queue `magic_cookie` is not null, unique and references the profile primary key |
+| Profile → submissions, one-to-many | [Notification DDL](migrations/202610020001_new_profile_notifications.sql) | `enqueue_new_profile_notification` inserts the registry entry; no submission-to-profile foreign key is declared |
+| First submission → notification, at most one | [Notification DDL](migrations/202610020001_new_profile_notifications.sql) | `usage_new_profile` inserts the notification with `new.submission_id`; no foreign key or unique constraint on notification `submission_id` is declared |
+| Acceptance and aggregate APIs | [Usage store DDL](migrations/202610010001_usage_summary.sql) | `accept_usage`, `usage_stats` and their execute grants |
+| Claim/completion APIs | [Notification DDL](migrations/202610020001_new_profile_notifications.sql) | `claim_new_profile_notifications`, `finish_new_profile_notification` and their execute grants |
+| Scheduled dispatch API and retry job | [Scheduler DDL](migrations/202610020002_notification_retry_schedule.sql) | `dispatch_new_profile_notifications`, `cron.schedule` and extension creation |
+| Table privacy | [Usage store DDL](migrations/202610010001_usage_summary.sql), [notification DDL](migrations/202610020001_new_profile_notifications.sql) | Row-level security plus table/function grants and revocations |
+| Historical classification and activity-only aggregates | [Classification DDL](migrations/202610020003_historical_report_classes.sql) | `record_class`, `legacy_source`, conditional count constraint, historical `patch` event, replacement `usage_stats` |
+| Optional reporting alias and adoption email snapshot | [Alias DDL](migrations/202610020004_optional_reporting_alias.sql) | Alias columns/checks on all three tables; replacements for `accept_usage` and `enqueue_new_profile_notification` |
+| Histogram sampling and binning | [Histogram DDL](migrations/202610020005_usage_histogram.sql) | Initial `usage_histogram`, restricted execute grant and normalised bucket heights |
+| Always-visible histogram | [Always-visible histogram DDL](migrations/202610020006_always_show_histogram.sql) | Replaces the three-argument function with `usage_histogram()`; removes the age filter and floor and returns empty bins |
+
+The missing foreign keys are an implementation limitation, not evidence that the relationships are optional. Current ingest maintains them through its trigger. Administrative imports must preserve them explicitly. A later integrity migration could enforce them declaratively; this documentation correction does not silently change the live database schema.
+
+# Historical import
+
+On 2 October 2026 the owner-supplied workbook contributed 42 submissions: 26 activity, three test and 13 synthetic records. All source records were retained; 41 carried an alias and one had no alias. The import preserved receipt times using the confirmed Africa/Johannesburg time zone and repaired the workbook's mixed event/source column layouts. Missing counts in diagnostic records remain null. Normal activity statistics omit test and synthetic records.
+
+The original workbook, its checksum, row-level conversion audit and prepared SQL remain private. The import baselined profile keys before inserting historical reports and created no notification. Deterministic historical receipt IDs and an existing-record check make repeated imports idempotent. The preparation utility is [prepare_legacy_usage_import.py](../scripts/prepare_legacy_usage_import.py); it does not itself connect to or modify Supabase. No new public import API was introduced.
+
+# References
+
+The project specifications and implementation references are:
+
+1. [My World Heritage requirements](../Requirements.md) (Requirements), My World Heritage project, 2 October 2026.
+2. [System architecture](../ARCHITECTURE.md) (Architecture), My World Heritage project, 2 October 2026.
+3. [Usage-summary migration](migrations/202610010001_usage_summary.sql) (Usage store DDL), My World Heritage project, 1 October 2026.
+4. [New-profile-notification migration](migrations/202610020001_new_profile_notifications.sql) (Notification DDL), My World Heritage project, 2 October 2026.
+5. [Supabase retry scheduler](migrations/202610020002_notification_retry_schedule.sql) (Scheduler DDL), My World Heritage project, 2 October 2026.
+6. [Parent Style guide](../../Style%20guide.md) (Style guide), Project workspace, 2 October 2026.
+7. [Historical report classifications](migrations/202610020003_historical_report_classes.sql) (Classification DDL), My World Heritage project, 2 October 2026.
+8. [Optional reporting alias](migrations/202610020004_optional_reporting_alias.sql) (Alias DDL), My World Heritage project, 2 October 2026.
+9. [Usage histogram](migrations/202610020005_usage_histogram.sql) (Histogram DDL), My World Heritage project, 2 October 2026.
+10. [Always-visible histogram](migrations/202610020006_always_show_histogram.sql) (Always-visible histogram DDL), My World Heritage project, 2 October 2026.

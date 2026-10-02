@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- index.html 0.2.1 -->
+<!-- index.html 0.2.2 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -160,6 +160,11 @@
         <input id="enrol-user-name" class="field" type="text" placeholder="Your name or alias">
       </div>
       <div class="row">
+        <label for="enrol-reporting-alias"><strong>Reporting alias (optional)</strong></label>
+        <input id="enrol-reporting-alias" class="field" type="text" maxlength="80" placeholder="Alias to share with the site owner">
+        <div class="meta">Included in usage reports and the new-user email. Leave blank to report without an alias.</div>
+      </div>
+      <div class="row">
         <strong>Home location</strong>
         <div class="combo-inline">
           <div class="combo-field-wrap">
@@ -187,10 +192,14 @@
   <div id="settings-overlay" class="modal-overlay">
     <div class="modal">
       <h2 style="margin-top:0;">My World Heritage settings</h2>
-      <p class="meta">Profile data is stored locally in your browser only.</p>
+      <p class="meta">Your profile and visits stay in this browser. Only usage summaries and an optional reporting alias are shared.</p>
       <div class="row setting-line">
         <label for="user-name" class="setting-label">User name</label>
         <input id="user-name" class="field" type="text" placeholder="Your name or alias">
+      </div>
+      <div class="row setting-line">
+        <label for="reporting-alias" class="setting-label">Reporting alias (optional)</label>
+        <input id="reporting-alias" class="field" type="text" maxlength="80" placeholder="Alias to share with the site owner">
       </div>
       <div class="row">
         <strong>Home location</strong>
@@ -265,6 +274,11 @@
       <h3 style="margin-top:0;">Usage summary</h3>
       <div id="submit-summary" class="status-grid"></div>
       <div id="submit-status" class="status-scroll submit-status">Ready to submit.</div>
+      <section id="usage-histogram-section" aria-labelledby="usage-histogram-title">
+        <h4 id="usage-histogram-title">Sites visited by reporting profiles</h4>
+        <div id="usage-histogram" style="overflow-x:auto;"></div>
+        <p id="usage-histogram-caption" class="meta" aria-live="polite"></p>
+      </section>
       <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
         <button id="submit-send" class="btn primary" type="button">Submit</button>
         <button id="submit-close" class="btn" type="button">Close</button>
@@ -319,7 +333,7 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.2.1";
+    const APP_VERSION = "0.2.2";
     const APP_NAME = "My World Heritage";
     const APP_TITLE_SEPARATOR = " \u2013 ";
     const REPORT_TILE_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}";
@@ -748,6 +762,7 @@
       return highVolumeComponentSiteIds.has(asText(siteId));
     }
     function shouldShowSite(siteId) {
+      if (siteId === temporarilyVisibleSiteId) return true;
       const onlyVisited = !!(connected && profile && profile.settings && profile.settings.visitedOnly);
       const visited = isVisited(siteId);
       if (onlyVisited && !visited) return false;
@@ -1311,7 +1326,13 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         });
       });
     }
-    function refreshMarkers() { for (const [siteId, marker] of markersBySiteId.entries()) marker.setStyle(markerStyle(siteId)); applyVisitedOnlyFilter(); }
+    let temporarilyVisibleSiteId = null;
+    function refreshMarkers(revealSiteId = null) {
+      // A selection survives its own zoom; the next ordinary redraw restores filters.
+      temporarilyVisibleSiteId = revealSiteId;
+      for (const [siteId, marker] of markersBySiteId.entries()) marker.setStyle(markerStyle(siteId));
+      applyVisitedOnlyFilter();
+    }
     function applyVisitedOnlyFilter() {
       if (!layer) return;
       layer.eachLayer(marker => {
@@ -1328,7 +1349,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       const marker = markersBySiteId.get(siteId);
       if (!marker) return;
       explicitVisibleSiteIds.add(asText(siteId));
-      refreshMarkers();
+      refreshMarkers(asText(siteId));
       const focus = searchFocusBySiteId.get(asText(siteId));
       if (focus && Number.isFinite(focus.lat) && Number.isFinite(focus.lon)) map.setView([focus.lat, focus.lon], 12);
       else {
@@ -1543,6 +1564,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       if (!enrolSelectedHome) return alert("Please select a home location.");
       profile = defaultProfile();
       profile.name = name;
+      profile.settings.reportingAlias = document.getElementById("enrol-reporting-alias").value.trim();
       profile.homeLat = enrolSelectedHome.lat;
       profile.homeLon = enrolSelectedHome.lon;
       profile.homeLabel = enrolSelectedHome.label;
@@ -1574,6 +1596,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
     function openEnrolment() {
       ui.enrolOverlay.style.display = "flex";
       ui.enrolUserName.value = "";
+      document.getElementById("enrol-reporting-alias").value = "";
       ui.enrolHomeQuery.value = "";
       renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, [], enrolMatchIndexByLabel);
       ui.enrolNearbyList.innerHTML = '<div class="meta">Search for a home location, then select one match to list nearby sites.</div>';
@@ -1586,6 +1609,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       ui.settingsOverlay.style.display = "flex";
       if (!(prefill && profile)) return;
       ui.userName.value = asText(profile.name);
+      document.getElementById("reporting-alias").value = asText(profile.settings && profile.settings.reportingAlias);
       if (Number.isFinite(profile.homeLat) && Number.isFinite(profile.homeLon)) setSelectedHome(profile.homeLat, profile.homeLon, asText(profile.homeLabel || "Saved home"));
       ui.visitedOnlySetting.checked = !!(profile.settings && profile.settings.visitedOnly);
       ui.dateFormat.value = asText(profile.settings && profile.settings.dateFormat) || "y-m-d";
@@ -1649,6 +1673,8 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         event_type: asText(eventType) || "manual",
         client_version: APP_VERSION
       };
+      const alias = asText(profile.settings && profile.settings.reportingAlias).trim();
+      if (alias) summary.reporting_alias = alias;
       profile.usage.pendingSummaries[eventType] = { summary, useCount: Number(profile.usage.useCount || 0) };
       persistProfile();
       return summary;
@@ -1683,6 +1709,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       const destination = endpoint ? "Configured endpoint" : "Clipboard fallback";
       ui.submitSummary.innerHTML = [
         `<div><strong>Event</strong></div><div>${escapeHtml(asText(summary.event_type) || "manual")}</div>`,
+        `<div><strong>Reporting alias</strong></div><div>${escapeHtml(asText(summary.reporting_alias) || "Not supplied")}</div>`,
         `<div><strong>Timestamp (UTC)</strong></div><div>${escapeHtml(formatTimestampUtc(summary.submitted_at_utc))}</div>`,
         `<div><strong>Uses since last summary</strong></div><div>${escapeHtml(String(summary.use_count_since_last_push))}</div>`,
         `<div><strong>Visited site count</strong></div><div>${escapeHtml(String(summary.visited_site_count))}</div>`,
@@ -1706,6 +1733,30 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       ui.submitSend.disabled = false;
       ui.submitClose.disabled = false;
       ui.submitOverlay.style.display = "flex";
+      void loadUsageHistogram();
+    }
+    async function loadUsageHistogram() {
+      const container = document.getElementById("usage-histogram");
+      const caption = document.getElementById("usage-histogram-caption");
+      container.replaceChildren(); caption.textContent = "Loading distribution…";
+      try {
+        const url = new URL(getUsageSummaryEndpoint()); url.searchParams.set("histogram", "1");
+        const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
+        if (!response.ok) throw new Error("Histogram unavailable");
+        const data = await response.json(); const histogram = data.histogram;
+        if (!data.ok || !histogram) throw new Error("Invalid histogram");
+        const bins = histogram.buckets;
+        if (!Array.isArray(bins) || bins.length !== 10 || bins.some(b => !Number.isFinite(b.lower_bound) || b.lower_bound < 0 || !Number.isFinite(b.upper_bound) || b.upper_bound <= b.lower_bound || !Number.isFinite(b.height) || b.height < 0 || b.height > 1)) throw new Error("Invalid buckets");
+        const width = Math.max(420, bins.length * 45 + 30), plotHeight = 130, baseline = 145, step = (width - 30) / bins.length;
+        const bars = bins.map((b, i) => {
+          const format = n => Number(n.toFixed(1)).toLocaleString();
+          const label = `${format(b.lower_bound)}–${format(b.upper_bound)}`;
+          const x = 20 + i * step, height = b.height * plotHeight;
+          return `<rect x="${x}" y="${baseline-height}" width="${Math.max(1,step-3)}" height="${height}" fill="#287b8e"/><text x="${x+step/2}" y="${baseline+16}" transform="rotate(45 ${x+step/2} ${baseline+16})" font-size="11" fill="#334155">${escapeHtml(label)}</text>`;
+        }).join("");
+        container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="205" role="img" aria-label="Distribution of visited sites in ten scaled ranges, with an unscaled frequency axis" aria-describedby="usage-histogram-caption"><line x1="18" y1="${baseline}" x2="${width}" y2="${baseline}" stroke="#64748b"/>${bars}</svg>`;
+        caption.textContent = "Latest activity report from each known reporting profile, regardless of age, in ten equal-width ranges. Bar heights show relative frequency; counts are not shown. Test and synthetic records are excluded.";
+      } catch { container.replaceChildren(); caption.textContent = "The usage distribution is temporarily unavailable."; }
     }
     async function runSubmissionDialogSend() {
       if (!(pendingSummaryDialog && pendingSummaryDialog.summary)) return;
@@ -1801,6 +1852,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       profile.settings.lengthUnits = asText(ui.lengthUnits.value) || "km";
       profile.settings.multipleThreshold = Math.max(1, Number(ui.multipleThreshold.value || 5));
       profile.settings.usageSummaryEndpoint = asText(ui.shareEndpoint.value).trim();
+      profile.settings.reportingAlias = document.getElementById("reporting-alias").value.trim();
       profile.settings.usageSummaryToken = asText(ui.shareToken.value).trim();
       profile.publishPreference = profile.publishPreference || {};
       profile.publishPreference.enabled = !!ui.shareEnabled.checked;
@@ -2012,7 +2064,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
           const only = rows[0];
           if (only.type === "geo") map.setView([only.lat, only.lon], 10);
         }
-        for (const row of rows) { const div = document.createElement("div"); div.className = "result-row"; div.innerHTML = `<strong>${row.title}</strong><br><span class="result-meta">${row.subtitle}</span>`; div.addEventListener("click", () => { if (row.type === "whs") { const f = row.feature; const sid = asText(f && f.properties && f.properties.site_id); explicitVisibleSiteIds.add(sid); refreshMarkers(); selectionContext = "search"; if (row.matchedPoint) map.setView([row.matchedPoint.lat, row.matchedPoint.lon], 10); else map.setView([Number(f.geometry.coordinates[1]), Number(f.geometry.coordinates[0])], 10); renderDetail(f); } else { map.setView([row.lat, row.lon], 10); clearSelection(); } ui.searchResults.style.display = "none"; }); ui.searchResults.appendChild(div); }
+        for (const row of rows) { const div = document.createElement("div"); div.className = "result-row"; div.innerHTML = `<strong>${row.title}</strong><br><span class="result-meta">${row.subtitle}</span>`; div.addEventListener("click", () => { if (row.type === "whs") { const f = row.feature; const sid = asText(f && f.properties && f.properties.site_id); explicitVisibleSiteIds.add(sid); refreshMarkers(sid); selectionContext = "search"; if (row.matchedPoint) map.setView([row.matchedPoint.lat, row.matchedPoint.lon], 10); else map.setView([Number(f.geometry.coordinates[1]), Number(f.geometry.coordinates[0])], 10); renderDetail(f); } else { map.setView([row.lat, row.lon], 10); clearSelection(); } ui.searchResults.style.display = "none"; }); ui.searchResults.appendChild(div); }
         ui.searchResults.style.display = rows.length ? "block" : "none";
       } finally {
         hideLoading();
