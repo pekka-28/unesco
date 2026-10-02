@@ -15,7 +15,7 @@ for (const source of program.getSourceFiles().filter(f=>/site[\\/]src[\\/].*\.ts
   };
   visit(source);
 }
-for (const file of ['site/index.html','site-supabase/index.html']) {
+for (const file of ['site/index.html','site-supabase/index.html','admin/index.html']) {
   const html=readFileSync(file,'utf8');
   if (/<script\s*>|\son\w+\s*=/i.test(html)) errors.push(`${file}: first-party code outside TypeScript`);
 }

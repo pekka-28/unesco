@@ -1,7 +1,7 @@
 <!-- SCHEMA.md -->
 # Supabase monitoring schema
 
-My World Heritage is a map-based companion for recording visits to UNESCO World Heritage sites. Its Requirements define the product and privacy boundaries [1]; its Architecture describes the components [2]. This schema specifies the Supabase monitoring store and database APIs that accept voluntary usage summaries, calculate aggregate activity and arrange owner notifications. Personal profiles, names, locations and individual visit histories remain in the browser. Supabase-managed Vault, Cron and HTTP extension tables support operations but are not application entities.
+My World Heritage is a map-based companion for recording visits to UNESCO World Heritage sites. Its Requirements define the product and privacy boundaries [1]; its Architecture describes the components [2]. This schema specifies the Supabase monitoring store and database APIs that accept voluntary usage summaries, calculate aggregate activity and arrange owner notifications. Personal profiles, locations and individual visit histories remain in the browser; voluntary submissions include the existing User name. Supabase-managed Vault, Cron, Auth and HTTP extension tables support operations but are not reporting entities.
 
 # Application entity model
 
@@ -195,18 +195,42 @@ The original workbook, its checksum, row-level conversion audit and prepared SQL
 
 The project specifications and implementation references are:
 
-1. [My World Heritage requirements](../Requirements.md) (Requirements), My World Heritage project, 2 October 2026.
-2. [System architecture](../ARCHITECTURE.md) (Architecture), My World Heritage project, 2 October 2026.
-3. [Usage reporting store](migrations/202610010001_usage_summary.sql) (Reporting store), My World Heritage project, 1 October 2026.
-4. [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) (Notifications), My World Heritage project, 2 October 2026.
-5. [Notification retry scheduling](migrations/202610020002_notification_retry_schedule.sql) (Retry scheduling), My World Heritage project, 2 October 2026.
-6. [Historical report classifications](migrations/202610020003_historical_report_classes.sql) (Report classification), My World Heritage project, 2 October 2026.
-7. [Optional reporting alias](migrations/202610020004_optional_reporting_alias.sql) (Reporting aliases), My World Heritage project, 2 October 2026.
-8. [Initial visited-site histogram](migrations/202610020005_usage_histogram.sql) (Initial histogram), My World Heritage project, 2 October 2026.
-9. [All-profile histogram](migrations/202610020006_always_show_histogram.sql) (Histogram), My World Heritage project, 2 October 2026.
+1. [My World Heritage requirements](../Requirements.md), My World Heritage project, 2 October 2026.
+2. [System architecture](../ARCHITECTURE.md), My World Heritage project, 2 October 2026.
+3. [Usage reporting store](migrations/202610010001_usage_summary.sql), My World Heritage project, 1 October 2026.
+4. [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql), My World Heritage project, 2 October 2026.
+5. [Notification retry scheduling](migrations/202610020002_notification_retry_schedule.sql), My World Heritage project, 2 October 2026.
+6. [Historical report classifications](migrations/202610020003_historical_report_classes.sql), My World Heritage project, 2 October 2026.
+7. [Optional reporting alias](migrations/202610020004_optional_reporting_alias.sql), My World Heritage project, 2 October 2026.
+8. [Initial visited-site histogram](migrations/202610020005_usage_histogram.sql), My World Heritage project, 2 October 2026.
+9. [All-profile histogram](migrations/202610020006_always_show_histogram.sql), My World Heritage project, 2 October 2026.
 
 # Subsequent maintenance scripts
 
 [Profile Name](migrations/202610020007_profile_name.sql) renames the name column in **Submissions**, **Profiles** and **Notifications** and replaces their acceptance/notification functions. It provides no alias compatibility path. The historical receipt payload remains unchanged.
 
 [Monthly report scheduling](migrations/202610020008_monthly_reporting_schedule.sql) installs `dispatch_monthly_report()` and the `mwh-monthly-report` cron job. The postgres-owned dispatcher reads the existing private notifier credential from Vault and invokes the monthly Edge Function. This adds no application entity. The owner mail includes aggregate usage and a site-register comparison derived from GitHub history.
+
+# Administration maintenance
+
+[Owner administration](migrations/202610030001_owner_administration.sql) adds two operational entities separate from reporting Profiles: **Admin operations** records authenticated command attempts and outcomes; **Admin login gate** reserves a five-minute interval between owner sign-in messages. Neither stores access tokens. Supabase Auth owns the administrator account.
+
+*Figure Administration entity model* shows these independent operational entities. The actor UUID in **Admin operations** identifies the authenticated administrator; it is not a reporting profile key. No foreign key to Auth is declared, so removal of an Auth account does not erase the audit record.
+
+```mermaid
+flowchart TB
+  classDef entity fill:#ffffff,stroke:#333333,color:#111111,font-size:11px
+  classDef point fill:transparent,stroke:transparent,color:transparent
+  AUDIT_SOURCE(( ))
+  GATE_SOURCE(( ))
+  Operations["Admin operations"]
+  Gate["Admin login gate"]
+  AUDIT_SOURCE --- Operations
+  GATE_SOURCE --- Gate
+  class Operations,Gate entity
+  class AUDIT_SOURCE,GATE_SOURCE point
+```
+
+*Figure Administration entity model*
+
+`admin_read(text, integer, text, text, timestamptz, timestamptz)` returns bounded read models for Profiles, Submissions, Notifications, operation history, columns and status. `admin_reserve_login()` atomically reserves a sign-in email interval. Both functions deny PUBLIC, anon and authenticated execution and grant it only to service_role. The owner API verifies the configured owner before using its server identity. [Administration](../ADMINISTRATION.md) specifies the authentication boundaries and operations.

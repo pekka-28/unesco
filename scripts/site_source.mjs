@@ -1,4 +1,5 @@
 import ts from 'typescript';
+import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 const root = new URL('../', import.meta.url);
 // Test helpers use the same compiler output as the published inline script.
@@ -8,8 +9,14 @@ export function siteCode(name = 'app') {
     .outputText.replace(/^export \{\};?\s*$/m, '').split('\n').map(line => '    '+line).join('\n');
 }
 export function siteHtml(name = 'app') {
-  const file = name === 'app' ? 'site/index.html' : 'site-supabase/index.html';
-  return readFileSync(new URL(file, root),'utf8').replace(`<!-- compiled:${name} -->`, `<script>\n${siteCode(name)}\n</script>`);
+  const file = name === 'app' ? 'site/index.html' : name === 'admin' ? 'admin/index.html' : 'site-supabase/index.html';
+  const code = `\n${siteCode(name)}\n`;
+  let html=readFileSync(new URL(file, root),'utf8').replace(`<!-- compiled:${name} -->`, `<script>${code}</script>`);
+  if(name==='admin') {
+    const hash=createHash('sha256').update(code).digest('base64');
+    html=html.replace('<head>',`<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-${hash}'; style-src 'unsafe-inline'; img-src 'self'; connect-src https://fjqhgcegnphavatrchjb.supabase.co; base-uri 'none'; form-action 'none'">`);
+  }
+  return html;
 }
 export function siteFunction(name) {
   const source = siteCode();

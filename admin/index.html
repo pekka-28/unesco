@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+<title>My World Heritage — Administration</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#173331;background:#f2f5f3;color-scheme:light}body{margin:0}header,main{max-width:1100px;margin:auto;padding:24px}header{display:flex;align-items:center;gap:16px}header img{width:52px}h1{font-size:1.7rem;margin:0}h2{font-size:1.2rem}section{background:white;border:1px solid #d1ddd6;border-radius:10px;padding:20px;margin-bottom:20px}.muted{color:#52665c}button,input,select{font:inherit;padding:9px;border:1px solid #83988b;border-radius:5px}button{cursor:pointer;background:#125b48;color:white}button:disabled{opacity:.5;cursor:wait}label{display:flex;flex-direction:column;gap:5px}form,.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:end}#status{white-space:pre-wrap;overflow-wrap:anywhere}#result{overflow:auto;max-height:60vh}table{border-collapse:collapse;width:100%;font-size:.85rem}td,th{border-bottom:1px solid #ddd;padding:8px;text-align:left;vertical-align:top;max-width:320px;overflow-wrap:anywhere}th{position:sticky;top:0;background:#eaf0ec}pre{white-space:pre-wrap;overflow-wrap:anywhere}a{color:#125b48}[hidden]{display:none!important}footer{padding:15px 0}.notice{border-left:4px solid #ab762b;padding-left:12px}
+</style></head><body>
+<header><img src="../site/icons/mwh-temple.svg" alt=""><div><h1>My World Heritage</h1><div class="muted">Owner administration</div></div></header>
+<main>
+<section id="signin"><h2>Sign in</h2><p>Access is restricted to the owner. Request a single-use link delivered to your mailbox.</p><button id="login">Email my sign-in link</button><button id="verify" hidden>Continue with this sign-in link</button></section>
+<p id="status" role="status" aria-live="polite">Sign in to view private records and run operations.</p>
+<div id="workspace" hidden>
+<section><h2>Operations</h2><p>Mail goes to the owner. Acceptance does not confirm inbox receipt. Refresh and publication run asynchronously in GitHub.</p><div class="actions">
+<button data-action="refresh">Refresh catalogue</button><button data-action="publish">Publish site</button><button data-action="probe">Run scheduled probe</button>
+<button data-action="test-mail">Send test email</button><button data-action="monthly-mail">Send monthly report check</button><button data-action="retry-notifications">Retry pending notifications</button>
+<button id="runs">Workflow status</button><button id="health">Database status / probe</button><button id="logout">Sign out</button></div>
+<p id="github-note" class="notice" hidden>Workflow controls need repository Actions permission. Workflow status and database operations remain available.</p></section>
+<section><h2>Database queries</h2><p>Read-only results, at most 100 rows per page. Date and record-class filters apply to Submissions; date boundaries are UTC and the end is exclusive. Profile identifiers filter Profiles, Submissions and Notifications.</p>
+<form id="query"><label>Entity<select id="entity"><option value="submissions">Submissions</option><option value="profiles">Profiles</option><option value="notifications">Notifications</option><option value="operations">Action history</option><option value="schema">Schema columns</option></select></label>
+<label>Profile identifier<input id="profile" maxlength="80"></label><label>Record class<select id="record-class"><option value="">All</option><option>activity</option><option>test</option><option>synthetic</option></select></label>
+<label>From (UTC)<input id="from" type="date"></label><label>Until (UTC, exclusive)<input id="until" type="date"></label><button>Query</button></form>
+<p class="actions"><button id="previous">Previous 100</button><span id="page-label"></span><button id="next">Next 100</button><button id="export">Download these results</button></p>
+<div id="result" tabindex="0" aria-label="Query results"></div></section>
+<section><h2>Maintenance</h2><p>Schema changes, imports, secrets and permission changes require the reviewed maintenance process. These consoles retain their own authentication.</p>
+<p><a href="https://supabase.com/dashboard/project/fjqhgcegnphavatrchjb/editor" target="_blank" rel="noopener noreferrer">Supabase SQL editor</a> · <a href="https://supabase.com/dashboard/project/fjqhgcegnphavatrchjb/logs/explorer" target="_blank" rel="noopener noreferrer">Supabase logs</a> · <a href="https://github.com/pekka-28/unesco/actions" target="_blank" rel="noopener noreferrer">Workflow logs and reruns</a> · <a href="https://github.com/pekka-28/unesco/issues" target="_blank" rel="noopener noreferrer">Issues</a> · <a href="https://github.com/pekka-28/unesco/blob/main/ADMINISTRATION.md" target="_blank" rel="noopener noreferrer">Operation inventory and setup</a></p></section>
+</div><footer><a href="../site/">Return to My World Heritage</a></footer>
+</main><!-- compiled:admin --></body></html>
