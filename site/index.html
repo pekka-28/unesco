@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- index.html 0.2.3 -->
+<!-- index.html 0.2.4 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -333,7 +333,7 @@
     const CENSUS_KEY = "mwh_census";
     const MAP_VIEW_KEY = "mwh_map_view";
     const USAGE_SUBMIT_STATUS_KEY = "mwh_usage_submit_status";
-    const APP_VERSION = "0.2.3";
+    const APP_VERSION = "0.2.4";
     const APP_NAME = "My World Heritage";
     const APP_TITLE_SEPARATOR = " \u2013 ";
     const REPORT_TILE_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}";
@@ -1698,7 +1698,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
     }
     function setSubmissionDialogContent(summary) {
       const endpoint = getUsageSummaryEndpoint();
-      const destination = endpoint ? "Configured endpoint" : "Clipboard fallback";
+      const destination = endpoint || "Clipboard fallback";
       ui.submitSummary.innerHTML = [
         `<div><strong>Event</strong></div><div>${escapeHtml(asText(summary.event_type) || "manual")}</div>`,
         `<div><strong>Reporting alias</strong></div><div>${escapeHtml(asText(summary.reporting_alias) || "Not supplied")}</div>`,
@@ -1706,7 +1706,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         `<div><strong>Uses since last summary</strong></div><div>${escapeHtml(String(summary.use_count_since_last_push))}</div>`,
         `<div><strong>Visited site count</strong></div><div>${escapeHtml(String(summary.visited_site_count))}</div>`,
         `<div><strong>Client version</strong></div><div>${escapeHtml(asText(summary.client_version || APP_VERSION))}</div>`,
-        `<div><strong>Destination</strong></div><div>${escapeHtml(destination)}</div>`
+        `<div><strong>Destination</strong></div><div style="min-width:0;overflow-wrap:anywhere;">${escapeHtml(destination)}</div>`
       ].join("");
     }
     function setSubmissionDialogStatus(lines) {
@@ -1730,7 +1730,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
     async function loadUsageHistogram() {
       const container = document.getElementById("usage-histogram");
       const caption = document.getElementById("usage-histogram-caption");
-      container.replaceChildren(); caption.textContent = "Loading distribution…";
+      container.replaceChildren(); caption.hidden = false; caption.textContent = "Loading distribution…";
       try {
         const url = new URL(getUsageSummaryEndpoint()); url.searchParams.set("histogram", "1");
         const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
@@ -1746,8 +1746,8 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
           const x = 20 + i * step, height = b.height * plotHeight;
           return `<rect x="${x}" y="${baseline-height}" width="${Math.max(1,step-3)}" height="${height}" fill="#287b8e"/><text x="${x+step/2}" y="${baseline+16}" transform="rotate(45 ${x+step/2} ${baseline+16})" font-size="11" fill="#334155">${escapeHtml(label)}</text>`;
         }).join("");
-        container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="205" role="img" aria-label="Distribution of visited sites in ten scaled ranges, with an unscaled frequency axis" aria-describedby="usage-histogram-caption"><line x1="18" y1="${baseline}" x2="${width}" y2="${baseline}" stroke="#64748b"/>${bars}</svg>`;
-        caption.textContent = "Latest activity report from each known reporting profile, regardless of age, in ten equal-width ranges. Bar heights show relative frequency; counts are not shown. Test and synthetic records are excluded.";
+        container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="205" role="img" aria-label="Distribution of visited sites in ten scaled ranges, with an unscaled frequency axis"><line x1="18" y1="${baseline}" x2="${width}" y2="${baseline}" stroke="#64748b"/>${bars}</svg>`;
+        caption.textContent = ""; caption.hidden = true;
       } catch { container.replaceChildren(); caption.textContent = "The usage distribution is temporarily unavailable."; }
     }
     async function runSubmissionDialogSend() {
