@@ -44,3 +44,24 @@ test('fault reporter sends only counts to fixed owner and records failed deliver
  await assert.rejects(reportSecurityFaults({rpc,send:async()=>{throw Error('secret provider body');}}),/Security fault reporting failed/);
  assert.equal(calls.at(-1).args.p_sent,false);
 });
+
+
+test('dispatcher invokes monitoring with no notifications, then suppresses fresh healthy polls',async()=>{
+ const db=new PGlite();try{
+  await db.exec(`create role anon;create role authenticated;create role service_role;
+   create table public.new_profile_notifications(sent_at timestamptz,available_at timestamptz,lease_until timestamptz);
+   create table public.security_monitor_state(singleton boolean,checked_at timestamptz);
+   insert into public.security_monitor_state values(true,null);
+   create schema vault;create table vault.decrypted_secrets(name text,decrypted_secret text);
+   insert into vault.decrypted_secrets values('mwh_notification_url','https://worker.test'),('mwh_notification_token','test-only');
+   create schema net;create function net.http_post(url text,headers jsonb,body jsonb,timeout_milliseconds integer) returns bigint language sql as $$ select 42::bigint $$;`);
+  await db.exec(readFileSync(new URL('../supabase/migrations/202610030004_monitor_dispatch.sql',import.meta.url),'utf8'));
+  assert.equal((await db.query('select public.dispatch_new_profile_notifications() as r')).rows[0].r,42);
+  await db.exec('update public.security_monitor_state set checked_at=now()');
+  assert.equal((await db.query('select public.dispatch_new_profile_notifications() as r')).rows[0].r,null);
+  await db.exec('insert into public.new_profile_notifications values(null,now(),null)');
+  assert.equal((await db.query('select public.dispatch_new_profile_notifications() as r')).rows[0].r,42);
+  await db.exec('set role service_role');
+  await assert.rejects(db.exec('select public.dispatch_new_profile_notifications()'),/permission denied/);
+ }finally{await db.close();}
+});

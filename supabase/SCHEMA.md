@@ -244,3 +244,5 @@ flowchart TB
 [Security audit script](migrations/202610030003_security_audit.sql) adds `security_monitor_state`, a private singleton holding the last check, current/reported fault counts and mail lease/completion state. It has no direct service-role table grants and no public access. It is operational state rather than immutable forensic history.
 
 `security_audit_read` returns bounded, selected `auth.audit_log_entries` fields or monitoring health. `security_monitor_claim` evaluates selected operational conditions and grants one temporary delivery lease. `security_monitor_finish` records only the outcome of the matching unexpired lease. All three are fixed definer functions with an empty search path and service-role-only execution. Auth log recording is provider configuration, not performed by this migration. The full coverage and response obligations are in [Security policy](../SECURITY.md).
+
+[Monitor dispatch script](migrations/202610030004_monitor_dispatch.sql) ensures the scheduled dispatcher invokes monitoring at least every five minutes even when no notification is pending. It retains postgres-only execution and Vault-mediated worker authentication.
