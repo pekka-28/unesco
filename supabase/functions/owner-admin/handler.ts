@@ -116,4 +116,3 @@ export function createAdminHandler({env, rpc, send, request = fetch}: Worker & {
     }
   };
 }
-
