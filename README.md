@@ -28,6 +28,9 @@ Current version: `0.2.0`
 ## Entry points
 
 - Application: [My World Heritage](https://pekka-28.github.io/unesco/site/)
+- Client behaviour: [User guide](https://pekka-28.github.io/unesco/site/user-guide.html)
+- Component design: [Architecture](ARCHITECTURE.md)
+- Interaction design: [System behaviour](SYSTEM_BEHAVIOUR.md)
 - Source entry file: [site/index.html](site/index.html)
 - Requirements and design decisions: [Requirements.md](Requirements.md)
 - Release notes: [RELEASE_NOTES.md](RELEASE_NOTES.md)
@@ -35,7 +38,7 @@ Current version: `0.2.0`
 
 ## Project detail
 
-Product intent, requirements, architecture, and design decisions are maintained in [Requirements.md](Requirements.md).
+[Requirements](Requirements.md) defines product intent and constraints. [Architecture](ARCHITECTURE.md) describes components; [System behaviour](SYSTEM_BEHAVIOUR.md) describes their message sequences and timer behaviour.
 
 
 

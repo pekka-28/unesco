@@ -7,14 +7,14 @@ import path from 'node:path';
 import vm from 'node:vm';
 import {buildPages, files} from '../scripts/build_pages.mjs';
 
-test('distribution contains only the canonical runtime, current data and compatibility redirect', async () => {
+test('distribution contains only the canonical runtime, user guide, current data and compatibility redirect', async () => {
   const parent = await mkdtemp(path.join(tmpdir(), 'mwh-pages-'));
   const destination = path.join(parent, 'dist');
   await buildPages(destination);
   const actual = (await readdir(destination, {recursive:true, withFileTypes:true}))
     .filter(e=>e.isFile()).map(e=>path.relative(destination,path.join(e.parentPath,e.name)).replaceAll('\\','/'));
   assert.deepEqual(actual.sort(), [...files].sort());
-  assert.equal(actual.length,13);
+  assert.equal(actual.length,14);
   assert(actual.every(f=>!f.startsWith('archive/') && !f.startsWith('scripts/') && !f.startsWith('supabase/') && !f.startsWith('data/history/')));
   assert.deepEqual(actual.filter(f=>f.startsWith('site-supabase/')),['site-supabase/index.html']);
   const html = await readFile(path.join(destination,'site/index.html'),'utf8');
