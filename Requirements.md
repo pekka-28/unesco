@@ -477,3 +477,7 @@ Implementing prevention of mailbox and credential theft is outside application d
 Owner administration shall expose bounded authentication audit records without raw credential payloads and shall distinguish unavailable evidence from an empty event set. Authentication, platform-administration, database and runtime logs have distinct coverage. No new application management credential shall be introduced for log access.
 
 Selected operational failures shall be durably detected, reported to the owner with duplicate suppression, reviewed and tracked through the Issue process. Monitoring shall expose its own stale/failed state. Complete forensic coverage additionally requires explicit retention, integrity and independent fault detection; the current limited monitor must not be represented as satisfying those outstanding obligations.
+
+# Documentation traceability
+
+The [traceability map](TRACEABILITY.md) connects this document to its requirements, design, implementation and verification evidence. It identifies indirect effects and incomplete assurance separately from normal behaviour.

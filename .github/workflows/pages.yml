@@ -26,6 +26,7 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci
+      - run: node scripts/check_documentation.mjs
       - run: node --test tests/pages-distribution.test.mjs
       - run: mkdir -p .local && node scripts/build_pages.mjs .local/pages-dist
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4

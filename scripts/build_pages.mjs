@@ -6,6 +6,21 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 export const files = [
   'admin/index.html',
+  'site/guide/map.png',
+  'site/guide/search.png',
+  'site/guide/user-menu.png',
+  'site/guide/enrolment.png',
+  'site/guide/site-details.png',
+  'site/guide/visit-edit.png',
+  'site/guide/settings.png',
+  'site/guide/usage-summary.png',
+  'site/guide/usage-receipt.png',
+  'site/guide/application.png',
+  'site/guide/symbol.png',
+  'site/guide/personal-summary.png',
+  'site/guide/admin-sign-in.png',
+  'site/guide/administration.png',
+
   'site/index.html', 'site/user-guide.html', 'site/favicon.svg', 'site/site.webmanifest',
   'site/icons/apple-touch-icon.svg', 'site/icons/favicon-16.svg',
   'site/icons/favicon-32.svg', 'site/icons/icon-192.svg',

@@ -189,7 +189,7 @@ The missing foreign keys are an implementation limitation, not evidence that the
 
 On 2 October 2026 the owner-supplied workbook contributed 42 records in **Submissions**: 26 activity, three test and 13 synthetic records. All source records were retained; 41 carried an alias and one had no alias. The import preserved receipt times using the confirmed Africa/Johannesburg time zone and repaired the workbook's mixed event/source column layouts. Missing counts in diagnostic records remain null. Normal activity statistics omit test and synthetic records.
 
-The original workbook, its checksum, row-level conversion audit and prepared SQL remain private. The import baselined records in **Profiles** before inserting records in **Submissions**, and created no record in **Notifications**. Deterministic historical receipt IDs and an existing-record check make repeated imports idempotent. The preparation utility is [prepare_legacy_usage_import.py](../scripts/prepare_legacy_usage_import.py); it does not itself connect to or modify Supabase. No new public import API was introduced.
+The original workbook, its checksum, row-level conversion audit and prepared SQL remain private. The import baselined records in **Profiles** before inserting records in **Submissions**, and created no record in **Notifications**. Deterministic historical receipt IDs and an existing-record check make repeated imports idempotent. The one-time [historical preparation utility](https://github.com/pekka-28/unesco/blob/6ae16d8/scripts/prepare_legacy_usage_import.py) is retired and retained in Git history; it prepared records without connecting to Supabase. No new public import API was introduced.
 
 # References
 
@@ -250,3 +250,7 @@ flowchart TB
 # Submission source
 
 [Submission source script](migrations/202610030005_submission_source.sql) renames `legacy_source` to `source`, preserves populated labels, fills previously null native sources and makes the server default mandatory. It replaces the bounded Submissions read model to expose `source`. Runtime column grants do not permit callers to supply or rewrite it; source data inside an arbitrary JSON payload does not override the authoritative column.
+
+# Documentation traceability
+
+The [traceability map](../TRACEABILITY.md) connects this document to its requirements, design, implementation and verification evidence. It identifies indirect effects and incomplete assurance separately from normal behaviour.
