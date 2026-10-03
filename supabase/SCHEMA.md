@@ -85,7 +85,7 @@ A record in **Submissions** represents an accepted report. A record in **Notific
 | `client_version` | text, not null | — | `0.2.1` |
 | `payload` | jsonb, not null | — | `{"submission_id":"sample-receipt-1","submitted_at_utc":"2026-10-02T01:59:59Z","magic_cookie":"0123456789abcdef","use_count_since_last_push":3,"visited_site_count":4,"event_type":"manual","client_version":"0.2.1"}` |
 | `record_class` | text, not null | — | `activity` |
-| `legacy_source` | text, nullable | — | `my-world-heritage` |
+| `source` | text, not null | `my-world-heritage` | `my-world-heritage` |
 | `name` | text, not null | — | `Visitor A` |
 
 *Table Notifications*
@@ -110,7 +110,7 @@ A record in **Submissions** represents an accepted report. A record in **Notific
 
 A record in **Notifications** references a record in **Profiles** through the declared foreign key from `new_profile_notifications.magic_cookie` to `known_usage_profiles.magic_cookie`. `usage_submissions.magic_cookie` and `new_profile_notifications.submission_id` have no declared foreign keys. Inserting a record in **Submissions** runs the trigger that creates the corresponding records in **Profiles** and **Notifications** when the profile is first seen. These changes are atomic. Baselining records in **Profiles** before historical import suppresses retrospective alerts.
 
-Usage and visited counts must be non-negative and are mandatory for `activity` records. Historical `test` and `synthetic` records can preserve missing counts as null. Public submission event types remain `adoption`, `manual` or `periodic`; the database also retains the historical synthetic event `patch`. `record_class` defaults to `activity`, and the public ingest API does not let clients set this classification. `legacy_source` retains a historical diagnostic source label. `usage_stats` includes only `activity` records [6]. Receipt time defaults to the server clock for new reports; historical import preserves the original receipt time.
+Usage and visited counts must be non-negative and are mandatory for `activity` records. Historical `test` and `synthetic` records can preserve missing counts as null. Public submission event types remain `adoption`, `manual` or `periodic`; the database also retains the historical synthetic event `patch`. `record_class` defaults to `activity`, and the public ingest API does not let clients set this classification. `source` retains original imported source labels and defaults to `my-world-heritage` for native reports. Clients cannot set this column through the ingest contract. `usage_stats` includes only `activity` records [6]. Receipt time defaults to the server clock for new reports; historical import preserves the original receipt time.
 
 The existing profile **Name** is sent as `name`, limited to 80 characters without control characters, and stored in **Submissions**, **Profiles** and **Notifications**. The initial owner email includes Name when supplied. There is no separate reporting-alias attribute or fallback. A record in **Submissions** retains its received name. Migration `202610020007_profile_name.sql` renames the former column; historical payloads and applied migrations remain forensic evidence.
 
@@ -178,7 +178,7 @@ Schema changes are maintained as ordered SQL migration scripts under `supabase/m
 | Claim/completion APIs | [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | `claim_new_profile_notifications`, `finish_new_profile_notification` and their execute grants |
 | Scheduled dispatch API and retry job | [Notification retry scheduling](migrations/202610020002_notification_retry_schedule.sql) | `dispatch_new_profile_notifications`, `cron.schedule` and extension creation |
 | Table privacy | [Usage reporting store](migrations/202610010001_usage_summary.sql), [Profile registration and notifications](migrations/202610020001_new_profile_notifications.sql) | Row-level security plus table/function grants and revocations |
-| Historical classification and activity-only aggregates | [Historical report classification](migrations/202610020003_historical_report_classes.sql) | `record_class`, `legacy_source`, conditional count constraint, historical `patch` event, replacement `usage_stats` |
+| Historical classification and activity-only aggregates | [Historical report classification](migrations/202610020003_historical_report_classes.sql) | `record_class`, original source column, conditional count constraint, historical `patch` event, replacement `usage_stats` |
 | Historical alias introduction (superseded by profile Name) | [Optional reporting aliases](migrations/202610020004_optional_reporting_alias.sql) | Alias columns/checks on all three tables; replacements for `accept_usage` and `enqueue_new_profile_notification` |
 | Histogram sampling and binning | [Initial visited-site histogram](migrations/202610020005_usage_histogram.sql) | Initial `usage_histogram`, restricted execute grant and normalised bucket heights |
 | Always-visible histogram | [All-profile histogram](migrations/202610020006_always_show_histogram.sql) | Replaces the three-argument function with `usage_histogram()`; removes the age filter and floor and returns empty bins |
@@ -246,3 +246,7 @@ flowchart TB
 `security_audit_read` returns bounded, selected `auth.audit_log_entries` fields or monitoring health. `security_monitor_claim` evaluates selected operational conditions and grants one temporary delivery lease. `security_monitor_finish` records only the outcome of the matching unexpired lease. All three are fixed definer functions with an empty search path and service-role-only execution. Auth log recording is provider configuration, not performed by this migration. The full coverage and response obligations are in [Security policy](../SECURITY.md).
 
 [Monitor dispatch script](migrations/202610030004_monitor_dispatch.sql) ensures the scheduled dispatcher invokes monitoring at least every five minutes even when no notification is pending. It retains postgres-only execution and Vault-mediated worker authentication.
+
+# Submission source
+
+[Submission source script](migrations/202610030005_submission_source.sql) renames `legacy_source` to `source`, preserves populated labels, fills previously null native sources and makes the server default mandatory. It replaces the bounded Submissions read model to expose `source`. Runtime column grants do not permit callers to supply or rewrite it; source data inside an arbitrary JSON payload does not override the authoritative column.
