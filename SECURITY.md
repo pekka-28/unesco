@@ -307,3 +307,7 @@ Auth events follow configured provider retention; this release does not delete A
 [System behaviour](SYSTEM_BEHAVIOUR.md) is the canonical source for use-case message sequences, including authentication and authorisation before protected effects. This policy supplies the authority constraints; the assessment references the design and records evidence, compromise consequences and residual decisions. A normal sequence belongs in the design once. A separate assessment diagram is appropriate only when it describes a distinct attack or counterexample.
 
 The documented controls do not establish completed hardening. Shared runtime authority and release enforcement remain in [Issue 33](https://github.com/pekka-28/unesco/issues/33); audit activation, coverage and fault escalation remain in [Issue 36](https://github.com/pekka-28/unesco/issues/36). Current API restrictions are useful controls, but do not prove containment of arbitrary code running with shared credentials. Browser isolation, recovery and aggregate-disclosure experiments still need evidence or explicit residual-risk decisions before a complete assurance claim.
+
+# Remaining concerns
+
+The [security concerns review](SECURITY_CONCERNS.md) records the confirmed visitor rendering defect, remaining exposures and the scope of the administration authentication checks.

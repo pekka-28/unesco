@@ -5,7 +5,7 @@ import {siteHtml} from './site_source.mjs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 export const files = [
-  'admin/index.html',
+  'admin/index.html', 'admin/guide.html',
   'site/guide/map.png',
   'site/guide/search.png',
   'site/guide/user-menu.png',

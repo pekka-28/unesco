@@ -15,7 +15,7 @@ This review connects the product overview, requirements, component and interacti
 | --- | --- | --- |
 | Overview | [README](README.md) | Product purpose and entry points |
 | Required behaviour | [Requirements](Requirements.md) | Features, boundaries, deferred scope and acceptance |
-| User operation | [User guide](site/user-guide.html) | Actual controls, screenshots and visible outcomes, including administration |
+| User operation | [User guide](site/user-guide.html), [administration guide](admin/guide.html) | Separate visitor and owner controls, screenshots and outcomes |
 | Component design | [Architecture](ARCHITECTURE.md) | Applications, stores, dependencies and responsibility |
 | Interaction design | [System behaviour](SYSTEM_BEHAVIOUR.md) | Canonical MSCs, triggers, state transitions, failures and hand-offs |
 | Data/API design | [Schema](supabase/SCHEMA.md) | Entities, API contracts, invariants and ordered migration definitions |

@@ -1,0 +1,73 @@
+<!doctype html>
+<!-- guide.html -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>My World Heritage — administration guide</title><link rel="icon" href="../site/favicon.svg" type="image/svg+xml"><style>
+body{max-width:54rem;margin:2rem auto;padding:0 1rem;font:1rem/1.6 system-ui,sans-serif;color:#172b4d;background:#fff}h1{font-size:1.65rem;line-height:1.25;margin-top:2rem}a{color:#075b91}nav ul{padding-left:1.3rem}dt{font-weight:600}dd{margin-bottom:1rem}code{overflow-wrap:anywhere}footer{border-top:1px solid #ccd5df;margin-top:2rem}
+figure{margin:1rem 0}figure img{display:block;max-width:100%;height:auto;border:1px solid #ccd5df}figcaption,caption{font-style:italic;text-align:left;margin:.5rem 0}table{width:100%;border-collapse:collapse;font-size:.94rem}th,td{border:1px solid #ccd5df;padding:.5rem;text-align:left;vertical-align:top;overflow-wrap:anywhere}section{scroll-margin-top:1rem}
+</style></head><body><header><h1>My World Heritage — administration guide</h1><p><time datetime="2026-10-03">3 October 2026</time></p><p><a href="./">Open administration</a></p></header>
+<main><section><h1>Access and authentication</h1><p>The administration page and this guide are public static files. Loading them does not grant access to private data or commands. Every protected request carries a bearer token which the server verifies against the identity service; the identity must also match the configured owner UUID, fixed owner email and confirmed email state.</p><p>The sign-in bootstrap operations are deliberate exceptions: requesting a link and verifying a one-use link must be reachable before a session exists. A link request can send only to the fixed owner and is throttled. Verification returns a session only after the proof and owner identity checks succeed. Preflight requests grant no authority. Knowing the page or API address, or setting an Origin header, does not authenticate a caller.</p><p>After sign-in the client stores a token in tab session storage and memory, without a refresh token. A 401 or 403 response clears the local session and hides the workspace. Sign-out clears the token and results locally even if remote sign-out fails; local cleanup does not prove copied tokens were revoked.</p></section><section><h1>Operations and results</h1><p>Administration permits bounded queries and the three named mail operations shown below. It has no site, catalogue, schema, deployment or arbitrary SQL mutation operation. A timeout may leave a mail operation uncertain: inspect Action history before another click, which creates a new operation Id. Download exports only the current result page, with full timestamp precision.</p><p>Screenshots use synthetic data. Select an image to open it at full size.</p><ul><li><a href="#screen-admin-sign-in">Sign-in controls</a></li><li><a href="#screen-administration">Administration workspace</a></li></ul></section>
+<section id="screen-admin-sign-in"><h1>Administration sign-in</h1><p><em>Figure Administration sign-in</em> shows this view. <em>Table Administration sign-in controls</em> describes its controls and displayed information.</p>
+<figure><a href="../site/guide/admin-sign-in.png"><img src="../site/guide/admin-sign-in.png" loading="lazy" alt="Administration sign-in with synthetic example data"></a><figcaption>Figure Administration sign-in</figcaption></figure>
+
+<table>
+<caption>Table Administration sign-in controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Email my sign-in link</td><td>Fixed-owner sign-in request</td><td>Request the owner email, subject to throttling</td></tr>
+
+<tr><td>Continue with this sign-in link</td><td>Shown when a challenge was captured from the URL</td><td>Verify the one-use link and establish a tab session</td></tr>
+
+<tr><td>Status</td><td>Sign-in progress or errors</td><td>Read the outcome</td></tr>
+
+<tr><td>Administration guide</td><td>Operator documentation link</td><td>Open this guide in another tab</td></tr>
+<tr><td>Return to My World Heritage</td><td>Visitor application link</td><td>Leave administration</td></tr>
+</tbody>
+</table>
+</section><section id="screen-administration"><h1>Administration workspace</h1><p><em>Figure Administration workspace</em> shows this view. <em>Table Administration workspace controls</em> describes its controls and displayed information.</p>
+<figure><a href="../site/guide/administration.png"><img src="../site/guide/administration.png" loading="lazy" alt="Administration workspace with synthetic example data"></a><figcaption>Figure Administration workspace</figcaption></figure>
+
+<table>
+<caption>Table Administration workspace controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Send test email</td><td>Named owner command</td><td>Send a delivery test through the configured worker</td></tr>
+
+<tr><td>Send monthly report check</td><td>Named owner command</td><td>Request the previous-month report with its labelled current-month check</td></tr>
+
+<tr><td>Retry pending notifications</td><td>Named owner command</td><td>Ask the delivery worker to process eligible pending work</td></tr>
+
+<tr><td>Sign out</td><td>Current owner session</td><td>Request remote sign-out and clear local token/results even if the request fails</td></tr>
+
+<tr><td>Status</td><td>Request progress, accepted operation Id or error</td><td>Inspect uncertain commands in Action history before retrying</td></tr>
+
+<tr><td>Entity</td><td>Submissions, Profiles, Notifications, Action history, Authentication audit, Security health, Schema columns, Database status or Workflow status</td><td>Choose a bounded query; there is no generic SQL control</td></tr>
+
+<tr><td>Profile identifier</td><td>Optional identifier filter</td><td>Applies to Profiles, Submissions and Notifications</td></tr>
+
+<tr><td>Record class</td><td>All, activity, test or synthetic</td><td>Applies to Submissions</td></tr>
+
+<tr><td>From / Until (UTC)</td><td>Optional date boundaries; Until is exclusive</td><td>Applies to Submissions and Authentication audit</td></tr>
+
+<tr><td>Query</td><td>Selected entity and relevant filters</td><td>Start at the first page of results</td></tr>
+
+<tr><td>Previous 100 / Next 100</td><td>Database result pagination</td><td>Move between bounded pages; controls disable when not applicable</td></tr>
+
+<tr><td>Row label</td><td>Range in the current returned array</td><td>Read result position</td></tr>
+
+<tr><td>Results table or value</td><td>Returned fields; displayed times omit fractional seconds</td><td>Scroll to inspect content; Schema puts data type after column name</td></tr>
+
+<tr><td>Download these results</td><td>Current raw result only</td><td>Save JSON with full timestamp precision; does not export all pages</td></tr>
+
+<tr><td>Administration guide</td><td>Operator documentation link</td><td>Open this guide in another tab</td></tr>
+<tr><td>Return to My World Heritage</td><td>Visitor application link</td><td>Return to the public map</td></tr>
+</tbody>
+</table>
+</section>
+<section><h1>Private outputs and limitations</h1><p>Downloaded results are private copies with their own access and retention obligations. Authentication audit shows stored events, not proof that all logging is enabled. Security health covers selected faults, not every runtime or platform event. The administration and visitor pages currently share an origin; separate paths do not establish browser isolation.</p><p>The <a href="https://github.com/pekka-28/unesco/blob/main/SECURITY_CONCERNS.md">security concerns review</a> distinguishes confirmed defects, known exposures and unverified possibilities.</p></section></main><footer><p><a href="./">Return to administration</a> · <a href="../site/user-guide.html">Visitor user guide</a></p></footer></body></html>

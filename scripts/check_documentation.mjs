@@ -2,8 +2,8 @@
 import {readFileSync, existsSync} from 'node:fs';
 import path from 'node:path';
 const docs = ['README.md','Requirements.md','ARCHITECTURE.md','SYSTEM_BEHAVIOUR.md','TRACEABILITY.md',
-  'SECURITY.md','ADMINISTRATION.md','TEST_PLAN.md','RETIRED_CODE.md','My World Heritage.md',
-  'supabase/SCHEMA.md','supabase/GITHUB_DEPLOYMENT.md','supabase/EXCHANGE_SETUP.md','site/user-guide.html'];
+  'SECURITY.md','SECURITY_CONCERNS.md','ADMINISTRATION.md','TEST_PLAN.md','RETIRED_CODE.md','My World Heritage.md',
+  'supabase/SCHEMA.md','supabase/GITHUB_DEPLOYMENT.md','supabase/EXCHANGE_SETUP.md','site/user-guide.html','admin/guide.html'];
 const errors = [];
 let links = 0;
 const slug = text => text.toLowerCase().replace(/[^\p{L}\p{N}_\-\s]/gu,'').replace(/\s/g,'-');

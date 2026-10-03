@@ -110,3 +110,7 @@ Displayed timestamps and owner mail omit fractional seconds; database values, qu
 # Documentation traceability
 
 The [traceability map](TRACEABILITY.md) connects this document to its requirements, design, implementation and verification evidence. It identifies indirect effects and incomplete assurance separately from normal behaviour.
+
+# Operator guide
+
+The separate [administration guide](admin/guide.html) describes sign-in, queries, mail commands, exports and session handling with screenshots and control tables. The static page is public; protected API operations require server-confirmed owner identity. The login/verification bootstrap remains deliberately callable before session establishment.

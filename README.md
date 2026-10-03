@@ -28,6 +28,7 @@ Browser source version: `0.2.6`; use the Git revision and deployment record to d
 ## Entry points
 
 - Application: [My World Heritage](https://pekka-28.github.io/unesco/site/)
+- Owner operation: [Administration guide](https://pekka-28.github.io/unesco/admin/guide.html)
 - Client behaviour: [User guide](https://pekka-28.github.io/unesco/site/user-guide.html)
 - Component design: [Architecture](ARCHITECTURE.md)
 - Documentation and evidence map: [Traceability](TRACEABILITY.md)
