@@ -173,7 +173,6 @@
           <button id="enrol-use-my-location" class="btn" type="button">Use my location</button>
           <span id="enrol-loc-status" class="meta"></span>
         </div>
-        <div id="enrol-home-selected" class="meta" style="margin-top:4px;"></div>
       </div>
       <div class="row">
         <strong>Nearby sites</strong>
@@ -204,7 +203,6 @@
           <span id="loc-status" class="meta"></span>
         </div>
         <datalist id="home-matches"></datalist>
-        <div id="home-selected" class="meta" style="margin-top:4px;"></div>
       </div>
       <div class="row setting-line">
         <span class="setting-label">Visited only</span>
@@ -226,10 +224,9 @@
       </div>
       <div class="row setting-line">
         <label for="share-endpoint" class="setting-label">Usage summary endpoint URL</label>
-        <input id="share-endpoint" class="field" type="url" aria-describedby="share-server-help">
+        <input id="share-endpoint" class="field" type="url">
       </div>
       <input id="share-token" type="hidden" value="">
-      <div id="share-server-help" class="meta">Supabase is the default. You may enter another reporting server; clear this field and save to restore the current default.</div>
       <div class="row">
         <div id="share-info-bubble" class="inline-bubble">Purpose: optionally prompt you to publish a pseudonymous usage summary (date, use count since last publication, visited site count, magic cookie) so project maintainers can understand usage trends. Reports are sent to your saved reporting server. If delivery fails, a clipboard copy does not count as a received report.</div>
       </div>

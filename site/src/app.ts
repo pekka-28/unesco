@@ -32,14 +32,14 @@ function errorMessage(error: unknown): string { return error instanceof Error ? 
       helpOverlay: element("help-overlay", "div"), settingsOverlay: element("settings-overlay", "div"), enrolOverlay: element("enrol-overlay", "div"), userMenuToggle: element("user-menu-toggle", "button"),
       userMenu: element("user-menu", "div"), menuSummary: element("menu-summary", "button"), menuSubmit: element("menu-submit", "button"), menuReset: element("menu-reset", "button"), importFile: element("import-file", "input"), userName: element("user-name", "input"),
       brandMarkWrap: element("brand-mark-wrap", "div"), brandMarkBtn: element("brand-mark-btn", "button"),
-      homeQuery: element("home-query", "input"), homeMatchesList: element("home-matches", "datalist"), homeSelected: element("home-selected", "div"),
+      homeQuery: element("home-query", "input"), homeMatchesList: element("home-matches", "datalist"),
       locStatus: element("loc-status", "span"), visitedOnlySetting: element("visited-only-setting", "input"),
       shareEnabled: element("share-enabled", "input"), shareInterval: element("share-interval", "input"), shareNone: element("share-none", "input"), shareEndpoint: element("share-endpoint", "input"), shareToken: element("share-token", "input"), shareSubmitStatus: element("share-submit-status", "div"),
       shareInfoLink: element("share-info-link", "button"), shareInfoBubble: element("share-info-bubble", "div"),
       summaryInboxBtn: element("summary-inbox-btn", "button"), summaryInboxDot: element("summary-inbox-dot", "span"),
       submitOverlay: element("submit-overlay", "div"), submitSummary: element("submit-summary", "div"), submitStatus: element("submit-status", "div"), submitSend: element("submit-send", "button"), submitClose: element("submit-close", "button"),
       enrolUserName: element("enrol-user-name", "input"), enrolHomeQuery: element("enrol-home-query", "input"), enrolHomeSuggestions: element("enrol-home-suggestions", "div"),
-      enrolLocStatus: element("enrol-loc-status", "span"), enrolHomeSelected: element("enrol-home-selected", "div"), enrolNearbyList: element("enrol-nearby-list", "div"),
+      enrolLocStatus: element("enrol-loc-status", "span"), enrolNearbyList: element("enrol-nearby-list", "div"),
       siteListMode: element("site-list-mode", "select"), appTitleBtn: element("app-title-btn", "button"),
       extractStatusResult: element("extract-status-result", "div"), extractStatusSource: element("extract-status-source", "div"),
       extractStatusCount: element("extract-status-count", "div"), extractStatusInput: element("extract-status-input", "div"),
@@ -1102,7 +1102,6 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
     function setSelectedHome(lat: number, lon: number, label: string, updateInput = true) {
       selectedHome = { lat, lon, label };
       if (updateInput) ui.homeQuery.value = label;
-      ui.homeSelected.textContent = `Selected home location: ${label}`;
       map.setView([lat, lon], 6);
     }
     function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -1148,7 +1147,6 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
     function setEnrolHome(lat: number, lon: number, label: string, updateInput = true) {
       enrolSelectedHome = { lat, lon, label };
       if (updateInput) ui.enrolHomeQuery.value = label;
-      ui.enrolHomeSelected.textContent = `Selected home location: ${label}`;
     }
     function applyHomeSelectionFromInput() {
       const picked = resolveLocationMatchFromInput(ui.homeQuery.value, homeMatches, homeMatchIndexByLabel);
@@ -1226,7 +1224,6 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
           return;
         }
         enrolSelectedHome = null;
-        ui.enrolHomeSelected.textContent = "";
         ui.enrolNearbyList.innerHTML = '<div class="meta">Select one location match to list nearby sites.</div>';
         ui.enrolLocStatus.textContent = "Select one match in the search control.";
       } catch (e) {
@@ -1276,7 +1273,6 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       renderEnrolLocationSuggestions(ui.enrolHomeSuggestions, [], enrolMatchIndexByLabel);
       ui.enrolNearbyList.innerHTML = '<div class="meta">Search for a home location, then select one match to list nearby sites.</div>';
       ui.enrolLocStatus.textContent = "";
-      ui.enrolHomeSelected.textContent = "";
       enrolSelectedHome = null;
       enrolMatches = [];
     }
