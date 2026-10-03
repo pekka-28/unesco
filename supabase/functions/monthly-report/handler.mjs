@@ -25,7 +25,7 @@ export function createMonthlyHandler({ env, rpc, send, register = monthlyRegiste
           `Accepted submissions: ${current.submissions}\nActive profiles: ${current.active_datasets}\n` +
           `Adoption submissions: ${current.adoption}\nManual updates: ${current.manual}\nPeriodic updates: ${current.periodic}\n` +
           `Reported uses: ${current.reported_uses}\nAverage visited sites (latest update per profile): ${Number(current.average_visited_sites).toFixed(1)}\n\n` +
-          'Current totals include the integration-test profile. No new-user event was created by sending this report.\n';
+          'Current totals include the integration-test profile.\n';
       }
       await send({ to: 'pekka@data.co.za',
         subject: `My World Heritage - monthly user activity${test ? ' - delivery check' : ''}`,
