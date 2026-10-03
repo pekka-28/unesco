@@ -5,7 +5,7 @@
 
 This design describes the interactions between components in [Architecture](ARCHITECTURE.md), against [Requirements](Requirements.md). It is the canonical home of the message sequence charts (MSCs); the security assessment references these sequences and adds its assurance argument. The charts use Mermaid sequence notation. Component structure remains in the architecture rather than being repeated in each flow.
 
-The source baseline reviewed for this edition is [d766f73](https://github.com/pekka-28/unesco/tree/d766f73d0f27199a5b652fda806a78a65217bb81). These are design descriptions, not evidence that every failure branch has been exercised. [Security policy](SECURITY.md) defines authentication approaches, effective grants and remaining containment limits. A message carrying a service credential does not mean the service independently verifies the originating user's identity.
+The source baseline reviewed for this edition is [9d7a40b](https://github.com/pekka-28/unesco/tree/9d7a40b38c31cf53cfb587998f13b99cf0904647). These are design descriptions, not evidence that every failure branch has been exercised. [Security policy](SECURITY.md) defines authentication approaches, effective grants and remaining containment limits. A message carrying a service credential does not mean the service independently verifies the originating user's identity.
 
 # Sequence coverage
 
@@ -19,8 +19,13 @@ The source baseline reviewed for this edition is [d766f73](https://github.com/pe
 | Local output | [Local output](#local-output) |
 | Accepted report | [Accepted report](#accepted-report) |
 | Notification delivery | [Notification delivery](#notification-delivery) |
-| Owner authentication | [Owner authentication](#owner-authentication) |
-| Owner operation | [Owner operation](#owner-operation) |
+| Request owner sign-in | [Owner authentication](#owner-authentication) |
+| Complete owner sign-in | [Owner session establishment](#owner-session-establishment) |
+| Reopen administration | [Administration startup](#administration-startup) |
+| Owner query | [Owner operation](#owner-operation) |
+| Owner mail command | [Owner mail operations](#owner-mail-operations) |
+| Export owner results | [Administration result export](#administration-result-export) |
+| Owner sign-out | [Owner sign-out](#owner-sign-out) |
 | Release | [Release](#release) |
 | Visitor resources | [Visitor resources](#visitor-resources) |
 | Monthly reporting | [Monthly reporting](#monthly-reporting) |
@@ -122,57 +127,227 @@ sequenceDiagram
 
 *Figure Notification delivery*
 
+# Administration client
+
+The [administration client](admin/index.html) is a separate browser interface at `/admin/`, implemented in [admin.ts](site/src/admin.ts). It presents owner sign-in, bounded query results and three named mail commands. Its fixed endpoint is the [administration service](supabase/functions/owner-admin/handler.mjs). It does not use the visitor's local profile as an identity or send that profile to administration.
+
+The client holds the current access token in memory and in tab-scoped `sessionStorage`, with an expiry timestamp. It stores no refresh token. A sign-in link carries a one-use challenge in its URL fragment; the client captures it in memory and removes the fragment from the address bar before proceeding. Query results remain in memory and the page until replaced or cleared; a download creates a separate copy. Visitor and administration pages share an origin, so separate paths do not establish a browser security boundary.
+
+The interface hides controls while signed out and disables buttons while one request is pending. These are interaction controls: the service independently authenticates every protected request, checks the pinned owner and restricts the requested operation. The browser has neither a release credential nor a generic SQL execution control. *Table Administration interactions* maps its inputs and effects to the sequences below.
+
+*Table Administration interactions*
+
+| Client action | Service request or local effect | Sequence |
+| --- | --- | --- |
+| Email my sign-in link | `login` | [Owner authentication](#owner-authentication) |
+| Continue with this sign-in link | `verify` with one-use challenge | [Owner session establishment](#owner-session-establishment) |
+| Open or reload administration | Read unexpired tab session, then Database status query | [Administration startup](#administration-startup) |
+| Query or page results | `read`, or `runs` for Workflow status | [Owner operation](#owner-operation) |
+| Send test email, monthly check or retry notifications | Named command with fresh operation Id | [Owner mail operations](#owner-mail-operations) |
+| Download these results | Local JSON download of current result | [Administration result export](#administration-result-export) |
+| Sign out | `logout`, then clear local session and results | [Owner sign-out](#owner-sign-out) |
+
 # Owner authentication
 
-The User process requests and then follows a sign-in link through the administration client. The endpoint creates only a fixed-owner challenge. Verification establishes a session only after the confirmed identity matches the pinned owner. Throttled requests return a generic result. Invalid or expired challenges terminate without an owner session. Neither provider mail acceptance nor the HTTP response proves inbox receipt. *Figure Owner authentication* shows the message order.
+The User process selects Email my sign-in link. The administration client sends `login` to its fixed service, which reserves the shared sign-in interval before generating a fixed-owner challenge. A throttled request still receives the generic result. Provider acceptance does not prove inbox receipt. This sequence ends at the displayed request outcome; following the delivered link starts [Owner session establishment](#owner-session-establishment). *Figure Owner authentication* shows the request path.
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant API as My Heritage administration
+    participant Client as Administration client
+    participant API as Administration service
     participant Auth as Identity service
-    participant Mail
-    User->>API: Request sign-in link
-    API->>API: Reserve global sign-in interval
-    API->>Auth: Generate fixed-owner challenge, Service role
-    Auth-->>API: One-use challenge
-    API->>Mail: Send link, Mail application
-    Mail-->>API: Provider acceptance
-    API-->>User: Generic request result
-    User->>API: Verify challenge
-    API->>Auth: Verify proof
-    Auth-->>API: Session and identity or failure
-    API->>API: Check pinned confirmed owner
-    API-->>User: Owner session or denial
+    participant Mail as Mail service
+    User->>Client: Request sign-in link
+    Client->>API: login
+    API->>API: Reserve sign-in interval
+    opt Reservation succeeds
+        API->>Auth: Generate fixed-owner challenge under service authority
+        Auth-->>API: One-use challenge
+        API->>Mail: Send owner link under mail authority
+        Mail-->>API: Provider outcome
+    end
+    API-->>Client: Generic accepted response or service error
+    Client-->>User: Display request outcome
 ```
 
 *Figure Owner authentication*
 
-# Owner operation
+# Owner session establishment
 
-The User process selects a bounded read or named mail operation through the administration client. The endpoint validates the bearer identity and pinned owner before dispatch. Mail operations carry a fresh operation Id and record their outcome; an uncertain outcome requires review before another operation. Read operations return bounded results. No administration command changes the site, catalogue, schema or release. *Figure Owner operation* shows the message order.
+Opening the emailed link loads the client and captures the challenge. The User process must then select Continue with this sign-in link. The service verifies the challenge and pinned, confirmed owner before returning an access token and lifetime. An invalid or expired challenge ends without a new owner session. On success the client saves the tab session and performs the Database status query defined in [Owner operation](#owner-operation). *Figure Owner session establishment* identifies the client and identity checks separately.
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant API as My Heritage administration
+    participant Client as Administration client
+    participant Storage as Tab session storage
+    participant API as Administration service
     participant Auth as Identity service
-    participant Executor as Database or mail worker
-    User->>API: Named read or mail command, Owner session
+    User->>Client: Open sign-in link
+    Client->>Client: Capture challenge and remove URL fragment
+    Client-->>User: Show Continue control
+    User->>Client: Continue with sign-in link
+    Client->>API: verify with challenge
+    API->>Auth: Verify one-use proof
+    Auth-->>API: Identity and session or failure
+    API->>API: Require pinned confirmed owner
+    alt Valid owner
+        API-->>Client: Access token and lifetime
+        Client->>Storage: Save token and local expiry
+        Client->>API: Authenticated Database status query
+        API-->>Client: Checked query result or error
+        Client-->>User: Display status or query failure
+    else Invalid proof or identity
+        API-->>Client: Denial
+        Client-->>User: Display failure without new session
+    end
+```
+
+*Figure Owner session establishment*
+
+# Administration startup
+
+Reopening the administration page restores only a saved token whose local expiry is in the future. This local check controls presentation; it does not establish server authority. An unexpired token triggers the same authenticated Database status query. The client has no renewal flow: a service response of 401 or 403 clears the saved token and hides the workspace, and the User process must request another sign-in link. A token that expires while the page is open is rejected on a later protected request; there is no separate expiry timer. *Figure Administration startup* ends with a sign-in prompt or checked status result.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Client as Administration client
+    participant Storage as Tab session storage
+    participant API as Administration service
+    User->>Client: Open or reload administration
+    Client->>Storage: Read saved token and expiry
+    Storage-->>Client: Session or no valid local session
+    alt Locally unexpired session
+        Client->>API: Database status query with bearer token
+        API->>API: Authenticate and check pinned owner before query
+        API-->>Client: Result, denial or service error
+        Client-->>User: Display result or error, show sign-in on denial
+    else Missing or expired local session
+        Client->>Storage: Remove expired or invalid session
+        Client-->>User: Show sign-in controls
+    end
+```
+
+*Figure Administration startup*
+
+# Owner operation
+
+The User process selects an entity and Query, or pages an existing query. The client sends only relevant filters: profile identifier for Profiles, Submissions and Notifications; record class for Submissions; UTC start/end dates for Submissions and Authentication audit, with an exclusive end. A new Query resets the offset. Database queries return at most 100 rows per page. Workflow status uses a fixed GitHub read of the latest 20 runs, not a database query or workflow-dispatch command.
+
+The service validates the bearer identity, pinned owner, entity and arguments before reading. The client renders values as text in a table, with column widths fitted to content and displayed timestamps omitting fractional seconds. Raw result values remain available for export. A 401 or 403 clears local session authority and hides the workspace; other failures show an error. A failed query can leave the preceding result in memory, so it must not be mistaken for a new successful result. *Figure Owner operation* covers queries and their checked result.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Client as Administration client
+    participant API as Administration service
+    participant Auth as Identity service
+    participant Source as Monitoring store or release status
+    User->>Client: Select query or result page
+    Client->>API: Named query and filters with bearer token
     API->>Auth: Validate bearer identity
     Auth-->>API: Identity or failure
-    API->>API: Check pinned owner, allowlist operation and arguments
-    alt Denied
-        API-->>User: Reject without protected effect
-    else Allowed
-        API->>Executor: Fixed operation, Service role or Worker
-        Executor->>Executor: Enforce immediate-caller grant
-        Executor-->>API: Result or uncertain outcome
-        API-->>User: Bounded result or recorded command outcome
+    API->>API: Check pinned owner and query arguments
+    alt Authorised valid query
+        API->>Source: Fixed bounded read
+        Source-->>API: Rows or failure
+        API-->>Client: Bounded result or service error
+        Client-->>User: Render result or display error
+    else Denied or invalid
+        API-->>Client: Rejection without protected read
+        Client-->>User: Display error, show sign-in on authentication denial
     end
 ```
 
 *Figure Owner operation*
+
+# Owner mail operations
+
+The client exposes Send test email, Send monthly report check and Retry pending notifications. Selecting a command creates a fresh operation Id; it does not ask for another confirmation. The service checks owner authority, rejects an already recorded Id, records a started operation, invokes the permitted worker and records success or uncertainty. The workers apply their own immediate-caller authentication and fixed-recipient restrictions. No command changes the site, catalogue, schema or deployment.
+
+The client allows one active request, uses a 70-second request timeout and displays the response. A timeout does not prove that mail was not sent. Another click creates a new operation Id rather than retrying the previous command: inspect Action history and the mail outcome before trying again. Recorded worker completion is not a guarantee of inbox receipt. *Figure Owner mail operations* shows the durable operation record as distinct from the browser result.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Client as Administration client
+    participant API as Administration service
+    participant Auth as Identity service
+    participant DB as Monitoring store
+    participant Worker as Mail reporting
+    User->>Client: Select named mail command
+    Client->>API: Command and fresh operation Id with bearer token
+    API->>Auth: Validate identity
+    Auth-->>API: Identity or failure
+    API->>API: Check pinned owner and allowed command
+    alt Allowed new operation
+        API->>DB: Reject duplicate Id and record started operation
+        DB-->>API: Recorded operation or rejection
+        alt Operation recorded
+            API->>Worker: Fixed command under worker authority
+            Worker->>Worker: Authenticate immediate caller and perform permitted work
+            Worker-->>API: Completion or uncertain outcome
+            API->>DB: Record succeeded or uncertain outcome
+            API-->>Client: Operation outcome
+        else Duplicate or record rejected
+            API-->>Client: Reject and direct review of action history
+        end
+        Client-->>User: Display outcome, inspect history if uncertain
+    else Denied
+        API-->>Client: Reject without invoking worker
+        Client-->>User: Display error
+    end
+```
+
+*Figure Owner mail operations*
+
+# Administration result export
+
+Download these results serialises the current result retained by the client into `mwh-admin-results.json`. It exports the current page or result, not every matching database row, and preserves timestamp precision omitted from the display. This is local egress: there is no second server query or new authorisation request. The downloaded private copy has its own access and retention obligations. *Figure Administration result export* ends when the browser starts the download; that does not prove the file was retained.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Client as Administration client
+    participant Download as Browser download
+    User->>Client: Download these results
+    Client->>Client: Serialise current raw result as JSON
+    Client->>Download: Download mwh-admin-results.json
+    Client->>Client: Release temporary download URL
+    Client-->>User: Current result remains displayed
+```
+
+*Figure Administration result export*
+
+# Owner sign-out
+
+The client requests authenticated sign-out from the service, which checks the pinned owner and calls the identity service. Whether that request succeeds or fails, the client removes its token from memory and tab storage, clears the displayed results and shows sign-in controls. Failure therefore ends local access without proving remote revocation. Existing token validity follows the identity service's session rules; local removal does not revoke separately retained copies. *Figure Owner sign-out* distinguishes remote outcome from local cleanup.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Client as Administration client
+    participant API as Administration service
+    participant Auth as Identity service
+    participant Storage as Tab session storage
+    User->>Client: Sign out
+    Client->>API: logout with bearer token
+    API->>Auth: Validate identity
+    Auth-->>API: Identity or failure
+    API->>API: Check pinned owner
+    opt Owner verified
+        API->>Auth: Request sign-out
+        Auth-->>API: Outcome
+    end
+    API-->>Client: Outcome or request failure
+    Client->>Storage: Remove local session
+    Client->>Client: Clear token and displayed results
+    Client-->>User: Show sign-in controls and outcome
+```
+
+*Figure Owner sign-out*
 
 # Release
 
