@@ -8,6 +8,7 @@
 The following components are retired:
 
 - **Supabase preview application and duplicate assets:** removed from `site-supabase/`. Its `index.html` is an active compatibility redirect, preserving query parameters and fragments. It contains no profile, mapping or submission logic.
+- **Historical sheet preparation utility:** `scripts/prepare_legacy_usage_import.py` was removed after the one-time import; [the historical implementation](https://github.com/pekka-28/unesco/blob/6ae16d8/scripts/prepare_legacy_usage_import.py) remains traceable in Git. It is not a current import API.
 - **Preview generator:** `scripts/build_supabase_preview.mjs` removed. The canonical source already contained the same application logic; comparison confirmed only preview branding and self-links differed.
 - **Google Sheets backend:** `backend/usage_summary_backend/google_apps_script/` was removed in PR #3. The client has no Google submission path. The unconditional endpoint override is retired. Browser endpoint migration remains active for empty settings and the exact previous standard address; custom overrides are preserved. The former Google URL is retained solely as a migration marker. The separately hosted Apps Script deployment and digest require the owner's Google access to disable; their remote retirement has not been verified.
 - **Overpass pipeline:** `archive/overpass_legacy/` is explicitly historical and excluded from the web distribution. Its README records the replacement by the official UNESCO pipeline on 28 March 2026.
@@ -23,7 +24,7 @@ Routine CLI deployment is retired as the chosen release process under [Issue #6]
 
 `Publish canonical application` builds a fresh directory from the explicit thirteen-file allowlist in `scripts/build_pages.mjs`. It publishes the visit and administration HTML files, eight referenced icon/manifest files, two current catalogue files and one compatibility redirect. No repository-wide copy or Jekyll build is used.
 
-The distribution excludes backend source, migrations, credentials, tests, build scripts, archived implementations, staging inputs and historical snapshots. Documentation remains in the GitHub repository. Automated tests check the exact output file list, refusal to reuse an existing output directory, the Supabase endpoint and redirect behaviour. Browser validation checks retained profile/history, map loading, histogram rendering and both entry URLs.
+The distribution excludes backend source, migrations, credentials, tests, build scripts, archived implementations, staging inputs and historical snapshots. Design and maintenance documentation remain in the GitHub repository; the client user guide and its screenshots are explicitly included in Pages. Automated tests check the exact output file list, refusal to reuse an existing output directory, the Supabase endpoint and redirect behaviour. Browser validation checks retained profile/history, map loading, histogram rendering and both entry URLs.
 
 The inventory and reference checks confirm removal of known retired and unreferenced application code. They do not constitute a formal proof that every branch of live application code is reachable.
 

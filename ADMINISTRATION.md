@@ -106,3 +106,7 @@ Database status and Workflow status are named result-set queries in the common s
 Displayed timestamps and owner mail omit fractional seconds; database values, query boundaries and downloaded JSON retain their original precision. The generic Query completed message and Maintenance policy panel are removed. Selecting an owner mail command initiates it without a second confirmation dialog; authentication, command allowlists and duplicate request protection remain enforced.
 
 `source` identifies the originating application or diagnostic source for every record in Submissions. Imported records retain their original source labels. Existing and future native reports use `my-world-heritage`, assigned by the database rather than caller input. It supports provenance review and is not a routing address. The former `legacy_source` column is renamed, with no parallel compatibility attribute.
+
+# Documentation traceability
+
+The [traceability map](TRACEABILITY.md) connects this document to its requirements, design, implementation and verification evidence. It identifies indirect effects and incomplete assurance separately from normal behaviour.

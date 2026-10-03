@@ -5,7 +5,7 @@ My World Heritage is a public, user-controlled map companion for UNESCO World He
 
 It exists to make site tracking practical without paywalls, advertising pressure, or forced social publishing.
 
-Current version: `0.2.0`
+Browser source version: `0.2.6`; use the Git revision and deployment record to distinguish maintenance changes.
 
 ## What it does
 
@@ -30,6 +30,7 @@ Current version: `0.2.0`
 - Application: [My World Heritage](https://pekka-28.github.io/unesco/site/)
 - Client behaviour: [User guide](https://pekka-28.github.io/unesco/site/user-guide.html)
 - Component design: [Architecture](ARCHITECTURE.md)
+- Documentation and evidence map: [Traceability](TRACEABILITY.md)
 - Interaction design: [System behaviour](SYSTEM_BEHAVIOUR.md)
 - Source entry file: [site/index.html](site/index.html)
 - Requirements and design decisions: [Requirements.md](Requirements.md)

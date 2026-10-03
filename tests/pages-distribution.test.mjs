@@ -14,7 +14,7 @@ test('distribution contains only the canonical runtime, user guide, current data
   const actual = (await readdir(destination, {recursive:true, withFileTypes:true}))
     .filter(e=>e.isFile()).map(e=>path.relative(destination,path.join(e.parentPath,e.name)).replaceAll('\\','/'));
   assert.deepEqual(actual.sort(), [...files].sort());
-  assert.equal(actual.length,14);
+  assert.equal(actual.length,28);
   assert(actual.every(f=>!f.startsWith('archive/') && !f.startsWith('scripts/') && !f.startsWith('supabase/') && !f.startsWith('data/history/')));
   assert.deepEqual(actual.filter(f=>f.startsWith('site-supabase/')),['site-supabase/index.html']);
   const html = await readFile(path.join(destination,'site/index.html'),'utf8');

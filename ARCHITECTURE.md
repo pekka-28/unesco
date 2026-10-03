@@ -1,7 +1,7 @@
 <!-- ARCHITECTURE.md -->
-# My World Heritage — proposed architecture specification
+# My World Heritage — architecture specification
 
-Status: proposed target architecture, aligned with [Requirements.md](Requirements.md). Prepared 1 October 2026. This document describes the intended system; it does not imply that every component is deployed.
+Reviewed 3 October 2026. This specification describes the implemented component structure and identifies remaining verification gaps. [Requirements](Requirements.md) defines intent; [System behaviour](SYSTEM_BEHAVIOUR.md) defines sequences; [Traceability](TRACEABILITY.md) connects them to implementation and evidence. Source review is not a new provider-configuration verification.
 
 # Architectural approach
 
@@ -300,7 +300,7 @@ The [Supabase monitoring schema](supabase/SCHEMA.md) provides the application en
 | Known profiles and pending alerts | Supabase `known_usage_profiles` and `new_profile_notifications` | One queue item per newly seen profile; retain failed deliveries for retry; existing profiles do not generate retrospective alerts |
 | Report artifacts | GitHub workflow artifacts | Monthly preview: 30 days; register text/JSON: 90 days. Git remains the permanent register history |
 
-Supabase stores only the allowed summary fields: submission identity, submission and receipt timestamps, pseudonymous cookie, usage count, visited-site count, event type, client version and an explicitly optional reporting alias. Historical records also retain activity/test/synthetic classification and their source label. It must not store local profile names, home coordinates, individual visits, visit notes, user-agent strings or ingest tokens.
+Supabase stores only the allowed summary fields: submission identity, submission and receipt timestamps, pseudonymous cookie, usage count, visited-site count, event type, client version and the existing profile Name when supplied. Historical records also retain activity/test/synthetic classification and their source label. It must not store home coordinates, individual visits, visit notes, user-agent strings or ingest tokens. There is no separate reporting-alias attribute.
 
 Root/component identity and visit status are distinct from catalogue status. A retired catalogue entry can still have editable visits. An entry missing from an extract is not automatically evidence of official UNESCO delisting.
 
@@ -315,7 +315,7 @@ The catalogue refresh follows these processing rules:
 5. Generate new synthetic components for multi-location roots. If a root later has only one location, preserve any already assigned component IDs needed for existing visits rather than deleting them.
 6. Derive GeoJSON from the reconciled register. Validate candidate outputs, unique IDs, parent relationships, allowed statuses and finite coordinates before replacing current files. Flag suspicious source loss for review; the prepared implementation rejects a loss of more than 10% of active roots.
 7. Commit the source and both current outputs together. After successful validation, create an annotated ingestion tag and push the branch and tag atomically. Serialise refresh jobs and fail conflicting pushes without force-pushing.
-8. Pages publishes the static files. Independently, the register report compares the baseline and successful output commit and emails the owner. The report confirms the committed register, not completion of the separate Pages deployment.
+8. Pages publishes the static files. The refresh workflow retains run results and artifacts; the Supabase monthly reporter independently compares catalogue commits and includes changes in owner mail. A refresh does not itself invoke the monthly mail worker.
 
 Conversion may accept an explicit timestamp for repeatable processing. Reprocessing the same source and prior register must not cause further semantic record changes. Git storage replaces duplicate snapshot paths; there is no application delta format and no requirement to rewrite historical commits.
 
@@ -368,11 +368,11 @@ Supabase commits a new-profile alert with the first accepted submission for that
 
 | Operation | Trigger and period | Result |
 | --- | --- | --- |
-| Catalogue refresh | Monthly workflow schedule or manual dispatch | Validated catalogue commit/tag, register report, or failure alert |
+| Catalogue refresh | Monthly workflow schedule or manual dispatch | Validated catalogue commit/tag, artifacts and workflow result |
 | New-profile alert | Immediately after first accepted profile report; Supabase checks failed or interrupted deliveries each minute with backoff | One durable alert per profile; Exchange acceptance recorded separately from submission acceptance |
 | Database probe | 02:17, 10:17 and 19:17 UTC, each with independent random 0–90 second delay | Successful database read or failed Actions run; no data writes |
 | Monthly usage report | First of month at 06:00 UTC (08:00 Africa/Johannesburg) | Email covering the preceding Johannesburg calendar month by server receipt time |
-| Register report | Each successful refresh commit and push, including unchanged/manual refreshes | Separate email describing semantic changes from the captured baseline |
+| Register report | Part of scheduled monthly mail or an explicit owner monthly check | Semantic changes between period-boundary catalogue commits, or explicit comparison failure |
 
 Scheduled probing requires `MWH_SUPABASE_PROBE_ENABLED=true`. Manual diagnostics bypass this switch and the delay. Relevant pull requests run mocked tests only. The probe receives only `SUPABASE_URL`, calls the public database-backed statistics route, validates its response and logs no aggregate values. It is a best-effort activity/availability check, not a guarantee against provider pausing or delayed GitHub schedules.
 
@@ -447,20 +447,12 @@ The detailed checks remain in [TEST_PLAN.md](TEST_PLAN.md). Local tests establis
 
 The canonical [Supabase application](https://pekka-28.github.io/unesco/site/) contains the latest client. The former `/site-supabase/` preview is a redirect only. Both addresses reach the same application and retain the existing browser profile and visit history. The Pages workflow publishes an explicit file allowlist; archived implementations, backend sources and build tooling remain outside the web distribution. See [Retired code](RETIRED_CODE.md).
 
-As last verified on 2 October 2026, the Supabase migration and Edge Function are deployed. Hosted permission and duplicate-receipt checks passed in a transaction that rolled back its test row. The read-only GitHub probe passed and its schedule is enabled. The broader catalogue changes and report workflows are not all live, and the canonical application defaults to Supabase, migrates the previous standard endpoint and preserves custom reporting overrides.
+The canonical client, owner administration, usage/notification/monthly functions and ordered schema migrations are deployed through the GitHub release path. The historical workbook import and Name/source maintenance are complete; [Schema](supabase/SCHEMA.md#historical-import) records import counts and migration traceability. The owner confirmed initial and monthly mail receipt. These are recorded delivery facts, not a new end-to-end test in this review.
 
-The new-profile queue, worker and Supabase retry schedule are also deployed. The owner confirmed receipt of the interactive Exchange test, and the dedicated application credential and mailbox-scoped send permission are configured. On 2 October 2026, Exchange accepted the unattended Supabase delivery test and the browser-triggered new-profile alert; the owner confirmed inbox receipt of both messages. An isolated Chrome test of local site files at the permitted Pages origin verified adoption, a manual visit-count update and profile persistence against live Supabase. Exactly one alert was accepted, approximately 0.66 seconds after the first report. The test profile remains in monitoring totals. See [Exchange setup](supabase/EXCHANGE_SETUP.md).
+Remaining work is tracked separately from completed cutover. [Security policy](SECURITY.md) and Issues [33](https://github.com/pekka-28/unesco/issues/33) and [36](https://github.com/pekka-28/unesco/issues/36) retain runtime/release isolation, audit activation/coverage and recovery evidence gaps. Catalogue recovery exceptions were recorded in a local provenance audit outside this published baseline; they are not evidence of a pending Supabase import. Published source and mapping evidence is in [staging](data/staging) and [mapping reports](data/mappings). [Traceability](TRACEABILITY.md) identifies source, test and deployment evidence and highlights indirect behaviours.
 
-Complete the remaining work in this order:
+The design adds no cloud profile synchronisation, temporal site database or visitor-account requirement. Future localisation and private custom datasets remain backlog items.
 
-1. Review and publish the catalogue/backend changes with CI validation; preserve the existing forensic history.
-2. Resolve or explicitly defer the recorded catalogue exceptions: nine historical component-ID conflicts, 14 conservative retired matches and 26 new source roots without usable coordinates. See [recovery-audit.json](data/provenance/recovery-audit.json). Existing ambiguous visits must not be silently remapped.
-3. Complete browser verification with periodic submission, concurrent retries and failure handling against the deployed backend; adoption and manual submission have passed in the local preview.
-4. Import the historical sheet once its private export and time zone are supplied; reconcile duplicates and baseline old profiles before inserts. The canonical application defaults to Supabase and migrates regular stored endpoints while preserving overrides.
-5. Observe scheduled probes. The owner confirmed the monthly Exchange delivery check; enable recurring delivery separately and verify the independent register-report path.
-6. Disable the old Google digest trigger after cutover and observe the first automated refresh, Pages deployment and reports.
-
-This proposal adds no cloud profile synchronization, temporal site database, social publishing service or requirement for app-user accounts. Future localisation and private custom datasets remain separate backlog items rather than prerequisites for monitoring migration.
 # System behaviour
 
 [System behaviour](SYSTEM_BEHAVIOUR.md) defines the canonical use-case MSCs, including local profile operations, exports, visitor requests, accepted submissions, notification delivery, owner authentication and commands, monthly reporting and release. It also defines the reminder and startup-help timers. The security assessment references these sequences and adds authority, exposure and evidence analysis rather than duplicating the diagrams.

@@ -1,0 +1,20 @@
+{
+  "source": "scripts/capture_user_guide.mjs",
+  "data": "Synthetic profile and monitoring responses; public catalogue and map tiles",
+  "screenshots": [
+    "enrolment.png",
+    "map.png",
+    "user-menu.png",
+    "search.png",
+    "site-details.png",
+    "visit-edit.png",
+    "settings.png",
+    "usage-summary.png",
+    "usage-receipt.png",
+    "application.png",
+    "symbol.png",
+    "personal-summary.png",
+    "admin-sign-in.png",
+    "administration.png"
+  ]
+}

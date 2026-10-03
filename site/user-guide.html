@@ -8,6 +8,7 @@
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <style>
 body{max-width:54rem;margin:2rem auto;padding:0 1rem;font:1rem/1.6 system-ui,sans-serif;color:#172b4d;background:#fff}h1{font-size:1.65rem;line-height:1.25;margin-top:2rem}a{color:#075b91}nav ul{padding-left:1.3rem}dt{font-weight:600}dd{margin-bottom:1rem}code{overflow-wrap:anywhere}footer{border-top:1px solid #ccd5df;margin-top:2rem}
+figure{margin:1rem 0}figure img{display:block;max-width:100%;height:auto;border:1px solid #ccd5df}figcaption,caption{font-style:italic;text-align:left;margin:.5rem 0}table{width:100%;border-collapse:collapse;font-size:.94rem}th,td{border:1px solid #ccd5df;padding:.5rem;text-align:left;vertical-align:top;overflow-wrap:anywhere}section{scroll-margin-top:1rem}
 </style>
 </head>
 <body>
@@ -16,18 +17,24 @@ body{max-width:54rem;margin:2rem auto;padding:0 1rem;font:1rem/1.6 system-ui,san
 <li><a href="#profile">Your profile and visit history</a></li>
 <li><a href="#browse">Browsing and searching</a></li>
 <li><a href="#reports">Summaries and reporting reminders</a></li>
+<li><a href="#screen-reference">Screenshots and control reference</a></li>
 <li><a href="#application">The application dialog</a></li>
 </ul></nav>
 <main>
+
 <section id="profile"><h1>Your profile and visit history</h1>
 <p>My World Heritage keeps your profile, Name, home settings and visit history in this browser's local storage. Reopening the same site in the same browser profile retains them. A different device, browser profile or private-browsing session does not automatically share this history. Clearing browser site data can remove it.</p>
 <p>Use the user menu to open Settings, export your profile or import a saved profile. Export creates a <code>.profile</code> backup containing personal information; keep it somewhere appropriate. Import loads a profile, including its settings. Export before replacing a profile if you need to keep the current history. Logout disconnects the current page without deleting the saved profile. Reset removes the local profile; it does not recall exported files or delete reports already accepted by the reporting service.</p>
 <p>Select a site to record visits, dates, status and notes. These personal edits do not change the shared UNESCO catalogue. Catalogue updates arrive through the maintained site distribution; the register identifies active and retired sites.</p>
 </section>
+
+
 <section id="browse"><h1>Browsing and searching</h1>
 <p>Search finds matching catalogue sites and geographic locations. Selecting a site brings it into view even when a filter would normally hide it; a later map redraw can apply the filter again. Opening a site records local inspection activity but does not create a visit. Startup increases the local usage counter. Searching does not by itself publish a usage report.</p>
 <p>The catalogue comes from the site distribution. Map tiles and geographic searches use external providers, which receive the requested tile coordinates or search text and ordinary request metadata. Local storage does not make those requests private from their providers.</p>
 </section>
+
+
 <section id="reports"><h1>Summaries and reporting reminders</h1>
 <p><strong>Summary</strong> in the user menu produces a personal report. <strong>Submit</strong> sends a statistical usage summary to the configured reporting service. The two operations serve different purposes.</p>
 <p>A usage submission includes your profile Name, a pseudonymous profile identifier, the visited-site count, usage count, timestamp, report type and client version. The default service does not receive your individual visit list, notes or home location in that summary. The Name is the same Name maintained in Settings; there is no separate reporting alias.</p>
@@ -38,12 +45,452 @@ body{max-width:54rem;margin:2rem auto;padding:0 1rem;font:1rem/1.6 system-ui,san
 <p>The reminder time persists across reloads. Updated tabs reconcile the saved time for the same profile; refresh older tabs after an application update. Tabs on another browser or device have separate storage. Detailed simultaneous profile edits are not a cloud synchronisation service.</p>
 <p>Settings shows the destination address. A blank address restores the current default when saved; startup also fills an empty setting. A recognised previous default migrates to the current server. A custom address remains your override, so check it before submitting. Settings also shows the last submission outcome.</p>
 </section>
+
+
 <section id="application"><h1>The application dialog</h1>
 <p>Select the My World Heritage title button to view the application information, help and usage chart. The dialog can open automatically after one minute without interaction following startup. This help prompt is separate from the reporting envelope.</p>
 <p><strong>Sites visited by users</strong> uses the latest report from each known reporting profile, regardless of age, excluding marked test and synthetic records. Ten ranges scale to the data. Visited sites is the horizontal axis; Relative frequency is the unnumbered vertical axis. A reporting profile is not a verified unique person. The chart is a population summary, not your personal visit total.</p>
 <p><strong>Invite someone to My World Heritage</strong> opens your configured mail client with an invitation and the public site address. Choose the recipient and send it yourself. The link neither sends automatically nor includes your profile or visit history.</p>
 </section>
+
+
+<section id="screen-reference"><h1>Screenshots and control reference</h1><p>These desktop screenshots use an example profile and synthetic monitoring results. They show the application, its dialogs, downloaded report and owner administration. Map data and credits remain those of the map provider. Your content, available controls and browser layout can differ. Select a screenshot to view it at full size. Escape closes transient panels and dialogs when no active submission prevents dismissal.</p><p>Choose a screen:</p><ul><li><a href="#screen-map">Map and site list</a></li><li><a href="#screen-search">Search results</a></li><li><a href="#screen-user-menu">User menu</a></li><li><a href="#screen-enrolment">Enrolment</a></li><li><a href="#screen-site-details">Site details and visit log</a></li><li><a href="#screen-visit-edit">Editing a visit</a></li><li><a href="#screen-settings">Settings</a></li><li><a href="#screen-usage-summary">Usage submission</a></li><li><a href="#screen-usage-receipt">Submission outcome</a></li><li><a href="#screen-application">Application dialog</a></li><li><a href="#screen-symbol">Symbol information</a></li><li><a href="#screen-personal-summary">Downloaded personal summary</a></li><li><a href="#screen-admin-sign-in">Administration sign-in</a></li><li><a href="#screen-administration">Administration workspace</a></li></ul></section>
+
+<section id="screen-map"><h1>Map and site list</h1><p><em>Figure Map and site list</em> shows this view. <em>Table Map and site list controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/map.png"><img src="./guide/map.png" loading="lazy" alt="Map and site list with synthetic example data"></a><figcaption>Figure Map and site list</figcaption></figure>
+
+<table>
+<caption>Table Map and site list controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Map</td><td>Catalogue markers and map tiles</td><td>Drag to pan; scroll or use zoom buttons to zoom; select a marker to open its site</td></tr>
+
+<tr><td>Zoom + / −</td><td>Current map scale</td><td>Zoom in or out</td></tr>
+
+<tr><td>Scale and attribution</td><td>Distance scale and map-provider credits</td><td>Scale follows zoom and length units; attribution links open provider information</td></tr>
+
+<tr><td>Symbol</td><td>Public-domain My World Heritage mark</td><td>Hover or focus for the reuse tooltip</td></tr>
+
+<tr><td>My World Heritage title</td><td>Application title</td><td>Open the application dialog</td></tr>
+
+<tr><td>Search field and magnifier</td><td>Site name, country, identifier or place query</td><td>Enter text and press Enter or select Search</td></tr>
+
+<tr><td>Snapshot image</td><td>Copy icon</td><td>Capture the map image to clipboard where supported, otherwise download PNG</td></tr>
+
+<tr><td>Site-list selector</td><td>Blank, All sites, Multiple sites, Visited sites or Searched sites</td><td>Choose which list to show; blank hides the list</td></tr>
+
+<tr><td>Site / Visited headings</td><td>List count, sort direction and visit dates</td><td>Select a heading to toggle sorting</td></tr>
+
+<tr><td>Site rows</td><td>Site name and latest visit date</td><td>Select a row to bring the site into view and open its detail</td></tr>
+
+<tr><td>Envelope and dot</td><td>A due reporting reminder, when enabled</td><td>Open a due usage summary; this is based on elapsed time, not changes</td></tr>
+
+<tr><td>User button</td><td>Profile Name or Guest</td><td>Open the user menu</td></tr>
+
+<tr><td>Loading indicator</td><td>Current loading operation, when active</td><td>Read progress; it is not a button</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-search"><h1>Search results</h1><p><em>Figure Search results</em> shows this view. <em>Table Search results controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/search.png"><img src="./guide/search.png" loading="lazy" alt="Search results with synthetic example data"></a><figcaption>Figure Search results</figcaption></figure>
+
+<table>
+<caption>Table Search results controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Search text</td><td>Entered query</td><td>Edit and search again; Escape hides results</td></tr>
+
+<tr><td>Result rows</td><td>Matching catalogue sites or geographic places, with identifying detail</td><td>Select a site to open its record, or a place to move the map</td></tr>
+
+<tr><td>Empty search</td><td>No query</td><td>Submitting an empty query clears search results and search-specific visibility</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-user-menu"><h1>User menu</h1><p><em>Figure User menu</em> shows this view. <em>Table User menu controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/user-menu.png"><img src="./guide/user-menu.png" loading="lazy" alt="User menu with synthetic example data"></a><figcaption>Figure User menu</figcaption></figure>
+
+<table>
+<caption>Table User menu controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Connect</td><td>Shown when disconnected</td><td>Load the saved local profile, or open enrolment if none exists</td></tr>
+
+<tr><td>Settings</td><td>Profile and application preferences</td><td>Open Settings</td></tr>
+
+<tr><td>Export</td><td>Complete local profile backup</td><td>Download a .profile file</td></tr>
+
+<tr><td>Import</td><td>Profile-file selector</td><td>Choose a .profile file to validate and load; this can replace the current profile</td></tr>
+
+<tr><td>Summary</td><td>Personal visited-site report</td><td>Download an HTML report with map and table</td></tr>
+
+<tr><td>Submit</td><td>Statistical usage report</td><td>Open the submission dialog</td></tr>
+
+<tr><td>Reset</td><td>Enabled local-test reset action</td><td>Ask for confirmation, then remove local profile/census and reload; does not delete server reports</td></tr>
+
+<tr><td>Logout</td><td>Local connection state</td><td>Disconnect this page while retaining its saved profile</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-enrolment"><h1>Enrolment</h1><p><em>Figure Enrolment</em> shows this view. <em>Table Enrolment controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/enrolment.png"><img src="./guide/enrolment.png" loading="lazy" alt="Enrolment with synthetic example data"></a><figcaption>Figure Enrolment</figcaption></figure>
+
+<table>
+<caption>Table Enrolment controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>User name</td><td>Your Name, up to 80 characters</td><td>Set the Name used locally and in submitted usage summaries</td></tr>
+
+<tr><td>Home location</td><td>Search text and selected place</td><td>Enter a place; choose a matching suggestion</td></tr>
+
+<tr><td>Search and suggestions</td><td>Geographic matches</td><td>Find and select the intended home place</td></tr>
+
+<tr><td>Use my location</td><td>Device position, subject to browser permission</td><td>Set the home location from geolocation</td></tr>
+
+<tr><td>Location status</td><td>Search/location progress or error</td><td>Read the outcome</td></tr>
+
+<tr><td>Nearby-site checkboxes</td><td>Suggested sites near home</td><td>Optionally mark initial visited sites</td></tr>
+
+<tr><td>Create profile</td><td>Entered Name, selected home and chosen sites</td><td>Save the local profile and send the initial adoption summary</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-site-details"><h1>Site details and visit log</h1><p><em>Figure Site details and visit log</em> shows this view. <em>Table Site details and visit log controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/site-details.png"><img src="./guide/site-details.png" loading="lazy" alt="Site details and visit log with synthetic example data"></a><figcaption>Figure Site details and visit log</figcaption></figure>
+
+<table>
+<caption>Table Site details and visit log controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Site title</td><td>Catalogue name linked to UNESCO</td><td>Open the source record</td></tr>
+
+<tr><td>Site identifier and catalogue status</td><td>Stable identifier and Active or Retired</td><td>Read register identity; retired entries remain available for personal history</td></tr>
+
+<tr><td>Criteria links</td><td>UNESCO selection criteria</td><td>Open criteria definitions</td></tr>
+
+<tr><td>Catalogue information</td><td>Location, country and other available details</td><td>Read the selected site description</td></tr>
+
+<tr><td>Visit log</td><td>Recorded dates, statuses and notes</td><td>Review personal visit entries</td></tr>
+
+<tr><td>Edit</td><td>Existing visit entry</td><td>Load it into the visit editor</td></tr>
+
+<tr><td>Delete</td><td>Existing visit entry</td><td>Remove that personal entry</td></tr>
+
+<tr><td>Visit date</td><td>YYYY-MM-DD, YYYY-MM or YYYY</td><td>Enter a date; Enter saves</td></tr>
+
+<tr><td>Visit status</td><td>Visited, Pending, Won’t visit or Not visited</td><td>Choose the entry status</td></tr>
+
+<tr><td>Note</td><td>Personal free text</td><td>Enter a note; Enter saves, Shift+Enter adds a line</td></tr>
+
+<tr><td>Save</td><td>Current editor contents</td><td>Save the entry locally; this does not change the shared catalogue</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-visit-edit"><h1>Editing a visit</h1><p><em>Figure Editing a visit</em> shows this view. <em>Table Editing a visit controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/visit-edit.png"><img src="./guide/visit-edit.png" loading="lazy" alt="Editing a visit with synthetic example data"></a><figcaption>Figure Editing a visit</figcaption></figure>
+
+<table>
+<caption>Table Editing a visit controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Date, status and note</td><td>Values from the selected existing entry</td><td>Change them before saving</td></tr>
+
+<tr><td>Save</td><td>Edited entry</td><td>Replace that visit entry</td></tr>
+
+<tr><td>Cancel</td><td>Shown while editing</td><td>Return to the new-entry editor without saving edits</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-settings"><h1>Settings</h1><p><em>Figure Settings</em> shows this view. <em>Table Settings controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/settings.png"><img src="./guide/settings.png" loading="lazy" alt="Settings with synthetic example data"></a><figcaption>Figure Settings</figcaption></figure>
+
+<table>
+<caption>Table Settings controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>User name</td><td>Existing profile Name</td><td>Edit the one Name attribute; there is no separate reporting alias</td></tr>
+
+<tr><td>Home location / Search / suggestions</td><td>Current home and matching places</td><td>Search for and select a replacement</td></tr>
+
+<tr><td>Use my location / status</td><td>Device location request and outcome</td><td>Use the browser geolocation permission flow</td></tr>
+
+<tr><td>Visited only</td><td>Show only visited markers</td><td>Filter ordinary map redraws; explicit site selection can temporarily reveal a hidden site</td></tr>
+
+<tr><td>Opt in to periodic usage summary</td><td>Reminder opt-in</td><td>Enable time-based prompts; does not automatically send periodic reports</td></tr>
+
+<tr><td>Information button</td><td>Usage-summary explanation</td><td>Show or hide the explanation</td></tr>
+
+<tr><td>Reminder interval (days)</td><td>Positive days, including fractions</td><td>Set elapsed time between accepted reports; 0.0002 means 17.28 seconds; 15 means fifteen days</td></tr>
+
+<tr><td>None</td><td>Periodic reminders disabled</td><td>Suppress periodic reminders while keeping manual submission available</td></tr>
+
+<tr><td>Usage summary endpoint URL</td><td>Saved destination server</td><td>Override the destination; clear and save to restore the current default</td></tr>
+
+<tr><td>Last submission status</td><td>Saved outcome and timestamp, when present</td><td>Read the most recent submission result</td></tr>
+
+<tr><td>Date display format</td><td>y-m-d, d-m-y or m-d-y</td><td>Choose how dates display</td></tr>
+
+<tr><td>Length units</td><td>Kilometres or Miles</td><td>Choose distance units</td></tr>
+
+<tr><td>Multiple sites threshold</td><td>Positive component-count threshold</td><td>Control grouping of large multi-component sites</td></tr>
+
+<tr><td>Save</td><td>All settings in the dialog</td><td>Validate and persist the changes</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-usage-summary"><h1>Usage submission</h1><p><em>Figure Usage submission</em> shows this view. <em>Table Usage submission controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/usage-summary.png"><img src="./guide/usage-summary.png" loading="lazy" alt="Usage submission with synthetic example data"></a><figcaption>Figure Usage submission</figcaption></figure>
+
+<table>
+<caption>Table Usage submission controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Event</td><td>adoption, manual or periodic</td><td>Read the report type</td></tr>
+
+<tr><td>Name</td><td>Current profile Name or Not supplied</td><td>Read the Name being sent; change it in Settings</td></tr>
+
+<tr><td>Timestamp (UTC)</td><td>Report capture time</td><td>Read the time associated with the pending report</td></tr>
+
+<tr><td>Uses since last summary</td><td>Captured unpublished usage count</td><td>Read the count; later usage remains for a later report</td></tr>
+
+<tr><td>Visited site count</td><td>Count of visited sites</td><td>Read the aggregate; individual visit entries are not in this summary</td></tr>
+
+<tr><td>Client version</td><td>Application version</td><td>Identify the reporting client</td></tr>
+
+<tr><td>Destination</td><td>Configured reporting URL</td><td>Check the recipient service</td></tr>
+
+<tr><td>Status panel</td><td>Ready, sending, received or failure information</td><td>Read the submission outcome</td></tr>
+
+<tr><td>Submit</td><td>Prepared summary and stable receipt Id</td><td>Send the pending report; disabled while sending</td></tr>
+
+<tr><td>Close</td><td>Dialog dismissal</td><td>Close when no send is blocking dismissal</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-usage-receipt"><h1>Submission outcome</h1><p><em>Figure Submission outcome</em> shows this view. <em>Table Submission outcome controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/usage-receipt.png"><img src="./guide/usage-receipt.png" loading="lazy" alt="Submission outcome with synthetic example data"></a><figcaption>Figure Submission outcome</figcaption></figure>
+
+<table>
+<caption>Table Submission outcome controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Outcome panel</td><td>Receipt, duplicate, timeout, error or clipboard fallback</td><td>An accepted receipt resets the reminder; clipboard fallback does not confirm receipt</td></tr>
+
+<tr><td>Submit</td><td>Already sent request</td><td>Remains disabled after this attempt; reopen Submit for a further attempt</td></tr>
+
+<tr><td>Close</td><td>Available after completion or timeout</td><td>Return to the map; a pending uncertain submission is retained for retry</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-application"><h1>Application dialog</h1><p><em>Figure Application dialog</em> shows this view. <em>Table Application dialog controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/application.png"><img src="./guide/application.png" loading="lazy" alt="Application dialog with synthetic example data"></a><figcaption>Figure Application dialog</figcaption></figure>
+
+<table>
+<caption>Table Application dialog controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Version and introduction</td><td>Application version and purpose</td><td>Read product context</td></tr>
+
+<tr><td>Sites visited by users</td><td>Ten scaled visited-site ranges with relative-frequency heights</td><td>View latest-per-profile aggregates; values in this guide are synthetic</td></tr>
+
+<tr><td>User guide</td><td>This document</td><td>Open it in a separate tab</td></tr>
+
+<tr><td>Invite someone</td><td>Email invitation link</td><td>Open a prefilled mail draft; choose the recipient and send yourself</td></tr>
+
+<tr><td>Where data is stored</td><td>Catalogue, local profile and logout-state descriptions</td><td>Read the storage explanation</td></tr>
+
+<tr><td>Dataset extract status</td><td>Status, source URL, record count, input/dataset sizes, most recent data/attempt times and retry interval, or unavailable</td><td>Inspect the dataset currently in use</td></tr>
+
+<tr><td>Tooling links</td><td>Leaflet, OpenStreetMap, Nominatim, Supabase and GitHub Pages</td><td>Open component/provider information</td></tr>
+
+<tr><td>Close</td><td>Dialog dismissal</td><td>Return to the map</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-symbol"><h1>Symbol information</h1><p><em>Figure Symbol information</em> shows this view. <em>Table Symbol information controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/symbol.png"><img src="./guide/symbol.png" loading="lazy" alt="Symbol information with synthetic example data"></a><figcaption>Figure Symbol information</figcaption></figure>
+
+<table>
+<caption>Table Symbol information controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Symbol tooltip</td><td>Meaning and public-domain declaration</td><td>Read how the custom mark differs from official marks</td></tr>
+
+<tr><td>About the symbol and how to reuse it</td><td>Symbol document link</td><td>Open the artwork description and licence declaration</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-personal-summary"><h1>Downloaded personal summary</h1><p><em>Figure Downloaded personal summary</em> shows this view. <em>Table Downloaded personal summary controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/personal-summary.png"><img src="./guide/personal-summary.png" loading="lazy" alt="Downloaded personal summary with synthetic example data"></a><figcaption>Figure Downloaded personal summary</figcaption></figure>
+
+<table>
+<caption>Table Downloaded personal summary controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Title and generation details</td><td>Profile Name, generation time and visited total</td><td>Identify the exported report</td></tr>
+
+<tr><td>My World Heritage links</td><td>Public application address</td><td>Open the application</td></tr>
+
+<tr><td>World map</td><td>Visited-site locations</td><td>View the static map; it has no interactive zoom controls</td></tr>
+
+<tr><td>Visited-sites table</td><td>Site identifier, linked Name, latest visit date, status and country</td><td>Review the personal report; Name links open UNESCO records</td></tr>
+
+<tr><td>Table-column notes and attribution</td><td>Column definitions and map credits</td><td>Read interpretation and source information</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-admin-sign-in"><h1>Administration sign-in</h1><p><em>Figure Administration sign-in</em> shows this view. <em>Table Administration sign-in controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/admin-sign-in.png"><img src="./guide/admin-sign-in.png" loading="lazy" alt="Administration sign-in with synthetic example data"></a><figcaption>Figure Administration sign-in</figcaption></figure>
+
+<table>
+<caption>Table Administration sign-in controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Email my sign-in link</td><td>Fixed-owner sign-in request</td><td>Request the owner email, subject to throttling</td></tr>
+
+<tr><td>Continue with this sign-in link</td><td>Shown when a challenge was captured from the URL</td><td>Verify the one-use link and establish a tab session</td></tr>
+
+<tr><td>Status</td><td>Sign-in progress or errors</td><td>Read the outcome</td></tr>
+
+<tr><td>Return to My World Heritage</td><td>Visitor application link</td><td>Leave administration</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="screen-administration"><h1>Administration workspace</h1><p><em>Figure Administration workspace</em> shows this view. <em>Table Administration workspace controls</em> describes its controls and displayed information.</p>
+<figure><a href="./guide/administration.png"><img src="./guide/administration.png" loading="lazy" alt="Administration workspace with synthetic example data"></a><figcaption>Figure Administration workspace</figcaption></figure>
+
+<table>
+<caption>Table Administration workspace controls</caption>
+
+<thead>
+<tr><th scope="col">Control or information</th><th scope="col">Contents</th><th scope="col">Behaviour</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Send test email</td><td>Named owner command</td><td>Send a delivery test through the configured worker</td></tr>
+
+<tr><td>Send monthly report check</td><td>Named owner command</td><td>Request the previous-month report with its labelled current-month check</td></tr>
+
+<tr><td>Retry pending notifications</td><td>Named owner command</td><td>Ask the delivery worker to process eligible pending work</td></tr>
+
+<tr><td>Sign out</td><td>Current owner session</td><td>Request remote sign-out and clear local token/results even if the request fails</td></tr>
+
+<tr><td>Status</td><td>Request progress, accepted operation Id or error</td><td>Inspect uncertain commands in Action history before retrying</td></tr>
+
+<tr><td>Entity</td><td>Submissions, Profiles, Notifications, Action history, Authentication audit, Security health, Schema columns, Database status or Workflow status</td><td>Choose a bounded query; there is no generic SQL control</td></tr>
+
+<tr><td>Profile identifier</td><td>Optional identifier filter</td><td>Applies to Profiles, Submissions and Notifications</td></tr>
+
+<tr><td>Record class</td><td>All, activity, test or synthetic</td><td>Applies to Submissions</td></tr>
+
+<tr><td>From / Until (UTC)</td><td>Optional date boundaries; Until is exclusive</td><td>Applies to Submissions and Authentication audit</td></tr>
+
+<tr><td>Query</td><td>Selected entity and relevant filters</td><td>Start at the first page of results</td></tr>
+
+<tr><td>Previous 100 / Next 100</td><td>Database result pagination</td><td>Move between bounded pages; controls disable when not applicable</td></tr>
+
+<tr><td>Row label</td><td>Range in the current returned array</td><td>Read result position</td></tr>
+
+<tr><td>Results table or value</td><td>Returned fields; displayed times omit fractional seconds</td><td>Scroll to inspect content; Schema puts data type after column name</td></tr>
+
+<tr><td>Download these results</td><td>Current raw result only</td><td>Save JSON with full timestamp precision; does not export all pages</td></tr>
+
+<tr><td>Return to My World Heritage</td><td>Visitor application link</td><td>Return to the public map</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="browser-dialogs"><h1>Browser and operating-system dialogs</h1><p>File selection, download handling, location permission, clipboard permission, email composition, reset confirmation and error alerts use browser or operating-system UI. They are not application-rendered pages and vary by browser; the screenshots above therefore do not depict them. <em>Table Browser dialogs</em> identifies their controls.</p>
+<table>
+<caption>Table Browser dialogs</caption>
+
+<thead>
+<tr><th>Dialog</th><th>Controls and contents</th><th>Effect</th></tr>
+</thead>
+
+<tbody>
+<tr><td>Import file picker</td><td>File selection, Open and Cancel</td><td>Open supplies the selected .profile file; Cancel leaves the current profile</td></tr>
+
+<tr><td>Download</td><td>Filename, destination and browser Save/Cancel controls</td><td>Creates a separate file if retained; exporting does not remove local data</td></tr>
+
+<tr><td>Location or clipboard permission</td><td>Browser permission prompt, allow/deny options</td><td>Permits or refuses that device capability; refusal can produce an error or fallback</td></tr>
+
+<tr><td>Reset confirmation</td><td>Reset local test data and reload?; OK and Cancel</td><td>OK removes profile/census and reloads; Cancel leaves them</td></tr>
+
+<tr><td>Error or completion alert</td><td>Message and dismissal button</td><td>Acknowledges a validation, import, connection or snapshot outcome</td></tr>
+
+<tr><td>Invitation mail draft</td><td>Recipient, subject, body and mail-client Send/Discard controls</td><td>You choose whether and to whom to send</td></tr>
+</tbody>
+</table>
+</section>
+
 </main>
+
 <footer><p><a href="./">Return to My World Heritage</a></p></footer>
+
 </body>
 </html>
