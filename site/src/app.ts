@@ -1427,14 +1427,14 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         if (!data.ok || !histogram) throw new Error("Invalid histogram");
         const bins = histogram.buckets;
         if (!Array.isArray(bins) || bins.length !== 10 || bins.some(b => !Number.isFinite(b.lower_bound) || b.lower_bound < 0 || !Number.isFinite(b.upper_bound) || b.upper_bound <= b.lower_bound || !Number.isFinite(b.height) || b.height < 0 || b.height > 1)) throw new Error("Invalid buckets");
-        const width = Math.max(420, bins.length * 45 + 30), plotHeight = 130, baseline = 145, step = (width - 30) / bins.length;
+        const left = 48, right = 45, width = bins.length * 45 + left + right, plotHeight = 130, baseline = 145, step = (width - left - right) / bins.length;
         const bars = bins.map((b, i) => {
           const format = (n: number) => Math.round(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
           const label = `${format(b.lower_bound)}–${format(b.upper_bound)}`;
-          const x = 20 + i * step, height = b.height * plotHeight;
+          const x = left + i * step + 2, height = b.height * plotHeight;
           return `<rect x="${x}" y="${baseline-height}" width="${Math.max(1,step-3)}" height="${height}" fill="#287b8e"/><text x="${x+step/2}" y="${baseline+16}" transform="rotate(45 ${x+step/2} ${baseline+16})" font-size="11" fill="#334155">${escapeHtml(label)}</text>`;
         }).join("");
-        container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="205" role="img" aria-label="Distribution of visited sites in ten scaled ranges, with an unscaled frequency axis"><line x1="18" y1="${baseline}" x2="${width}" y2="${baseline}" stroke="#64748b"/>${bars}</svg>`;
+        container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="255" role="img" aria-label="Sites visited by users: ten scaled ranges of visited sites, with relative frequency shown without numerical values"><path d="M ${left} 15 V ${baseline} H ${width-right}" fill="none" stroke="#64748b"/>${bars}<text x="16" y="${baseline-plotHeight/2}" transform="rotate(-90 16 ${baseline-plotHeight/2})" text-anchor="middle" font-size="12" fill="#334155">Relative frequency</text><text x="${left+(width-left-right)/2}" y="240" text-anchor="middle" font-size="12" fill="#334155">Visited sites</text></svg>`;
         caption.textContent = ""; caption.hidden = true;
       } catch { container.replaceChildren(); caption.textContent = "The usage distribution is temporarily unavailable."; }
     }
