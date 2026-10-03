@@ -6,7 +6,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 export const files = [
   'admin/index.html',
-  'site/index.html', 'site/favicon.svg', 'site/site.webmanifest',
+  'site/index.html', 'site/user-guide.html', 'site/favicon.svg', 'site/site.webmanifest',
   'site/icons/apple-touch-icon.svg', 'site/icons/favicon-16.svg',
   'site/icons/favicon-32.svg', 'site/icons/icon-192.svg',
   'site/icons/icon-512.svg', 'site/icons/mwh-temple.svg',

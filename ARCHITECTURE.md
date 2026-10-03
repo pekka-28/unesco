@@ -461,34 +461,9 @@ Complete the remaining work in this order:
 6. Disable the old Google digest trigger after cutover and observe the first automated refresh, Pages deployment and reports.
 
 This proposal adds no cloud profile synchronization, temporal site database, social publishing service or requirement for app-user accounts. Future localisation and private custom datasets remain separate backlog items rather than prerequisites for monitoring migration.
-# Integration scenario — successful manual usage submission
+# System behaviour
 
-Trigger: while the application is idle, the user chooses to send a usage summary. Preconditions: reporting is configured, the service is available, and the submission is valid and within its rate limit. *Figure Manual usage submission* follows one successful submission; retries, rejections and independent statistics queries are outside this flow.
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Browser as Browser application
-    participant Local as Local profile storage
-    participant Edge as usage-summary Edge Function
-    participant DB as Supabase Postgres
-
-    User->>Browser: Choose to send usage summary
-    Browser->>Local: Save pending ID, payload and captured usage total
-    Local-->>Browser: Pending state saved
-    Browser->>Edge: POST summary with stable submission ID
-    Edge->>DB: accept_usage(validated summary)
-    Note over DB: Check duplicate and rate limits, then insert and commit
-    DB-->>Edge: Committed acceptance receipt
-    Edge-->>Browser: Explicit acceptance
-    Browser->>Local: Save acknowledged total and clear pending summary
-    Local-->>Browser: Acknowledged state saved
-    Browser-->>User: Show submission accepted and return to idle
-```
-
-*Figure Manual usage submission*
-
-Fixed point: the database contains one accepted submission, the browser has no pending copy of that submission, and its published-use counter reflects the captured total. Any uses recorded after capture remain unpublished. No further action follows from this trigger; a new user action or scheduled event starts a separate flow. Failure and recovery rules remain in the Failure handling and recovery section.
+[System behaviour](SYSTEM_BEHAVIOUR.md) defines the canonical use-case MSCs, including local profile operations, exports, visitor requests, accepted submissions, notification delivery, owner authentication and commands, monthly reporting and release. It also defines the reminder and startup-help timers. The security assessment references these sequences and adds authority, exposure and evidence analysis rather than duplicating the diagrams.
 
 # Security boundary
 

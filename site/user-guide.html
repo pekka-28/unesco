@@ -1,0 +1,49 @@
+<!doctype html>
+<!-- user-guide.html -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My World Heritage &mdash; user guide</title>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<style>
+body{max-width:54rem;margin:2rem auto;padding:0 1rem;font:1rem/1.6 system-ui,sans-serif;color:#172b4d;background:#fff}h1{font-size:1.65rem;line-height:1.25;margin-top:2rem}a{color:#075b91}nav ul{padding-left:1.3rem}dt{font-weight:600}dd{margin-bottom:1rem}code{overflow-wrap:anywhere}footer{border-top:1px solid #ccd5df;margin-top:2rem}
+</style>
+</head>
+<body>
+<header><h1>My World Heritage &mdash; user guide</h1><p><time datetime="2026-10-03">3 October 2026</time></p><p><a href="./">Open My World Heritage</a></p></header>
+<nav aria-label="Contents"><ul>
+<li><a href="#profile">Your profile and visit history</a></li>
+<li><a href="#browse">Browsing and searching</a></li>
+<li><a href="#reports">Summaries and reporting reminders</a></li>
+<li><a href="#application">The application dialog</a></li>
+</ul></nav>
+<main>
+<section id="profile"><h1>Your profile and visit history</h1>
+<p>My World Heritage keeps your profile, Name, home settings and visit history in this browser's local storage. Reopening the same site in the same browser profile retains them. A different device, browser profile or private-browsing session does not automatically share this history. Clearing browser site data can remove it.</p>
+<p>Use the user menu to open Settings, export your profile or import a saved profile. Export creates a <code>.profile</code> backup containing personal information; keep it somewhere appropriate. Import loads a profile, including its settings. Export before replacing a profile if you need to keep the current history. Logout disconnects the current page without deleting the saved profile. Reset removes the local profile; it does not recall exported files or delete reports already accepted by the reporting service.</p>
+<p>Select a site to record visits, dates, status and notes. These personal edits do not change the shared UNESCO catalogue. Catalogue updates arrive through the maintained site distribution; the register identifies active and retired sites.</p>
+</section>
+<section id="browse"><h1>Browsing and searching</h1>
+<p>Search finds matching catalogue sites and geographic locations. Selecting a site brings it into view even when a filter would normally hide it; a later map redraw can apply the filter again. Opening a site records local inspection activity but does not create a visit. Startup increases the local usage counter. Searching does not by itself publish a usage report.</p>
+<p>The catalogue comes from the site distribution. Map tiles and geographic searches use external providers, which receive the requested tile coordinates or search text and ordinary request metadata. Local storage does not make those requests private from their providers.</p>
+</section>
+<section id="reports"><h1>Summaries and reporting reminders</h1>
+<p><strong>Summary</strong> in the user menu produces a personal report. <strong>Submit</strong> sends a statistical usage summary to the configured reporting service. The two operations serve different purposes.</p>
+<p>A usage submission includes your profile Name, a pseudonymous profile identifier, the visited-site count, usage count, timestamp, report type and client version. The default service does not receive your individual visit list, notes or home location in that summary. The Name is the same Name maintained in Settings; there is no separate reporting alias.</p>
+<p>Creating a profile sends an initial adoption summary. Periodic reporting is opt-in: enable it under Settings &rarr; Usage summary. It prompts you to submit; the reminder timer does not silently send periodic reports. You can also choose Submit manually.</p>
+<p><strong>The envelope is a time-based reporting reminder, not an indication that the site register or your visits changed.</strong> While connected and opted in, the client checks whether a report is due every 15 seconds. It also checks on startup and can open the submission dialog then. A report is due when no prior reminder time is saved, or when the configured interval has elapsed since an accepted submission. Browsing without changing visits does not postpone the reminder.</p>
+<p>The interval is measured in <strong>days</strong> and accepts fractions. For example, <code>0.0002</code> days is <strong>17.28 seconds</strong>, so the next 15-second check can show the envelope within a minute of a successful report. This is useful for testing. Set <code>15</code> for fifteen days and save Settings for ordinary use; the default for a new profile is seven days. Selecting None disables periodic reminders, while manual submission remains available. A longer interval takes effect against the saved reminder time; it does not require another submission.</p>
+<p>An accepted manual, periodic or adoption submission resets the reminder and hides the envelope. A retry acknowledged as already accepted also counts as receipt. A failed request or clipboard fallback does not confirm receipt and does not reset the reminder. A timeout can leave acceptance uncertain: retry the saved submission rather than assuming it was lost. The client keeps its receipt identifier to avoid counting the same submission twice.</p>
+<p>The reminder time persists across reloads. Updated tabs reconcile the saved time for the same profile; refresh older tabs after an application update. Tabs on another browser or device have separate storage. Detailed simultaneous profile edits are not a cloud synchronisation service.</p>
+<p>Settings shows the destination address. A blank address restores the current default when saved; startup also fills an empty setting. A recognised previous default migrates to the current server. A custom address remains your override, so check it before submitting. Settings also shows the last submission outcome.</p>
+</section>
+<section id="application"><h1>The application dialog</h1>
+<p>Select the My World Heritage title button to view the application information, help and usage chart. The dialog can open automatically after one minute without interaction following startup. This help prompt is separate from the reporting envelope.</p>
+<p><strong>Sites visited by users</strong> uses the latest report from each known reporting profile, regardless of age, excluding marked test and synthetic records. Ten ranges scale to the data. Visited sites is the horizontal axis; Relative frequency is the unnumbered vertical axis. A reporting profile is not a verified unique person. The chart is a population summary, not your personal visit total.</p>
+<p><strong>Invite someone to My World Heritage</strong> opens your configured mail client with an invitation and the public site address. Choose the recipient and send it yourself. The link neither sends automatically nor includes your profile or visit history.</p>
+</section>
+</main>
+<footer><p><a href="./">Return to My World Heritage</a></p></footer>
+</body>
+</html>
