@@ -96,6 +96,60 @@ A Pages environment approval would gate Pages publication only. It would not gat
 
 Inspection on 3 October 2026 found access-token and email-link lifetimes of 3,600 seconds. Public Auth signup remained enabled; signup cannot satisfy the pinned owner UUID but can consume resources. The Auth site URL retained its localhost default with no additional redirect allowlist. The administration mail path constructs a fixed HTTPS fragment link and explicitly verifies it, so it does not use that default redirect. These facts are configuration observations, not endorsements of the defaults. Shorter lifetimes and disabling unused signup need a deliberate provider-configuration change.
 
+# Credential custody by security domain
+
+Every retained credential copy forms part of its domain's security profile. *Table Credential locations* identifies holders; *Table Credential authority* distinguishes store access, extraction, use and modification. The preceding inventory defines their purpose and compromise consequences. Readability includes indirect access through deployed code or a restored copy. A use-only operation requires independently enforced non-extraction and constrained use; masking a secret does not establish either.
+
+The following records derive from the reviewed browser, mail, worker and setup code and the earlier inventory. They are not a fresh provider-role readback. Provider-internal storage, backup access and exact administrative role assignments remain unverified where stated. Domain administrators are roles requiring verification, not a claim that every account in a domain holds that authority.
+
+*Table Credential locations*
+
+| Custody Id | Credential/copy | Security domain | Holder/store and retention |
+| --- | --- | --- | --- |
+| C1 | Owner sign-in challenge | Monitoring | Auth service and administration-service memory during generation/verification; issuer expiry |
+| C2 | Owner sign-in link | Mail | Exchange message and any mailbox/client/archive copies; retention follows those stores |
+| C3 | Captured sign-in challenge | Browser/device | URL fragment until client captures/removes it, then administration-client memory; copied links may survive elsewhere |
+| C4 | Owner access token | Browser/device | Administration memory and tab sessionStorage with local expiry; no retained refresh token |
+| C5 | Service-role key and injected database credential | Monitoring | Hosted function environment and process memory; retained until provider/configuration rotation |
+| C6 | Worker bearer token | Monitoring | Function secret/environment and process memory |
+| C7 | Worker bearer token copy | Monitoring | Vault and privileged dispatch execution; must match C6 |
+| C8 | Microsoft application secret | Monitoring | Function secret/environment and mail-adapter memory; setup copy is C16 |
+| C9 | Graph access token | Monitoring | Mail-adapter memory cache until expiry/replacement; sent to Microsoft over HTTPS |
+| C10 | Auth signing material | Monitoring | Provider-managed issuer; internal holders, exportability and backup copies not inspected |
+| C11 | Native integration installation authority | Release | GitHub provider-managed installation; underlying proof custody not inspected |
+| C12 | Workflow token and Pages OIDC proof | Release | Job/runner environment or issuance channel; job-scoped lifetime |
+| C13 | Operator credentials and owner mail/browser sessions | Browser/device | OS credential store and tool/browser sessions; inventory of all copies remains incomplete |
+| C14 | Owner Microsoft authentication material | Mail | Identity provider; exact factors and issuer custody not inspected; client copies are C13 |
+| C15 | Native integration installation authority copy | Monitoring | Supabase integration provider; retained proof and internal storage not inspected |
+| C16 | Microsoft application secret setup copy | Browser/device | Authorised setup process receives generated secret and writes function configuration; memory lifetime and diagnostic/backup copies need review |
+
+*Table Credential authority*
+
+| Custody Id | Locate/access metadata or store | Read/extract material | Use and enforced limits | Modify or replace credential/policy |
+| --- | --- | --- | --- | --- |
+| C1 | Auth and administration service | Service receives usable challenge; Auth administrators may mint equivalent challenges | Auth verifies one-use proof; administration pins owner identity | Issuer controls challenge lifetime/invalidation; service deployment can alter challenge handling |
+| C2 | Mailbox principals and authorised mail clients | Any principal able to read the message can obtain its sign-in proof | Link possession enables verification before use/expiry | Mailbox/message writers can change or delete a copy, but cannot thereby issue a valid replacement; issuer authority is C1 |
+| C3 | User/browser and executing same-context code | Client JavaScript can read the fragment and captured memory; same-origin interaction paths require review | Client forwards challenge to fixed verifier; not use-only | Browser code/user can replace local bytes; only issuer can establish accepted replacement authority |
+| C4 | Administration tab and same-origin code with access to that tab | Token is readable JavaScript data, not a non-exportable credential | Bearer permits bounded owner operations after server checks | Client removes/replaces local copy; Auth issues sessions; owner configuration/deployment can change acceptance |
+| C5 | Hosted runtime; configured project/deployment authorities | Runtime code can read injected values; deployable code creates an indirect extraction path | Data/Auth or direct database authority; SQL restrictions do not prove runtime isolation | Provider/project credential managers rotate proofs; deployment can change consumers; exact role assignments need readback |
+| C6 | Hosted runtime and secret configuration authorities | Runtime code reads raw token, so not use-only | Bearer invokes allowed workers | Secret managers replace copy; deployment changes checks; coordinated C7 rotation required |
+| C7 | Privileged database/Vault administration | Dispatch function obtains decrypted token; trusted database administration can access or change the path | Permitted dispatcher callers invoke constrained work without a token-return API; broader privileged bypasses remain | Privileged database operators change Vault value, dispatcher destination/code or grants |
+| C8 | Hosted runtime and Microsoft/setup authorities | Mail adapter and setup process receive secret bytes; deployed code can extract them | Obtains application Graph tokens within issuer/grant constraints | Microsoft application credential managers issue/revoke; function secret managers replace stored copy; Exchange administrators change send scope |
+| C9 | Mail runtime | Mail runtime reads cached token; it is not use-only | Microsoft enforces application mail grant | Issuer creates tokens; runtime replaces cache; application/grant administrators control future issuance and scope |
+| C10 | Provider issuer and authorised project controls | Not verified; no claim of non-exportability | Application asks Auth to issue/verify sessions; this is not evidence that issuer keys are use-only | Provider/project key-management authority; exact permissions and recovery paths require readback |
+| C11 | Integration providers and installation/configuration administrators | Application has no reader; provider-side extraction/export rules are unknown | Connected repository/project deployment under installation grants | Repository/installation/project authorities configure or revoke trust; release writers can change deployed consumers |
+| C12 | Permitted workflow jobs and runner code | Job code can obtain usable token/proof; masking logs does not prevent extraction | Repository job permissions and OIDC relying-party checks constrain use | GitHub issues credentials; authorised workflow/repository/environment administrators alter requesting code or policy |
+| C13 | Local OS account and authorised tools | Credential-consuming tools can retrieve usable values; exact OS/account isolation and backup access unverified | Provider verifies scoped maintenance authority | Local account can replace/remove copies; provider credential/account administrators issue/revoke and alter grants |
+| C14 | Provider identity controls | Exact read-versus-use boundaries for factors not verified | Identity provider enforces sign-in and account rights | Account recovery/factor administrators and provider controls; possession consequences remain in scope |
+| C15 | Monitoring integration/configuration administrators | Provider-side read/export boundaries unknown; no application reader | Backend deployment under connected installation and project trust | Provider/project authorities configure or revoke integration; release writers change deployed consumers |
+| C16 | Authorised setup process and local OS account | Setup code receives usable secret bytes; no use-only claim | Writes a credential copy into authorised monitoring configuration | Local process can replace bytes; Microsoft credential managers create/revoke valid secrets; secret managers control destination copy |
+
+Public verification keys, project URLs, owner UUID/email, tenant/application identifiers, sender and allowed-origin settings are configuration rather than secret proof. Their values may be public, but authorised repository/project/issuer administrators control the accepted values. The protected effect depends on this integrity as well as secret custody. Changing a local string does not make a verifier trust it; changing the verifier, trust mapping or release can.
+
+The optional ingest token and former administration GitHub token are not required credentials in the inspected deployment. Any discovered retained copy must receive its own domain/custody record and revocation decision. Exports, support bundles, logs and backups must be checked for additional copies; absence from application output is not proof that provider or operator copies do not exist.
+
+Credential lifecycle review must cover creation, rotation, expiry, revocation, deletion, policy edits and the administrators able to perform them. [Issue 33](https://github.com/pekka-28/unesco/issues/33) retains effective runtime/deployment isolation work. This custody inventory establishes review scope; unresolved provider readback and recovery paths prevent a general use-only or non-extraction assurance claim.
+
 # Data and distribution
 
 *Table Data protection* records what is public, what is private and the limits of protection. Optional names remain identifying data regardless of whether a user chose to submit them.
