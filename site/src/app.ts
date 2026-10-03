@@ -189,7 +189,7 @@ function errorMessage(error: unknown): string { return error instanceof Error ? 
       }
       return { ok: true };
     }
-    function persistProfile() { if (!profile) return; migrateUsageSettings(profile); localStorage.setItem(USAGE_ENDPOINT_STORAGE_KEY, profile.settings.usageSummaryEndpoint); profile.updatedAt = nowIso(); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
+    function persistProfile() { if (!profile) return; syncSummaryReminderState(); migrateUsageSettings(profile); localStorage.setItem(USAGE_ENDPOINT_STORAGE_KEY, profile.settings.usageSummaryEndpoint); profile.updatedAt = nowIso(); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
     function siteIdCaption(feature: Site) {
       const p = feature && feature.properties ? feature.properties : {};
       const id = assertValidSiteId(p.site_id, "detail site id");
@@ -1360,9 +1360,22 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       persistProfile();
       return summary;
     }
+    function syncSummaryReminderState() {
+      if (!profile) return;
+      try {
+        const stored: Profile | null = JSON.parse(localStorage.getItem(PROFILE_KEY) || "null");
+        if (!stored || stored.magicCookie !== profile.magicCookie) return;
+        const saved = Date.parse(stored.publishPreference?.lastPromptAt || "");
+        const current = Date.parse(profile.publishPreference?.lastPromptAt || "");
+        if (Number.isFinite(saved) && (!Number.isFinite(current) || saved > current)) {
+          profile.publishPreference.lastPromptAt = stored.publishPreference.lastPromptAt;
+        }
+      } catch { /* Leave unreadable storage to the profile recovery flow. */ }
+    }
     function isSummaryDue() {
       if (!(connected && profile)) return false;
       if (!(profile.publishPreference && profile.publishPreference.enabled)) return false;
+      syncSummaryReminderState();
       const intervalDays = Number(profile.publishPreference.intervalDays);
       if (!Number.isFinite(intervalDays) || intervalDays <= 0) return false;
       const last = profile.publishPreference.lastPromptAt ? Date.parse(profile.publishPreference.lastPromptAt) : NaN;
@@ -1465,12 +1478,12 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       if (timedOut) return;
 
       if (!profile) return;
-      profile.publishPreference.lastPromptAt = nowIso();
       let sent = submitted.ok === true;
       if (!sent) {
         try { sent = await copySummaryToClipboard(summary); } catch {}
       }
       if (submitted.ok === true) {
+        profile.publishPreference.lastPromptAt = nowIso();
         const pending = profile.usage.pendingSummaries && profile.usage.pendingSummaries[summary.event_type];
         if (pending && pending.summary.submission_id === summary.submission_id) {
           profile.usage.publishedUseCount = Math.max(Number(profile.usage.publishedUseCount || 0), pending.useCount);
@@ -1860,8 +1873,10 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         return;
       }
       {
+        profile.publishPreference.lastPromptAt = nowIso();
         delete profile.usage.pendingSummaries?.adoption;
         persistProfile();
+        updateSummaryReminderUi();
       }
       if (submitted.duplicate) {
         recordSubmitStatus("adoption_duplicate", `Adoption summary already recently recorded.${statsLine ? " " + statsLine : ""}`);

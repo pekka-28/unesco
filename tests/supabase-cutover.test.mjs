@@ -56,7 +56,7 @@ test('unreadable profiles are preserved; a new profile inherits the browser endp
 test('saving or importing a profile persists its override; blank/previous reset to current',()=>{
  for(const value of ['',previous,'https://custom.example/import']){
   const {stored,ctx}=environment('{}',current);ctx.profile=makeProfile(value);
-  vm.runInContext(siteFunction('persistProfile'),ctx);
+  vm.runInContext(siteFunction('syncSummaryReminderState') + siteFunction('persistProfile'),ctx);
   ctx.persistProfile();const saved=JSON.parse(stored.get('mwh_profile'));
   assert.equal(saved.settings.usageSummaryEndpoint,value===''||value===previous?current:value);
   assert.equal(stored.get(key),saved.settings.usageSummaryEndpoint);
