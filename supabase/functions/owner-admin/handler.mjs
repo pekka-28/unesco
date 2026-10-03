@@ -2,7 +2,7 @@ const OWNER = 'pekka@data.co.za';
 const ORIGIN = 'https://pekka-28.github.io';
 const PAGE = `${ORIGIN}/unesco/admin/`;
 const REPO = 'https://api.github.com/repos/pekka-28/unesco';
-const entities = new Set(['status','profiles','submissions','notifications','operations','schema']);
+const entities = new Set(['status','profiles','submissions','notifications','operations','schema','auth-audit','security-health']);
 const commands = new Set(['retry-notifications','test-mail','monthly-mail']);
 
 export function createAdminHandler({env, rpc, send, request = fetch}) {
@@ -71,6 +71,8 @@ export function createAdminHandler({env, rpc, send, request = fetch}) {
         if (body.profile && (typeof body.profile !== 'string' || !/^[a-f0-9-]{8,80}$/i.test(body.profile))) return reply({error:'Invalid profile identifier'},400);
         if (body.record_class && !['activity','test','synthetic'].includes(body.record_class)) return reply({error:'Invalid record class'},400);
         for (const date of [body.from,body.until]) if (date && (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)))) return reply({error:'Invalid date'},400);
+        if (body.entity === 'auth-audit' || body.entity === 'security-health')
+          return reply({data:await rpc('security_audit_read',{p_entity:body.entity,p_offset:offset,p_from:body.from||null,p_until:body.until||null})});
         return reply({data:await rpc('admin_read',{p_entity:body.entity,p_offset:offset,p_profile:body.profile||null,
           p_class:body.record_class||null,p_from:body.from||null,p_until:body.until||null})});
       }

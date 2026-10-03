@@ -19,9 +19,9 @@ Permitted mail operations necessarily update delivery leases, attempts, completi
 
 # Security assurance
 
-Mailbox and credential theft are outside this project's security assessment by owner decision. Their prevention, account recovery and general account MFA are provider/account responsibilities, not additional application requirements. The inventory below retains credential locations and authority so that permissions can be reviewed; it does not expand this scope. No additional application second factor is required for the current bounded read and mail operations.
+Prevention of mailbox and credential theft is outside application delivery scope by owner decision. The assessment still models credential possession, impersonation, delegated authority, material impacts and recovery responsibilities. Their prevention, account recovery and general account MFA are provider/account responsibilities, not additional application requirements. The inventory below retains credential locations and authority so that permissions can be reviewed; it does not expand this scope. No additional application second factor is required for the current bounded read and mail operations.
 
-The assessment covers positive authorisation, least privilege and the material damage one compromised application component could cause. Reading private reporting records, destroying or rewriting history, changing deployed code or schema, and unrestricted sending are material effects. A component's available runtime authority remains in scope even when credential theft as an initial attack is excluded.
+The assessment covers positive authorisation, least privilege and the material damage one compromised application component could cause. Reading private reporting records, destroying or rewriting history, changing deployed code or schema, and unrestricted sending are material effects. A component's available runtime authority remains in scope even when implementing credential-theft prevention belongs to another owner.
 
 Authentication at the executing component and freedom from obscurity are necessary, but **not sufficient to assure containment, even assuming correct implementation**. Shared authority can exceed a component's purpose by design. With trustworthy providers and release inputs and correctly configured grants, the intended interfaces deny unauthorised private access and expose no administration operation that changes the site. That interface guarantee is narrower than containment after arbitrary code execution in a server function.
 
@@ -135,7 +135,7 @@ Database recovery uses forward corrective migrations through GitHub and the nati
 
 Release checks must verify private endpoints reject missing/invalid credentials, wrong/unconfirmed users cannot access owner operations, direct database calls lack ordinary-client grants, authenticated owner requests cannot invoke forbidden mutations, GitHub inspection sends only a credential-free GET, and the published page has no mutation controls. Preserve evidence in the issue. Do not put credentials or private row contents in test output.
 
-The remaining hardening decisions are branch protection compatible with catalogue automation, narrower server privileges, stronger browser-origin isolation, unused Auth capabilities, dependency integrity, abuse controls and tested recovery. Prioritise restrictions that prevent one application compromise from causing material damage. Account MFA verification and credential-theft prevention are outside this assessment. None of the remaining controls is silently claimed complete. Security defects belong in GitHub Issues; do not publish exploit secrets or private data when reporting them.
+The remaining hardening decisions are branch protection compatible with catalogue automation, narrower server privileges, stronger browser-origin isolation, unused Auth capabilities, dependency integrity, abuse controls and tested recovery. Prioritise restrictions that prevent one application compromise from causing material damage. Account MFA verification and credential-theft prevention are outside application delivery; possession impacts remain part of this assessment. None of the remaining controls is silently claimed complete. Security defects belong in GitHub Issues; do not publish exploit secrets or private data when reporting them.
 
 # Positive authorisation by operation
 
@@ -195,7 +195,7 @@ The remaining hardening decisions are branch protection compatible with catalogu
 | Secret scanning | Provider-pattern scanning and push protection enabled | Retain; consider non-provider patterns/validity checks where available |
 | Dependency updates | Security updates disabled | Add dependency-update configuration; enable repository alerts/security updates and review resulting PRs |
 | Code scanning | Not verified | Recommend CodeQL for JavaScript/TypeScript and workflow checks with minimal read/security-events permissions |
-| Account protection | GitHub/provider account controls remain separate | Mailbox/credential theft and general MFA verification are outside project scope; retain provider protections without claiming per-operation step-up |
+| Account protection | GitHub/provider account controls remain separate | Theft prevention and general MFA verification are externally owned; possession consequences remain assessed; retain provider protections without claiming per-operation step-up |
 | Integration scope | Configured repository/project connection | Verify selected-repository installation scope; no administration-site PAT |
 | Operational tokens | Local operator session has broad maintenance authority | Replace with expiring, repository/project-scoped credentials per task; do not reuse them in hosted applications |
 
@@ -235,3 +235,13 @@ Scoped [Supabase personal access tokens](https://supabase.com/docs/guides/platfo
 The GitHub baseline was applied and read back: only the six named official Actions are allowed, full SHA pinning is required, the main-history and ingestion-tag rulesets are active without bypass actors, and Pages allows only `main`. Default workflow authority remains read-only and workflow PR approval remains disabled. Secret scanning/push protection remain enabled; dependency security updates are now enabled. Mandatory PR checks/independent review are not yet enforced. [Issue 33](https://github.com/pekka-28/unesco/issues/33) tracks the remaining release, identity and runtime-isolation work.
 
 The authorised catalogue updater completed successfully under these restrictions in [run 37076676255](https://github.com/pekka-28/unesco/actions/runs/37076676255). This verifies compatibility of the current workflow with the baseline; it does not prove that repository-wide write permission is path-scoped.
+
+# Audit policy and response
+
+The owner API authenticates every audit query and returns only fixed event fields through `security_audit_read`. Ordinary users cannot call the RPC; the service role has no direct rights on the monitor table. Native Auth events retain provider semantics: an actor field does not necessarily identify the human behind a delegated service operation. Database administrators can alter local audit storage, so independent forensic integrity is not claimed.
+
+Operational monitoring uses a singleton state record and a five-minute delivery lease. A completed or failed attempt limits subsequent mail for one hour. Counts and timestamps, not report content, enter fault mail. An uncertain external acknowledgement can still duplicate mail after a retry. Failures of monitoring do not prevent normal notification delivery.
+
+The owner reviews reported faults within one working day, records material anomalies as Issues, applies corrective changes through the release process and verifies closure. A recovery message reports an observed condition, not completion of investigation. Repeated denials and all runtime errors are not yet centrally detected; platform audit and independent monitoring remain coverage gaps tracked in Issue 36.
+
+Auth events follow configured provider retention; this release does not delete Auth rows or promise an unverified retention period. The monitor retains its current/last-reported state, not an append-only incident history. The administration operation ledger and GitHub Issues provide separate action records. Retention, independent archival, incident acknowledgement and monitoring-failure escalation require explicit follow-up before claiming a complete forensic service.

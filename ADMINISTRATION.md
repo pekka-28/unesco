@@ -59,7 +59,7 @@ Supabase generates and verifies the single-use magic link. The browser removes i
 | Track and resolve anomalies | GitHub Issues REST API | Issues link |
 | Compact Git history, inspect files, compile and test | Local Git/compiler/test tools | Local development; no hosted API equivalent |
 
-The site permits bounded reads and three named mail commands only. Its API rejects changes to site content, catalogue, database schema, reporting history, accounts, secrets or release configuration. Backend releases proceed through GitHub and the native Supabase integration; GitHub Pages publishes the site. Irreversible maintenance is confined to that separate change process. Mailbox and credential theft are outside the assessment; no additional application second factor is required for the allowed operations. See [Security policy](SECURITY.md) for enforcement, the complete asset inventory and assurance limits. The server environment still carries broad database/Auth authority, so containment after server compromise is not yet assured even though the exposed operations are restricted.
+The site permits bounded reads and three named mail commands only. Its API rejects changes to site content, catalogue, database schema, reporting history, accounts, secrets or release configuration. Backend releases proceed through GitHub and the native Supabase integration; GitHub Pages publishes the site. Irreversible maintenance is confined to that separate change process. Credential-theft prevention is externally owned; possession impacts remain assessed; no additional application second factor is required for the allowed operations. See [Security policy](SECURITY.md) for enforcement, the complete asset inventory and assurance limits. The server environment still carries broad database/Auth authority, so containment after server compromise is not yet assured even though the exposed operations are restricted.
 
 # Queries and action records
 
@@ -86,3 +86,15 @@ Production validation must also check deployed anonymous denial, owner sign-in, 
 # References
 
 The implementation uses the published [Supabase generateLink API](https://supabase.com/docs/reference/javascript/auth-admin-generatelink), [Supabase verifyOtp API](https://supabase.com/docs/reference/javascript/auth-verifyotp), [Supabase Management API](https://supabase.com/docs/reference/api/introduction) and [GitHub workflow API](https://docs.github.com/en/rest/actions/workflows). Release instructions are in [GitHub deployment](supabase/GITHUB_DEPLOYMENT.md).
+
+# Audit and operational faults
+
+Authentication audit is a bounded owner-only read of stored Supabase Auth events: event Id, time, action, actor Id and SSO marker. It excludes raw metadata, addresses and credential payloads. Date filters apply. It is not a complete platform audit or an immutable log.
+
+Security health exposes monitor freshness, selected fault counts, previous report time and alert delivery failure. The existing scheduled notification worker checks pending notifications with failed attempts older than ten minutes, uncertain/stale owner operations, and the latest failed run of active scheduled jobs within 24 hours. It sends counts to the fixed owner at most hourly while faults remain, and a recovery notice after reported conditions clear, subject to the same interval. It never closes an Issue automatically. Owner review and corrective changes use the normal GitHub process.
+
+A stale monitor or failed mail report is visible in Security health. A total database/worker/mail outage cannot reliably notify through that same path; an independent watchdog remains outstanding. Cron HTTP dispatch success is not proof of downstream Edge success. This monitor does not yet collect every runtime exception, monthly-report failure or platform event.
+
+Supabase database Auth recording was disabled during initial inspection on 3 October 2026. The management API accepted an enable request but readback remained disabled; the documented dashboard toggle is required and remains to be verified. Existing historical events are not reconstructed. An empty audit table must not be interpreted as no authentication activity.
+
+[Auth audit documentation](https://supabase.com/docs/guides/auth/audit-logs) describes the recording option. [Platform audit documentation](https://supabase.com/docs/guides/security/platform-audit-logs) describes a separate Team/Enterprise facility. No paid upgrade or Management API credential has been added to the application. Provider control-plane logs remain outside this bounded view.
