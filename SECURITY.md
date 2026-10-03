@@ -310,4 +310,4 @@ The documented controls do not establish completed hardening. Shared runtime aut
 
 # Remaining concerns
 
-The [security concerns review](SECURITY_CONCERNS.md) records the confirmed visitor rendering defect, remaining exposures and the scope of the administration authentication checks.
+The [security concerns review](SECURITY_CONCERNS.md) records the visitor rendering correction, remaining exposures and the scope of the administration authentication checks.

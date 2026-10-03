@@ -146,6 +146,13 @@ function errorMessage(error: unknown): string { return error instanceof Error ? 
     function escapeHtml(text: unknown) {
       return asText(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
     }
+    // Catalogue links are untrusted too: HTML escaping alone does not block script URLs.
+    function safeExternalUrl(value: unknown): string {
+      try {
+        const url = new URL(asText(value));
+        return url.protocol === "https:" || url.protocol === "http:" ? url.href : "";
+      } catch { return ""; }
+    }
     function nbspHtml(text: unknown) {
       return escapeHtml(text).replace(/ /g, "&nbsp;");
     }
@@ -517,7 +524,7 @@ function errorMessage(error: unknown): string { return error instanceof Error ? 
         const sid = asText(p.site_id);
         const nm = displayName(p);
         const d = formatVisitDateForDisplay(latestVisitDate(sid));
-        return `<div class="site-row-grid"><a href="#" class="plain-link site-pick" data-site-id="${sid}" dir="auto" title="${nm}"><span class="site-name-clip">${nm}</span></a><span class="meta" dir="ltr">${d || ""}</span></div>`;
+        return `<div class="site-row-grid"><a href="#" class="plain-link site-pick" data-site-id="${escapeHtml(sid)}" dir="auto" title="${escapeHtml(nm)}"><span class="site-name-clip">${escapeHtml(nm)}</span></a><span class="meta" dir="ltr">${escapeHtml(d || "")}</span></div>`;
       }).join("");
       const nameDir = listSortBy === "name" ? (listSortDir === "asc" ? "^" : "v") : "";
       const dateDir = listSortBy === "date" ? (listSortDir === "asc" ? "^" : "v") : "";
@@ -852,7 +859,7 @@ function errorMessage(error: unknown): string { return error instanceof Error ? 
         const reportTitleHtml = escapeHtml(reportTitle);
         const reportLogoDataUrl = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 128 128\" role=\"img\" aria-label=\"My World Heritage mark\"><path d=\"M12 36 L64 10 L116 36 Z\" fill=\"#0a4f8a\"/><rect x=\"20\" y=\"44\" width=\"14\" height=\"52\" fill=\"#0a4f8a\"/><rect x=\"57\" y=\"44\" width=\"14\" height=\"52\" fill=\"#0a4f8a\"/><rect x=\"94\" y=\"44\" width=\"14\" height=\"52\" fill=\"#0a4f8a\"/><rect x=\"12\" y=\"102\" width=\"104\" height=\"12\" fill=\"#0a4f8a\"/></svg>');
         const tableRows = rows.map((r) => {
-          const url = asText(r.feature && r.feature.properties && r.feature.properties.unesco_url);
+          const url = safeExternalUrl(r.feature && r.feature.properties && r.feature.properties.unesco_url);
           const siteNameHtml = url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(r.name)}</a>` : escapeHtml(r.name);
           return `<tr><td class="site-id">${reportSiteIdHtml(r.siteId)}</td><td>${siteNameHtml}</td><td class="visited-date">${nbspHtml(r.latestVisitDisplay || "")}</td><td>${escapeHtml(r.status)}</td><td class="country">${escapeHtml(r.country)}</td></tr>`;
         }).join("");
@@ -921,10 +928,12 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       const inscription = asText(p.inscription_date);
       const note = asText(p.note || p.description);
       const wiki = asText(p.wikipedia);
-      const wikiUrl = wiki && wiki.includes(":") ? `https://${wiki.replace(":", ".wikipedia.org/wiki/")}` : "";
+      const wikiUrl = /^[a-z][a-z0-9-]*:[^\s]/i.test(wiki) ? safeExternalUrl(`https://${wiki.replace(":", ".wikipedia.org/wiki/")}`) : "";
+      const siteUrl = safeExternalUrl(p.unesco_url);
+      const siteHeading = siteUrl ? `<a href="${escapeHtml(siteUrl)}" target="_blank" rel="noopener">${escapeHtml(name)}</a>` : escapeHtml(name);
       const infoLines = [`<strong>Catalogue status:</strong> ${p.status === "retired" ? "Retired" : "Active"}`];
       if (p.status === "retired") infoLines.push("Not matched in the latest source; retained for recording visits.");
-      if (inscription) infoLines.push(`<strong>Inscription date:</strong> ${inscription}`);
+      if (inscription) infoLines.push(`<strong>Inscription date:</strong> ${escapeHtml(inscription)}`);
       const scope = asText(p.site_scope);
       if (scope === "whs") {
         const componentCount = Number(p.component_count || 0);
@@ -933,22 +942,22 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         const parentId = asText(p.parent_site_id);
         const parentCount = Number(componentCountByRootId.get(parentId) || 0);
         if (parentId) {
-          if (parentCount > 0) infoLines.push(`<strong>Component of ${parentId}:</strong> ${parentCount} individual sites`);
-          else infoLines.push(`<strong>Component of:</strong> ${parentId}`);
+          if (parentCount > 0) infoLines.push(`<strong>Component of ${escapeHtml(parentId)}:</strong> ${parentCount} individual sites`);
+          else infoLines.push(`<strong>Component of:</strong> ${escapeHtml(parentId)}`);
         }
       }
-      if (wikiUrl) infoLines.push(`<strong>Wikipedia:</strong> <a href="${wikiUrl}" target="_blank" rel="noopener">${wiki}</a>`);
-      if (note) infoLines.push(`<strong>Notes:</strong> ${note}`);
+      if (wikiUrl) infoLines.push(`<strong>Wikipedia:</strong> <a href="${escapeHtml(wikiUrl)}" target="_blank" rel="noopener">${escapeHtml(wiki)}</a>`);
+      if (note) infoLines.push(`<strong>Notes:</strong> ${escapeHtml(note)}`);
       const visits = getSiteVisits(siteId);
       const visitRows = visits.length ? visits.map((v) => {
         const d = formatVisitDateForDisplay(v.date) || "No date";
         const s = formatStatusLabel(asText(v.status) || "not_visited");
         const nFull = asText(v.note).trim();
         const n = truncateText(nFull, 72);
-        return `<div class="visited-row" data-visit-id="${asText(v.id)}" style="display:flex; justify-content:space-between; gap:8px;"><div><span>${d}</span> <span class="meta">${s}</span>${n ? ` <span class="meta visit-note-clip" title="${nFull}">${n}</span>` : ""}</div><div><a href="#" class="plain-link visit-edit" title="Edit visit" data-visit-id="${asText(v.id)}">&#9998;</a> <a href="#" class="plain-link visit-delete" title="Delete visit" data-visit-id="${asText(v.id)}">&#128465;</a></div></div>`;
+        return `<div class="visited-row" data-visit-id="${escapeHtml(v.id)}" style="display:flex; justify-content:space-between; gap:8px;"><div><span>${escapeHtml(d)}</span> <span class="meta">${escapeHtml(s)}</span>${n ? ` <span class="meta visit-note-clip" title="${escapeHtml(nFull)}">${escapeHtml(n)}</span>` : ""}</div><div><a href="#" class="plain-link visit-edit" title="Edit visit" data-visit-id="${escapeHtml(v.id)}">&#9998;</a> <a href="#" class="plain-link visit-delete" title="Delete visit" data-visit-id="${escapeHtml(v.id)}">&#128465;</a></div></div>`;
       }).join("") : '<div class="meta">No recorded visits for this site.</div>';
       ui.detailPane.style.display = "block";
-      ui.detailPane.innerHTML = `<h3 style="margin:0 0 6px 0;"><a href="${asText(p.unesco_url)}" target="_blank" rel="noopener">${name}</a></h3>${nativeName ? `<div dir="auto" style="margin:0 0 6px 0;">${nativeName}</div>` : ""}<div class="muted">${siteIdCaption(feature)}</div><p><strong>Criteria:</strong> ${criteriaHtml(p.whc_criteria)}</p>${infoLines.length ? `<p>${infoLines.join("<br>")}</p>` : ""}<hr><h4 style="margin:10px 0 6px 0;">Visit log</h4><div id="visit-log-list">${visitRows}</div><div class="row" style="margin-top:8px;"><input id="visit-date" class="field" type="text" placeholder="YYYY-MM-DD, YYYY-MM, or YYYY"></div><div class="row"><select id="visit-entry-status" class="field"><option value="visited">Visited</option><option value="pending">Pending</option><option value="wont_visit">Won't visit</option><option value="not_visited">Not visited</option></select></div><div class="row"><textarea id="visit-note" class="field" rows="3" placeholder="Note"></textarea></div><div class="row" style="display:flex; gap:8px;"><button id="visit-save" class="btn primary" type="button">Save</button><button id="visit-cancel-edit" class="btn" type="button" style="display:none;">Cancel</button></div>`;
+      ui.detailPane.innerHTML = `<h3 style="margin:0 0 6px 0;">${siteHeading}</h3>${nativeName ? `<div dir="auto" style="margin:0 0 6px 0;">${escapeHtml(nativeName)}</div>` : ""}<div class="muted">${escapeHtml(siteIdCaption(feature))}</div><p><strong>Criteria:</strong> ${criteriaHtml(p.whc_criteria)}</p>${infoLines.length ? `<p>${infoLines.join("<br>")}</p>` : ""}<hr><h4 style="margin:10px 0 6px 0;">Visit log</h4><div id="visit-log-list">${visitRows}</div><div class="row" style="margin-top:8px;"><input id="visit-date" class="field" type="text" placeholder="YYYY-MM-DD, YYYY-MM, or YYYY"></div><div class="row"><select id="visit-entry-status" class="field"><option value="visited">Visited</option><option value="pending">Pending</option><option value="wont_visit">Won't visit</option><option value="not_visited">Not visited</option></select></div><div class="row"><textarea id="visit-note" class="field" rows="3" placeholder="Note"></textarea></div><div class="row" style="display:flex; gap:8px;"><button id="visit-save" class="btn primary" type="button">Save</button><button id="visit-cancel-edit" class="btn" type="button" style="display:none;">Cancel</button></div>`;
       const visitDate = element("visit-date", "input");
       const visitEntryStatus = element("visit-entry-status", "select");
       const visitNote = element("visit-note", "textarea");
@@ -1140,7 +1149,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         const name = displayName(p);
         const li = document.createElement("li");
         li.className = "visited-row";
-        li.innerHTML = `<label><input type="checkbox" data-site-id="${id}"> <span dir="auto">${escapeHtml(name)}</span></label>`;
+        li.innerHTML = `<label><input type="checkbox" data-site-id="${escapeHtml(id)}"> <span dir="auto">${escapeHtml(name)}</span></label>`;
         list?.appendChild(li);
       }
     }
@@ -1756,7 +1765,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
           const only = rows[0];
           if (only.type === "geo") map.setView([only.lat, only.lon], 10);
         }
-        for (const row of rows) { const div = document.createElement("div"); div.className = "result-row"; div.innerHTML = `<strong>${row.title}</strong><br><span class="result-meta">${row.subtitle}</span>`; div.addEventListener("click", () => { if (row.type === "whs") { const f = row.feature; const sid = asText(f && f.properties && f.properties.site_id); explicitVisibleSiteIds.add(sid); refreshMarkers(sid); selectionContext = "search"; if (row.matchedPoint) map.setView([row.matchedPoint.lat, row.matchedPoint.lon], 10); else map.setView([Number(f.geometry.coordinates[1]), Number(f.geometry.coordinates[0])], 10); renderDetail(f); } else { map.setView([row.lat, row.lon], 10); clearSelection(); } ui.searchResults.style.display = "none"; }); ui.searchResults.appendChild(div); }
+        for (const row of rows) { const div = document.createElement("div"); div.className = "result-row"; div.innerHTML = `<strong>${escapeHtml(row.title)}</strong><br><span class="result-meta">${escapeHtml(row.subtitle)}</span>`; div.addEventListener("click", () => { if (row.type === "whs") { const f = row.feature; const sid = asText(f && f.properties && f.properties.site_id); explicitVisibleSiteIds.add(sid); refreshMarkers(sid); selectionContext = "search"; if (row.matchedPoint) map.setView([row.matchedPoint.lat, row.matchedPoint.lon], 10); else map.setView([Number(f.geometry.coordinates[1]), Number(f.geometry.coordinates[0])], 10); renderDetail(f); } else { map.setView([row.lat, row.lon], 10); clearSelection(); } ui.searchResults.style.display = "none"; }); ui.searchResults.appendChild(div); }
         ui.searchResults.style.display = rows.length ? "block" : "none";
       } finally {
         hideLoading();
@@ -2051,7 +2060,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         refreshMarkers();
         if (!connected && !localStorage.getItem(PROFILE_KEY)) openEnrolment();
         hideLoading();
-      }).catch((err: unknown) => { hideLoading(); ui.detailPane.style.display = "block"; ui.detailPane.innerHTML = `<p>Failed to load local data: ${asText(err)}</p>`; });
+      }).catch((err: unknown) => { hideLoading(); ui.detailPane.style.display = "block"; ui.detailPane.innerHTML = `<p>Failed to load local data: ${escapeHtml(err)}</p>`; });
     }
     migrateStoredUsageSettings();
     applyFeatureFlags();
