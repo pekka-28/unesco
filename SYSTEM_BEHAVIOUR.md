@@ -129,7 +129,7 @@ sequenceDiagram
 
 # Administration client
 
-The [administration client](admin/index.html) is a separate browser interface at `/admin/`, implemented in [admin.ts](site/src/admin.ts). It presents owner sign-in, bounded query results and three named mail commands. Its fixed endpoint is the [administration service](supabase/functions/owner-admin/handler.mjs). It does not use the visitor's local profile as an identity or send that profile to administration.
+The [administration client](admin/index.html) is a separate browser interface at `/admin/`, implemented in [admin.ts](site/src/admin.ts). It presents owner sign-in, bounded query results and three named mail commands. Its fixed endpoint is the [administration service](supabase/functions/owner-admin/handler.ts). It does not use the visitor's local profile as an identity or send that profile to administration.
 
 The client holds the current access token in memory and in tab-scoped `sessionStorage`, with an expiry timestamp. It stores no refresh token. A sign-in link carries a one-use challenge in its URL fragment; the client captures it in memory and removes the fragment from the address bar before proceeding. Query results remain in memory and the page until replaced or cleared; a download creates a separate copy. Visitor and administration pages share an origin, so separate paths do not establish a browser security boundary.
 

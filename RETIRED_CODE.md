@@ -45,3 +45,7 @@ Issue 25 retires the administration refresh, publish and scheduled-probe buttons
 # Historical provider provisioning
 
 `scripts/authorise_exchange_notifier.ps1`, `scripts/configure_supabase_mail.ps1` and `scripts/configure_notification_worker.ps1` are retained historical provisioning tools. Their ability to register applications, assign Exchange roles or write Supabase Secrets/Vault is not part of the current maintenance procedure. Use provider administration systems for those changes. They remain outside the web distribution; retention is not permission to execute them. [Service dependencies and configuration](SERVICE_DEPENDENCIES.md) records the current authority boundary and replacement procedure.
+
+# Supabase JavaScript implementation
+
+The `.mjs` handlers and shared modules under `supabase/functions` are replaced by `.ts` implementations under [Issue 59](https://github.com/pekka-28/unesco/issues/59). There are no parallel active JavaScript copies. All entrypoints and their imports are checked by `npm run typecheck:server`; tests execute the same TypeScript modules through `tsx`. JavaScript maintenance scripts and tests remain outside this runtime typing claim. The retained monthly-report diagnostic now needs `node --import tsx scripts/monthly_usage_report.mjs` because it imports the typed shared formatter; this is not a provider-configuration tool.

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {PGlite} from '../.local/node_modules/@electric-sql/pglite/dist/index.js';
-import {createHandler} from '../supabase/functions/usage-summary/handler.mjs';
+import {createHandler} from '../supabase/functions/usage-summary/handler.ts';
 test('histogram uses latest activity per profile, always visible and no raw counts',async()=>{
  const db=new PGlite();
  try{

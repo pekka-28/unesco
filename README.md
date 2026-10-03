@@ -59,4 +59,4 @@ The [security policy](SECURITY.md) inventories credentials, data and trust bound
 
 # Type-check coverage
 
-Strict TypeScript checking covers the first-party browser clients in `site/src`, including administration. Supabase server handlers and shared adapters contain untyped `.mjs` JavaScript and are not covered by `npm run typecheck`. Build tools and tests also include JavaScript. See the [explicit coverage boundary](SERVICE_DEPENDENCIES.md#implementation-languages-and-assurance-boundary); the entire system is not fully typed TypeScript.
+`npm run typecheck` strictly checks both first-party browser clients in `site/src` and all Supabase entrypoints, handlers and shared modules in `supabase/functions`. Run `npm run typecheck:server` for the server gate alone. Both reject unused declarations; the source gates reject `any` and type suppressions. Runtime JSON validation remains necessary. Maintenance tooling/tests also contain JavaScript, Python and PowerShell; see the [coverage boundary](SERVICE_DEPENDENCIES.md#implementation-languages-and-assurance-boundary).

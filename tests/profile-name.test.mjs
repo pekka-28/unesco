@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { PGlite } from '../.local/node_modules/@electric-sql/pglite/dist/index.js';
-import { createHandler } from '../supabase/functions/usage-summary/handler.mjs';
-import { renderNewProfileMail } from '../supabase/functions/_shared/new-profile-mail.mjs';
+import { createHandler } from '../supabase/functions/usage-summary/handler.ts';
+import { renderNewProfileMail } from '../supabase/functions/_shared/new-profile-mail.ts';
 const migrations=['202610010001_usage_summary.sql','202610020001_new_profile_notifications.sql','202610020003_historical_report_classes.sql','202610020004_optional_reporting_alias.sql','202610020007_profile_name.sql'];
 const payload={submission_id:'12345678-1234-1234-1234-123456789abc',submitted_at_utc:'2026-10-02T00:00:00Z',magic_cookie:'0123456789abcdef',use_count_since_last_push:0,visited_site_count:2,event_type:'adoption',client_version:'0.2.2'};
 test('profile Name reaches the queue and adoption mail; classifications keep noise out of stats',async()=>{

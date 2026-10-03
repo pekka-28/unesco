@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {PGlite} from '../.local/node_modules/@electric-sql/pglite/dist/index.js';
-import {createAdminHandler} from '../supabase/functions/owner-admin/handler.mjs';
+import {createAdminHandler} from '../supabase/functions/owner-admin/handler.ts';
 const owner={id:'11111111-1111-4111-8111-111111111111',email:'pekka@data.co.za',email_confirmed_at:'2026-10-03'};
 const operation='22222222-2222-4222-8222-222222222222';
 function harness(overrides={}) {

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createMonthlyHandler } from '../supabase/functions/monthly-report/handler.mjs';
+import { createMonthlyHandler } from '../supabase/functions/monthly-report/handler.ts';
 
 const stats = { submissions: 4, active_datasets: 2, adoption: 1, manual: 2, periodic: 1, reported_uses: 4, average_visited_sites: 38.5 };
 function setup() {

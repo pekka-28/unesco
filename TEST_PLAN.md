@@ -8,13 +8,13 @@ The canonical application uses Supabase for monitoring and Exchange 365 for owne
 Run the following checks before publication:
 
 1. `npm ci` installs the locked compiler and library declarations.
-2. `npm run typecheck` checks first-party browser TypeScript in `site/src/**/*.ts` only with strict types, unused-declaration checks and a prohibition on `any` declarations and type suppressions.
+2. `npm run typecheck` checks first-party browser TypeScript in `site/src/**/*.ts` and server TypeScript in `supabase/functions/**/*.ts` with strict types, unused-declaration checks and a prohibition on `any` declarations and type suppressions.
 3. `npm install --prefix .local --no-save --package-lock=false @electric-sql/pglite@0.5.8` installs the isolated database test engine.
 4. `npm test` verifies receipts, profile Name, queue isolation, histogram, country search, reporting periods, settings migration, startup help and the explicit distribution allowlist, including the user guide and its screenshots.
 5. Run `tests/catalogue.tests.ps1` in PowerShell to verify stable component IDs, active/retired retention and source-loss rejection.
 6. `node scripts/build_pages.mjs .local/pages-review` builds a fresh distribution. Existing output directories are rejected.
 
-The root type check does not cover Supabase `.mjs` handlers/shared adapters or its TypeScript entrypoints; behavioural tests do not establish equivalent static typing. See [coverage](SERVICE_DEPENDENCIES.md#implementation-languages-and-assurance-boundary).
+The server gate uses `tsconfig.supabase.json`, locked Deno declarations and a narrow declaration of `EdgeRuntime.waitUntil`. It includes all four entrypoints and rejects remaining server JavaScript, `any` and type suppressions. `npm test` runs the `.ts` implementations through the `tsx` loader; direct test commands that import server code require `node --import tsx --test`. Invalid request/provider/RPC fixtures in `tests/server-boundaries.test.mjs` verify rejection before mail or database effects. See [coverage](SERVICE_DEPENDENCIES.md#implementation-languages-and-assurance-boundary).
 
 # Browser verification
 

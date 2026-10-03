@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {PGlite} from '../.local/node_modules/@electric-sql/pglite/dist/index.js';
-import {reportSecurityFaults} from '../supabase/functions/_shared/security-monitor.mjs';
+import {reportSecurityFaults} from '../supabase/functions/_shared/security-monitor.ts';
 
 test('audit reads redact payloads; ordinary callers cannot read; monitor leases and throttles fault mail',async()=>{
  const db=new PGlite();try{
