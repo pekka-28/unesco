@@ -8,11 +8,13 @@ The canonical application uses Supabase for monitoring and Exchange 365 for owne
 Run the following checks before publication:
 
 1. `npm ci` installs the locked compiler and library declarations.
-2. `npm run typecheck` checks all first-party site code with strict types, unused-declaration checks and a prohibition on `any` declarations and type suppressions.
+2. `npm run typecheck` checks first-party browser TypeScript in `site/src/**/*.ts` only with strict types, unused-declaration checks and a prohibition on `any` declarations and type suppressions.
 3. `npm install --prefix .local --no-save --package-lock=false @electric-sql/pglite@0.5.8` installs the isolated database test engine.
 4. `npm test` verifies receipts, profile Name, queue isolation, histogram, country search, reporting periods, settings migration, startup help and the explicit distribution allowlist, including the user guide and its screenshots.
 5. Run `tests/catalogue.tests.ps1` in PowerShell to verify stable component IDs, active/retired retention and source-loss rejection.
 6. `node scripts/build_pages.mjs .local/pages-review` builds a fresh distribution. Existing output directories are rejected.
+
+The root type check does not cover Supabase `.mjs` handlers/shared adapters or its TypeScript entrypoints; behavioural tests do not establish equivalent static typing. See [coverage](SERVICE_DEPENDENCIES.md#implementation-languages-and-assurance-boundary).
 
 # Browser verification
 

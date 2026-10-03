@@ -460,3 +460,7 @@ The design adds no cloud profile synchronisation, temporal site database or visi
 # Security boundary
 
 Owner administration belongs to operations and reporting. It exposes bounded inspection and named owner-mail operations, with no site-changing API or workflow dispatch credential. Production changes originate in GitHub; native Supabase integration releases the backend and GitHub Pages publishes the browser distribution. [Security policy](SECURITY.md) defines executing-component authentication, delegated service authority, asset protection and residual risks.
+
+# Service dependencies and replacement
+
+[Service dependencies and configuration](SERVICE_DEPENDENCIES.md) identifies each partner purpose, exchanged information, actual setting location, configuration authority and replacement contract. Its component continuity and handover procedure cover stores, browser state, pending mail, release history and independent deployment verification. Provider administrators own provider settings; tooling may retain references and validate expectations but must not administer them. Centralisation is proposed, not implemented. The same document states the browser-only TypeScript assurance boundary and the untyped server JavaScript gap.

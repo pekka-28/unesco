@@ -311,3 +311,7 @@ The documented controls do not establish completed hardening. Shared runtime aut
 # Remaining concerns
 
 The [security concerns review](SECURITY_CONCERNS.md) records the visitor rendering correction, remaining exposures and the scope of the administration authentication checks.
+
+# Provider configuration authority
+
+Provider-owned settings and grants are administered through the provider administration systems, not application or repository tooling. Local material may identify credential/store references and expected non-secret configuration. Existing automated provisioning scripts are historical, not the authorised handover procedure. [Service dependencies and configuration](SERVICE_DEPENDENCIES.md) records purpose, holder, consumer, replacement checks and the distinction between readable mail credentials and provider-managed integration grants. GitHub remains the release path for code/schema; this does not confer authority to overwrite provider-managed settings.

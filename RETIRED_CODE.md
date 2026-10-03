@@ -41,3 +41,7 @@ Full-clone catalogue snapshots and `backup_current_whs.ps1` are removed from the
 # Administration release controls
 
 Issue 25 retires the administration refresh, publish and scheduled-probe buttons, their server dispatch paths and the GitHub token configuration. Authenticated owner calls cannot invoke those operations. The remaining GitHub client performs one fixed, credential-free status GET. Immediate database inspection and named owner-mail operations remain active.
+
+# Historical provider provisioning
+
+`scripts/authorise_exchange_notifier.ps1`, `scripts/configure_supabase_mail.ps1` and `scripts/configure_notification_worker.ps1` are retained historical provisioning tools. Their ability to register applications, assign Exchange roles or write Supabase Secrets/Vault is not part of the current maintenance procedure. Use provider administration systems for those changes. They remain outside the web distribution; retention is not permission to execute them. [Service dependencies and configuration](SERVICE_DEPENDENCIES.md) records the current authority boundary and replacement procedure.
