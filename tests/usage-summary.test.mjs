@@ -1,7 +1,7 @@
 import {siteHtml, siteFunction} from '../scripts/site_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createHandler } from '../supabase/functions/usage-summary/handler.mjs';
+import { createHandler } from '../supabase/functions/usage-summary/handler.ts';
 import { previousMonth, renderReport } from '../scripts/monthly_usage_report.mjs';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';

@@ -1,4 +1,5 @@
-export function previousMonth(now = new Date()) {
+import type {Period, Stats} from './contracts.ts';
+export function previousMonth(now = new Date()): Period {
   // Johannesburg is UTC+02 throughout the year. Reporting periods use local months.
   const local = new Date(+now + 2 * 3600000);
   const y = local.getUTCFullYear(), m = local.getUTCMonth();
@@ -8,7 +9,7 @@ export function previousMonth(now = new Date()) {
   return { start_at: start.toISOString(), end_at: end.toISOString(), label };
 }
 
-export function renderReport(period, s) {
+export function renderReport(period: Pick<Period, 'label'>, s: Stats) {
   return `My World Heritage user activity: ${period.label}\n\n` +
     `Period: previous calendar month in Africa/Johannesburg.\n` +
     `Accepted submissions: ${s.submissions}\nActive profiles: ${s.active_datasets}\n` +

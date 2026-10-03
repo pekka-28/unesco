@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { PGlite } from '../.local/node_modules/@electric-sql/pglite/dist/index.js';
-import { createHandler } from '../supabase/functions/usage-summary/handler.mjs';
-import { deliverNewProfiles, renderNewProfileMail, createMailSender } from '../supabase/functions/_shared/new-profile-mail.mjs';
+import { createHandler } from '../supabase/functions/usage-summary/handler.ts';
+import { deliverNewProfiles, renderNewProfileMail, createMailSender } from '../supabase/functions/_shared/new-profile-mail.ts';
 
 test('new profiles queue once; old profiles, retries, failed writes and concurrent claims do not duplicate alerts', async () => {
   const db = new PGlite();

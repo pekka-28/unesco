@@ -1,25 +1,26 @@
 {
-    "name":  "my-world-heritage",
-    "version":  "1.0.0",
-    "description":  "My World Heritage site build and checks",
-    "directories":  {
-                        "test":  "tests"
-                    },
-    "scripts":  {
-                    "build":  "node scripts/build_pages.mjs",
-                    "typecheck":  "tsc --noEmit \u0026\u0026 node scripts/check_site_types.mjs",
-                    "test":  "node --test tests/*.test.mjs"
-                },
-    "keywords":  [
-
-                 ],
-    "author":  "",
-    "devDependencies":  {
-                            "@types/geojson":  "^7946.0.16",
-                            "@types/leaflet":  "^1.9.22",
-                            "html2canvas":  "^1.4.1",
-                            "playwright":  "^1.63.0",
-                            "typescript":  "5.9.3"
-                        },
-    "private":  true
+  "name": "my-world-heritage",
+  "version": "1.0.0",
+  "description": "My World Heritage site build and checks",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "node scripts/build_pages.mjs",
+    "typecheck": "tsc --noEmit && node scripts/check_site_types.mjs && npm run typecheck:server",
+    "test": "node --import tsx --test tests/*.test.mjs",
+    "typecheck:server": "tsc -p tsconfig.supabase.json && node scripts/check_server_types.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "devDependencies": {
+    "@types/deno": "^2.7.0",
+    "@types/geojson": "^7946.0.16",
+    "@types/leaflet": "^1.9.22",
+    "html2canvas": "^1.4.1",
+    "playwright": "^1.63.0",
+    "tsx": "^4.23.15",
+    "typescript": "5.9.3"
+  },
+  "private": true
 }

@@ -1,5 +1,5 @@
-import { createHandler } from './handler.mjs';
-import { createRpc, createMailSender, mailConfigured, deliverNewProfiles } from '../_shared/new-profile-mail.mjs';
+import { createHandler } from './handler.ts';
+import { createRpc, createMailSender, mailConfigured, deliverNewProfiles } from '../_shared/new-profile-mail.ts';
 const env = (name: string) => Deno.env.get(name);
 Deno.serve(createHandler({ env, onAccepted: (submissionId: string) => {
   if (!mailConfigured(env)) return;

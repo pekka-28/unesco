@@ -1,17 +1,19 @@
+import {array, object, text} from './contracts.ts';
+import type {Period, Requester} from './contracts.ts';
 const repository = 'pekka-28/unesco';
 const cataloguePath = 'data/current/unesco_official_sites.json';
-function stable(value) {
+function stable(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stable);
-  if (value && typeof value === 'object') return Object.fromEntries(Object.keys(value).sort().map(k=>[k,stable(value[k])]));
+  if (value && typeof value === 'object') return Object.fromEntries(Object.keys(value).sort().map(k=>[k,stable(object(value)[k])]));
   return value;
 }
-const canonical = value => JSON.stringify(stable(value));
+const canonical = (value: unknown) => JSON.stringify(stable(value));
 
-export function registerChanges(before, after) {
-  if (!Array.isArray(before?.sites) || !Array.isArray(after?.sites)) throw new Error('Invalid catalogue');
-  const old = new Map(before.sites.map(s=>[s.site_id,s]));
-  const current = new Map(after.sites.map(s=>[s.site_id,s]));
-  const result = {added:[], retired:[], reactivated:[], changed:[], removed:[]};
+export function registerChanges(before: unknown, after: unknown) {
+  const rows = (value: unknown) => array(object(value).sites).map(value=>{const row=object(value);return {...row,site_id:text(row.site_id),status:row.status};});
+  const old = new Map(rows(before).map(s=>[s.site_id,s]));
+  const current = new Map(rows(after).map(s=>[s.site_id,s]));
+  const result: Record<'added' | 'retired' | 'reactivated' | 'changed' | 'removed', string[]> = {added:[], retired:[], reactivated:[], changed:[], removed:[]};
   for (const [id, site] of current) {
     const prior = old.get(id);
     if (!prior) result.added.push(id);
@@ -23,23 +25,24 @@ export function registerChanges(before, after) {
   return result;
 }
 
-export async function monthlyRegisterReport(period, request = fetch) {
-  async function json(url) {
+export async function monthlyRegisterReport(period: Period, request: Requester = fetch) {
+  async function json(url: string): Promise<unknown> {
     const response = await request(url, {headers:{Accept:'application/vnd.github+json','User-Agent':'My-World-Heritage-monthly-report'}, signal:AbortSignal.timeout(15000)});
     if (!response.ok) throw new Error(`Catalogue history HTTP ${response.status}`);
     return response.json();
   }
-  async function snapshot(at) {
+  async function snapshot(at: string) {
     // GitHub's until is inclusive; subtract one millisecond for calendar boundaries.
     const until = new Date(Date.parse(at)-1).toISOString();
     const commits = await json(`https://api.github.com/repos/${repository}/commits?sha=main&path=${cataloguePath}&until=${encodeURIComponent(until)}&per_page=1`);
-    const sha = commits[0]?.sha;
+    const first = array(commits)[0];
+    const sha = first == null ? '' : text(object(first).sha);
     if (!/^[a-f0-9]{40}$/.test(sha || '')) throw new Error('No catalogue history at boundary');
-    return {sha, data:await json(`https://raw.githubusercontent.com/${repository}/${sha}/${cataloguePath}`)};
+    return {sha, data:object(await json(`https://raw.githubusercontent.com/${repository}/${sha}/${cataloguePath}`))};
   }
   const before = await snapshot(period.start_at), after = await snapshot(period.end_at);
   const changes = registerChanges(before.data, after.data);
-  const lines = ['', 'Site register changes', '', `Period: ${period.label}`, `Current entries at period end: ${after.data.sites.length}`,
+  const lines = ['', 'Site register changes', '', `Period: ${period.label}`, `Current entries at period end: ${array(after.data.sites).length}`,
     'These are register records, including components; additions are not necessarily new UNESCO inscriptions.',
     'Retired means absent from the latest source, not confirmed official delisting.'];
   for (const [kind, ids] of Object.entries(changes)) {

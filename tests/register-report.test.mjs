@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {registerChanges,monthlyRegisterReport} from '../supabase/functions/_shared/register-report.mjs';
+import {registerChanges,monthlyRegisterReport} from '../supabase/functions/_shared/register-report.ts';
 test('register report detects lifecycle and nested attribute changes, ignoring metadata',()=>{
  const before={metadata:{generated:1},sites:[{site_id:'a',status:'active',native_names:{x:'old'}},{site_id:'b',status:'active'},{site_id:'c',status:'retired'},{site_id:'d'}]};
  const after={metadata:{generated:2},sites:[{site_id:'a',status:'active',native_names:{x:'new'}},{site_id:'b',status:'retired'},{site_id:'c',status:'active'},{site_id:'e'}]};

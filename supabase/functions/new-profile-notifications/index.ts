@@ -1,5 +1,5 @@
-import { createRpc, createMailSender, mailConfigured, deliverNewProfiles } from '../_shared/new-profile-mail.mjs';
-import { reportSecurityFaults } from '../_shared/security-monitor.mjs';
+import { createRpc, createMailSender, mailConfigured, deliverNewProfiles } from '../_shared/new-profile-mail.ts';
+import { reportSecurityFaults } from '../_shared/security-monitor.ts';
 
 const env = (name: string) => Deno.env.get(name);
 Deno.serve(async (req) => {

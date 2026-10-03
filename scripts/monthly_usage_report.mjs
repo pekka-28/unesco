@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
-import { previousMonth, renderReport } from '../supabase/functions/_shared/monthly-report.mjs';
+import { previousMonth, renderReport } from '../supabase/functions/_shared/monthly-report.ts';
 export { previousMonth, renderReport };
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

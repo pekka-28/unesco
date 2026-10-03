@@ -1,9 +1,11 @@
-import { reportTime } from '../_shared/report-time.mjs';
-import { previousMonth, renderReport } from '../_shared/monthly-report.mjs';
-import { monthlyRegisterReport } from '../_shared/register-report.mjs';
+import {stats as parseStats} from '../_shared/contracts.ts';
+import type {Environment, Worker, Period} from '../_shared/contracts.ts';
+import { reportTime } from '../_shared/report-time.ts';
+import { previousMonth, renderReport } from '../_shared/monthly-report.ts';
+import { monthlyRegisterReport } from '../_shared/register-report.ts';
 
-export function createMonthlyHandler({ env, rpc, send, register = monthlyRegisterReport, now = () => new Date(), id = () => crypto.randomUUID() }) {
-  return async req => {
+export function createMonthlyHandler({ env, rpc, send, register = monthlyRegisterReport, now = () => new Date(), id = () => crypto.randomUUID() }: Worker & {env: Environment; register?: (period: Period) => Promise<string>; now?: () => Date; id?: () => string}) {
+  return async (req: Request) => {
     const token = env('MWH_NOTIFICATION_TOKEN');
     if (!token || req.headers.get('authorization') !== `Bearer ${token}`) {
       return Response.json({ ok: false }, { status: 401 });
@@ -12,13 +14,13 @@ export function createMonthlyHandler({ env, rpc, send, register = monthlyRegiste
     try {
       const timestamp = now();
       const period = previousMonth(timestamp);
-      const stats = await rpc('usage_stats', { start_at: period.start_at, end_at: period.end_at });
+      const stats = parseStats(await rpc('usage_stats', { start_at: period.start_at, end_at: period.end_at }));
       let text = renderReport(period, stats);
       try { text += await register(period); }
       catch { text += '\nSite register comparison unavailable. Inspect the GitHub catalogue history; no claim of zero changes is made.\n'; }
       const test = req.headers.get('x-mwh-report-test') === 'true';
       if (test) {
-        const current = await rpc('usage_stats', { start_at: period.end_at, end_at: timestamp.toISOString() });
+        const current = parseStats(await rpc('usage_stats', { start_at: period.end_at, end_at: timestamp.toISOString() }));
         text += '\nManual delivery check — current month to date\n\n' +
           'The section above is the regular previous-month report. The section below is included only for this manual check.\n' +
           `As at: ${reportTime(timestamp.toISOString())}\n` +
