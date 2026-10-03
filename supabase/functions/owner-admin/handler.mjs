@@ -81,7 +81,7 @@ export function createAdminHandler({env, rpc, send, request = fetch}) {
         return reply({data:data.workflow_runs.map(r=>({id:r.id,name:r.name,status:r.status,conclusion:r.conclusion,created_at:r.created_at,url:r.html_url,commit:r.head_sha}))});
       }
       if (!commands.has(body.action)) return reply({error:'Unknown operation'},400);
-      if (body.confirm !== true || typeof body.id !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.id)) return reply({error:'Confirmation and operation ID required'},400);
+      if (typeof body.id !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.id)) return reply({error:'Operation Id required'},400);
       // A repeated request must never send another email.
       const prior=await api(`/rest/v1/admin_operations?id=eq.${body.id}&select=id,status`,undefined,key,'GET');
       if (prior.length) return reply({error:'Operation already recorded; inspect its status before retrying',data:prior},409);

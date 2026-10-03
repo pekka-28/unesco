@@ -56,23 +56,23 @@ test('read queries are bounded and cannot choose arbitrary SQL, entities or filt
  assert.equal((await h.request({action:'read',entity:'submissions',record_class:'test',offset:100})).status,200);
  assert.equal(h.calls.filter(c=>c.name==='admin_read').length,1);
 });
-test('mail commands require confirmation and duplicate IDs never send twice',async()=>{
- const h=harness();assert.equal((await h.request({action:'test-mail',id:operation})).status,400);
- assert.equal((await h.request({action:'test-mail',id:operation,confirm:true})).status,200);
- assert.equal((await h.request({action:'test-mail',id:operation,confirm:true})).status,409);
+test('mail commands require an operation Id and duplicate Ids never send twice',async()=>{
+ const h=harness();assert.equal((await h.request({action:'test-mail'})).status,400);
+ assert.equal((await h.request({action:'test-mail',id:operation})).status,200);
+ assert.equal((await h.request({action:'test-mail',id:operation})).status,409);
  assert.equal(h.calls.filter(c=>c.url?.includes('/functions/v1/')).length,1);
  assert.equal(h.records.get(operation).status,'succeeded');
 });
 test('uncertain delivery remains in the ledger and does not automatically resend',async()=>{
- const h=harness({workerFailure:true});const r=await h.request({action:'monthly-mail',id:operation,confirm:true});
+ const h=harness({workerFailure:true});const r=await h.request({action:'monthly-mail',id:operation});
  assert.equal(r.status,503);assert.equal(h.records.get(operation).status,'uncertain');
- assert.equal((await h.request({action:'monthly-mail',id:operation,confirm:true})).status,409);
+ assert.equal((await h.request({action:'monthly-mail',id:operation})).status,409);
  assert.equal(h.calls.filter(c=>c.url?.includes('/functions/v1/')).length,1);
 });
 test('even the owner cannot invoke site mutations, with or without a legacy GitHub credential',async()=>{
  const h=harness();
  for(const action of ['refresh','publish','probe','deploy','rerun','sql','import','update','delete','set-secret','set-owner']) {
-  assert.equal((await h.request({action,id:operation,confirm:true,query:'select 1'})).status,400);
+  assert.equal((await h.request({action,id:operation,query:'select 1'})).status,400);
  }
  assert.equal(h.records.size,0);
  assert(!h.calls.some(c=>c.url?.includes('api.github.com')||c.url?.includes('/functions/v1/')));

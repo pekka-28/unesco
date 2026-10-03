@@ -37,7 +37,7 @@ Supabase generates and verifies the single-use magic link. The browser removes i
 | Refresh UNESCO catalogue | GitHub workflow dispatch | Excluded; GitHub maintenance only |
 | Rebuild and publish the website | GitHub workflow dispatch | Excluded; GitHub release only |
 | Run the scheduled database probe | GitHub workflow dispatch | Excluded; use the immediate read-only database probe here |
-| Check the database immediately | Supabase Data API RPC | Database status/probe |
+| Check the database immediately | Supabase Data API RPC | Database status query |
 | Inspect pipeline and deployment status | GitHub Actions REST API | Latest 20 production runs |
 | Read workflow logs/artifacts or rerun failed jobs | GitHub Actions REST API | Separate GitHub maintenance; no administration dispatch/rerun |
 | Query Profiles and latest activity | Supabase Data API RPC | Profiles query |
@@ -65,7 +65,7 @@ The site permits bounded reads and three named mail commands only. Its API rejec
 
 Queries return at most 100 rows, ordered consistently and paged by offset. **Profiles** shows the latest activity regardless of age. **Submissions** can include activity, test and synthetic records. UTC date boundaries apply to receipt times and the end is exclusive. Read models omit raw historical payloads and notification lease tokens. Live inserts can shift offset pagination; a download represents the current page, not a transactional backup.
 
-State-changing controls require confirmation and a fresh request ID. **Admin operations** records the actor, command, start time and completion state. Reusing an ID cannot repeat the operation. If a provider accepts work but the response fails, completion remains uncertain. Inspect delivered mail before submitting a new request. Graph acceptance does not prove inbox delivery.
+State-changing controls run directly when selected and require a fresh request Id. **Admin operations** records the actor, command, start time and completion state. Reusing an ID cannot repeat the operation. If a provider accepts work but the response fails, completion remains uncertain. Inspect delivered mail before submitting a new request. Graph acceptance does not prove inbox delivery.
 
 **Admin login gate** reserves the next permitted sign-in email time. It stores no link or session token. [Owner administration maintenance](supabase/migrations/202610030001_owner_administration.sql) creates both operational entities and the bounded read API. Supabase Auth owns administrator accounts separately from pseudonymous reporting **Profiles**.
 
@@ -79,7 +79,7 @@ Replacing the owner requires an authenticated Supabase administrator to identify
 
 # Validation
 
-Tests cover anonymous and wrong-owner rejection, unconfirmed email rejection, forged origins, link throttling, invalid filters, denied direct database access, confirmation, duplicate operation IDs, uncertain mail completion, forbidden owner mutations and credential-free read-only GitHub inspection. Strict TypeScript checks cover the browser source. Distribution tests ensure no backend source or secrets are published.
+Tests cover anonymous and wrong-owner rejection, unconfirmed email rejection, forged origins, link throttling, invalid filters, denied direct database access, duplicate operation Ids, uncertain mail completion, forbidden owner mutations and credential-free read-only GitHub inspection. Strict TypeScript checks cover the browser source. Distribution tests ensure no backend source or secrets are published.
 
 Production validation must also check deployed anonymous denial, owner sign-in, read results and operational permissions. Mock tests cannot confirm real email receipt or the user's mailbox session.
 
@@ -98,3 +98,11 @@ A stale monitor or failed mail report is visible in Security health. A total dat
 Supabase database Auth recording was disabled during initial inspection on 3 October 2026. The management API accepted an enable request but readback remained disabled; the documented dashboard toggle is required and remains to be verified. Existing historical events are not reconstructed. An empty audit table must not be interpreted as no authentication activity.
 
 [Auth audit documentation](https://supabase.com/docs/guides/auth/audit-logs) describes the recording option. [Platform audit documentation](https://supabase.com/docs/guides/security/platform-audit-logs) describes a separate Team/Enterprise facility. No paid upgrade or Management API credential has been added to the application. Provider control-plane logs remain outside this bounded view.
+
+# Query presentation and imported provenance
+
+Database status and Workflow status are named result-set queries in the common selector. Database status wraps its structured result as a table; workflow status remains a fixed public GitHub read behind owner authentication, not arbitrary database SQL. Schema columns appear in table, column, data type and nullability order. Table widths follow their content.
+
+Displayed timestamps and owner mail omit fractional seconds; database values, query boundaries and downloaded JSON retain their original precision. The generic Query completed message and Maintenance policy panel are removed. Selecting an owner mail command initiates it without a second confirmation dialog; authentication, command allowlists and duplicate request protection remain enforced.
+
+`legacy_source` identifies the original source of an imported record in Submissions. It is populated for the 42 historical workbook records; native submissions do not have an import source. It supports provenance and forensic review and is not a routing address or an unused user attribute.

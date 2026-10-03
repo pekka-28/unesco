@@ -1,3 +1,4 @@
+import { reportTime } from '../_shared/report-time.mjs';
 import { previousMonth, renderReport } from '../_shared/monthly-report.mjs';
 import { monthlyRegisterReport } from '../_shared/register-report.mjs';
 
@@ -20,7 +21,7 @@ export function createMonthlyHandler({ env, rpc, send, register = monthlyRegiste
         const current = await rpc('usage_stats', { start_at: period.end_at, end_at: timestamp.toISOString() });
         text += '\nManual delivery check — current month to date\n\n' +
           'The section above is the regular previous-month report. The section below is included only for this manual check.\n' +
-          `As at: ${timestamp.toISOString()}\n` +
+          `As at: ${reportTime(timestamp.toISOString())}\n` +
           `Accepted submissions: ${current.submissions}\nActive profiles: ${current.active_datasets}\n` +
           `Adoption submissions: ${current.adoption}\nManual updates: ${current.manual}\nPeriodic updates: ${current.periodic}\n` +
           `Reported uses: ${current.reported_uses}\nAverage visited sites (latest update per profile): ${Number(current.average_visited_sites).toFixed(1)}\n\n` +

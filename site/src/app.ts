@@ -1330,6 +1330,13 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
     function buildUsageSummary(eventType = "manual") {
       if (!profile) throw new Error("No connected profile");
       profile.usage.pendingSummaries = profile.usage.pendingSummaries || {};
+      const name = asText(profile.name).trim();
+      // A queued report predates a Name edit or the removed alias field. Create a
+      // fresh receipt rather than changing the payload of a potentially sent Id.
+      for (const key of Object.keys(profile.usage.pendingSummaries)) {
+        const pending = profile.usage.pendingSummaries[key];
+        if (pending && asText(pending.summary.name).trim() !== name) delete profile.usage.pendingSummaries[key];
+      }
       if (eventType !== "adoption") {
         const pending = profile.usage.pendingSummaries.manual || profile.usage.pendingSummaries.periodic;
         if (pending) return pending.summary;
@@ -1348,8 +1355,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         event_type: asText(eventType) || "manual",
         client_version: APP_VERSION
       };
-      const alias = asText(profile.name).trim();
-      if (alias) summary.name = alias;
+      if (name) summary.name = name;
       profile.usage.pendingSummaries[eventType] = { summary, useCount: Number(profile.usage.useCount || 0) };
       persistProfile();
       return summary;
