@@ -154,7 +154,7 @@ The remaining hardening decisions are branch protection compatible with catalogu
 | Owner database status, schema and entity queries | Valid owner token at owner API; service-role EXECUTE on `admin_read` | Fixed read models; at most 100 entity rows |
 | Download query results | Successful authorised read already completed | Export current page in the owner's browser |
 | Read workflow status | Valid owner token; public GitHub GET needs no GitHub credential | Fixed repository's latest production runs |
-| Send test/monthly mail or retry notifications | Owner token, allowed command, explicit confirmation, fresh UUID; worker verifies separate bearer credential | Fixed owner mail and delivery-state updates |
+| Send test/monthly mail or retry notifications | Owner token, allowed command, fresh UUID; worker verifies separate bearer credential | Fixed owner mail and delivery-state updates |
 | Record operation start | Service role INSERT on ledger `id`, `actor`, `action` only | Server-validated owner and command; timestamps/default state set by database |
 | Finish operation | Service role UPDATE on ledger `status`, `finished_at` only | Cannot rewrite actor, command, start time or delete records |
 | Accept voluntary report | Public reporting contract and validation; service-role EXECUTE on `accept_usage`; SELECT and listed-column INSERT on Submissions | New immutable receipt/report; no caller-set class, legacy source or server receipt time |

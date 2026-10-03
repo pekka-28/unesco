@@ -37,31 +37,39 @@ function pagination():void {
   el('next','button').disabled=pending||lastCount<100;
   el('page-label','span').textContent=Array.isArray(lastData)?`Rows ${lastCount?offset+1:0}–${offset+lastCount}`:'';
 }
+function displayValue(value:Json|undefined):string {
+  const text=typeof value==='object'?JSON.stringify(value):String(value??'');
+  return text.replace(/(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})\.\d+(?=Z|[+-]\d{2}(?::?\d{2})?)/g,'$1');
+}
 function render(data:Json):void {
   lastData=data;lastCount=Array.isArray(data)?data.length:0;
   const target=el('result','div');target.replaceChildren();
-  if(Array.isArray(data)&&data.length&&data.every(r=>r!==null&&typeof r==='object'&&!Array.isArray(r))){
-    const rows=data as Record<string,Json>[], columns=Array.from(new Set(rows.flatMap(row=>Object.keys(row))));
+  const records=Array.isArray(data)?data:data!==null&&typeof data==='object'?[data]:[];
+  if(records.length&&records.every(r=>r!==null&&typeof r==='object'&&!Array.isArray(r))){
+    const rows=records as Record<string,Json>[], columns=Array.from(new Set(rows.flatMap(row=>Object.keys(row))));
+    if(columns.includes('column_name')&&columns.includes('data_type')) {
+      const order=['table_name','column_name','data_type','is_nullable'];
+      columns.sort((a,b)=>(order.includes(a)?order.indexOf(a):order.length)-(order.includes(b)?order.indexOf(b):order.length));
+    }
     const table=document.createElement('table'), head=table.createTHead().insertRow();
     for(const key of columns){const th=document.createElement('th');th.textContent=key;th.scope='col';head.append(th);}
     const body=table.createTBody();
-    for(const row of rows){const tr=body.insertRow();for(const key of columns){const value=row[key];tr.insertCell().textContent=typeof value==='object'?JSON.stringify(value):String(value??'');}}
+    for(const row of rows){const tr=body.insertRow();for(const key of columns){const value=row[key];tr.insertCell().textContent=displayValue(value);}}
     target.append(table);
-  }else{const pre=document.createElement('pre');pre.textContent=JSON.stringify(data,null,2);target.append(pre);}
+  }else{const pre=document.createElement('pre');pre.textContent=displayValue(data);target.append(pre);}
   pagination();
 }
 async function health():Promise<void>{
-  const reply=await api({action:'read',entity:'status'});
-  workspace.hidden=false;el('signin','section').hidden=true;offset=0;render(reply.data??null);
-  message('Signed in as owner. Database query succeeded.');
+  workspace.hidden=false;el('signin','section').hidden=true;offset=0;el('entity','select').value='status';
+  await query();
 }
 async function query():Promise<void>{
   const entity=el('entity','select').value;
-  const reply=await api({action:'read',entity,offset,
+  const reply=await api(entity==='workflow-status'?{action:'runs'}:{action:'read',entity,offset,
     profile:['profiles','submissions','notifications'].includes(entity)?el('profile','input').value.trim():'',
     record_class:entity==='submissions'?el('record-class','select').value:'',
-    from:entity==='submissions'?el('from','input').value:'',until:entity==='submissions'?el('until','input').value:''});
-  render(reply.data??null);message('Query completed.');
+    from:['submissions','auth-audit'].includes(entity)?el('from','input').value:'',until:['submissions','auth-audit'].includes(entity)?el('until','input').value:''});
+  render(reply.data??null);message('');
 }
 el('login','button').onclick=()=>void task(async()=>{const reply=await api({action:'login'});message(reply.message||'Check your mailbox.');});
 el('verify','button').hidden=!tokenHash;
@@ -74,8 +82,6 @@ el('verify','button').onclick=()=>void task(async()=>{
   await health();
 });
 el('logout','button').onclick=()=>void task(async()=>{try{await api({action:'logout'});}finally{signedOut();el('result','div').replaceChildren();lastData=null;message('Signed out.');}});
-el('health','button').onclick=()=>void task(health);
-el('runs','button').onclick=()=>void task(async()=>{const reply=await api({action:'runs'});offset=0;render(reply.data??null);message('Latest production workflow runs.');});
 el('query','form').onsubmit=event=>{event.preventDefault();offset=0;void task(query);};
 el('previous','button').onclick=()=>{offset=Math.max(0,offset-100);void task(query);};
 el('next','button').onclick=()=>{offset+=100;void task(query);};
@@ -87,8 +93,7 @@ document.querySelectorAll<HTMLButtonElement>('button[data-action]').forEach(butt
   button.onclick=()=>void task(async()=>{
     const action=button.dataset.action;
     if(!action)return;
-    if(!confirm(`${button.textContent}? This records an owner operation and may send mail.`)){message('Cancelled.');return;}
-    const reply=await api({action,id:crypto.randomUUID(),confirm:true});
+    const reply=await api({action,id:crypto.randomUUID()});
     message(`Operation accepted. ${reply.id||''}\nCheck action history or your mailbox for the result.`);
   });
 });

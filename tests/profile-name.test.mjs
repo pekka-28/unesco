@@ -34,3 +34,14 @@ test('API accepts Name and ignores the removed alias attribute',async()=>{
  for(const name of ['x'.repeat(81),'bad\nline',42]) assert.equal((await handler(request({...payload,name}))).status,400);
  assert.equal((await handler(request({...payload,reporting_alias:'Ignored'}))).status,200);assert.equal(clean.name,undefined);
 });
+
+
+test('queued summaries with an outdated Name are rebuilt without reusing the receipt',async()=>{
+ const {siteFunction}=await import('../scripts/site_source.mjs');
+ const vm=await import('node:vm');
+ const context={profile:{name:'Current name',magicCookie:'aabbccdd',siteVisits:{},usage:{useCount:5,publishedUseCount:1,pendingSummaries:{manual:{summary:{submission_id:'old',event_type:'manual'},useCount:4}}}},
+ asText:v=>String(v??''),crypto:{randomUUID:()=> 'new-receipt'},nowIso:()=> '2026-10-03T00:00:00.123Z',APP_VERSION:'test',persistProfile:()=>{},getVisitStatus:()=> 'not_visited'};
+ vm.createContext(context);vm.runInContext(siteFunction('buildUsageSummary')+';result=buildUsageSummary("manual");',context);
+ assert.equal(context.result.name,'Current name');assert.equal(context.result.submission_id,'new-receipt');
+ vm.runInContext('again=buildUsageSummary("manual");',context);assert.equal(context.again,context.result);
+});
