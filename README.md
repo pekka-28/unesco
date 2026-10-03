@@ -30,6 +30,7 @@ Browser source version: `0.2.6`; use the Git revision and deployment record to d
 - Application: [My World Heritage](https://pekka-28.github.io/unesco/site/)
 - Owner operation: [Administration guide](https://pekka-28.github.io/unesco/admin/guide.html)
 - Client behaviour: [User guide](https://pekka-28.github.io/unesco/site/user-guide.html)
+- Maintenance and partner replacement: [Service dependencies and configuration](SERVICE_DEPENDENCIES.md)
 - Component design: [Architecture](ARCHITECTURE.md)
 - Documentation and evidence map: [Traceability](TRACEABILITY.md)
 - Interaction design: [System behaviour](SYSTEM_BEHAVIOUR.md)
@@ -55,3 +56,7 @@ First-party browser code lives in `site/src/*.ts`. `site/index.html` and the com
 The owner interface is published at `/admin/`. Its operations, authentication boundaries and server configuration are documented in [Administration](ADMINISTRATION.md). The static sign-in page contains no private data or credentials; the owner API enforces access.
 
 The [security policy](SECURITY.md) inventories credentials, data and trust boundaries, and states the limits of security assurance. Administration cannot change the site; releases remain in GitHub and its native Supabase integration.
+
+# Type-check coverage
+
+Strict TypeScript checking covers the first-party browser clients in `site/src`, including administration. Supabase server handlers and shared adapters contain untyped `.mjs` JavaScript and are not covered by `npm run typecheck`. Build tools and tests also include JavaScript. See the [explicit coverage boundary](SERVICE_DEPENDENCIES.md#implementation-languages-and-assurance-boundary); the entire system is not fully typed TypeScript.

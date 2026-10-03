@@ -20,6 +20,7 @@ This review connects the product overview, requirements, component and interacti
 | Interaction design | [System behaviour](SYSTEM_BEHAVIOUR.md) | Canonical MSCs, triggers, state transitions, failures and hand-offs |
 | Data/API design | [Schema](supabase/SCHEMA.md) | Entities, API contracts, invariants and ordered migration definitions |
 | Operational design | [Administration](ADMINISTRATION.md), [deployment](supabase/GITHUB_DEPLOYMENT.md), [mail setup](supabase/EXCHANGE_SETUP.md) | Permitted operations and separately authorised configuration |
+| Service configuration and continuity | [Service dependencies](SERVICE_DEPENDENCIES.md) | Partner purposes, setting/store locations, provider authority, component replacement and typing limits |
 | Security profile | [Security](SECURITY.md) | Domains, proof/grant boundaries, custody, compromise consequences and residual gaps |
 | Implementation | [Client](site/src/app.ts), [administration client](site/src/admin.ts), [functions](supabase/functions), [migrations](supabase/migrations), [workflows](.github/workflows) | Executable mechanisms and configuration |
 | Verification | [Test plan](TEST_PLAN.md), [tests](tests), GitHub PR/check/deployment records | Reproducible checks and revision-specific outcomes |

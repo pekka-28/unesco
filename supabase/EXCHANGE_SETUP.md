@@ -5,47 +5,39 @@ The Supabase notifier sends new-profile alerts from and to `pekka@data.co.za` th
 
 The owner also confirmed receipt of the monthly delivery check on 2 October 2026. Both mail paths are confirmed working. The temporary delivery-test helper stopped after acceptance; real notification retries run independently inside Supabase. Supabase schedules the combined monthly report at 08:00 Africa/Johannesburg on the first.
 
-# Administrator setup
+# Provider administration
 
-Run the prepared script from the repository in an interactive PowerShell window:
+Provider administrators configure this integration through Microsoft Entra, Exchange and Supabase administration systems. The application and repository tooling do not administer those settings. The earlier registration/configuration scripts are historical provisioning material, retained outside the web distribution; do not use them as the current setup or handover procedure. [Service dependencies and configuration](../SERVICE_DEPENDENCIES.md) records the complete setting inventory, mail path and authority boundaries.
 
-```powershell
-./scripts/authorise_exchange_notifier.ps1
-```
+Microsoft's published application-RBAC procedure uses Exchange Online PowerShell for service-principal pointers, role assignments and authorisation tests [1]. This document does not claim those operations all have dashboard equivalents. Where a required operation is unavailable in the approved provider administration interface, record that limitation and agree the provider-administrator procedure before proceeding; do not silently fall back to the project's provisioning scripts. Supabase supports managing function secrets through its dashboard [5].
 
-Sign in with an administrator who can register Microsoft Entra applications and assign Exchange application roles. The script creates a dedicated single-tenant application and Exchange service principal, limits `Application Mail.Send` to `pekka@data.co.za`, verifies the scope, and places the application credential in Supabase Secrets. It does not request mailbox-reading permissions or a tenant-wide Entra `Mail.Send` grant. Exchange application RBAC provides the mailbox restriction [1].
+The responsible administrators establish and verify the following:
 
-Registration and Exchange permission assignment run in separate PowerShell processes because the installed modules use conflicting authentication-library versions. If registration succeeds but Exchange permission assignment fails, resume only that phase with `./scripts/authorise_exchange_notifier.ps1 -Phase Grant`; this avoids creating another credential.
+1. In Microsoft Entra administration, identify the dedicated single-tenant notifier application and record its tenant/application identifiers. Create or replace the application credential through the provider's credential controls. Record expiry and the responsible owner without storing its value in project material.
+2. In Exchange administration, establish the corresponding service principal and mailbox-scoped `Application Mail.Send` authorisation for the intended sender. Do not substitute mailbox-reading permissions or an unrestricted tenant-wide sending grant. Verify both allowed sending and exclusion of other mailboxes using the provider's supported administration facilities [1].
+3. In Supabase project administration, install the consuming credential and references in function Secrets/settings. The configured sender must agree with the Exchange grant. Changing the application notification recipient is separate from changing its authenticated owner.
+4. Maintain the worker token in Supabase Secrets and its matching Vault entry through provider administration. Maintain the trusted worker URL in Vault. The database worker credential is separate from the Microsoft credential; Postgres does not send through Microsoft directly.
+5. Verify the integration before revoking a superseded credential. The recorded current credential expires on 2 October 2027 in Africa/Johannesburg; the exact UTC expiry remains in the private registration record. Recheck the provider's current record rather than assuming the historical date remains authoritative.
 
-The script needs `Application.ReadWrite.All` for the administrator's interactive registration session. That permission belongs to the setup session, not to the deployed notifier. The notifier uses only its own application credential and scoped Exchange permission. The current application's credential expires on 2 October 2027 in Africa/Johannesburg; the exact UTC expiry is recorded locally with the registration IDs.
-
-If an administrator prepares the application separately, enter its IDs and secret through the local hidden prompt:
-
-```powershell
-./scripts/configure_supabase_mail.ps1
-```
-
-Do not enter the mailbox password. *Table Exchange settings* lists the required Supabase settings. The automatic setup script creates a credential valid for one year and records its expiry in `.local/exchange-authorisation-result.json`; rotate it before expiry. Rerunning setup creates a replacement credential without deleting existing ones. An administrator can remove superseded credentials after verification.
+The *Table Exchange settings* identifies the configured references and their purposes. Actual credential values remain with the providers and their authorised consuming store.
 
 *Table Exchange settings*
 
-| Setting | Purpose |
+| Setting | Purpose and location |
 | --- | --- |
-| `MWH_MS_TENANT_ID` | Microsoft tenant containing the mailbox |
-| `MWH_MS_CLIENT_ID` | Dedicated notifier application ID |
-| `MWH_MS_CLIENT_SECRET` | Application credential held only in Supabase Secrets |
-| `MWH_MS_MAIL_FROM` | Sender mailbox, defaulting to `pekka@data.co.za` |
-| `MWH_NOTIFICATION_TOKEN` | Separate private worker credential, mirrored in Supabase Vault |
+| `MWH_MS_TENANT_ID` | Microsoft tenant identifier in Supabase function settings |
+| `MWH_MS_CLIENT_ID` | Dedicated notifier application identifier in Supabase function settings |
+| `MWH_MS_CLIENT_SECRET` | Microsoft-issued application credential in Supabase Secrets; readable by the mail adapter |
+| `MWH_MS_MAIL_FROM` | Sender mailbox in Supabase function settings, with the existing code fallback `pekka@data.co.za` |
+| `MWH_NOTIFICATION_TOKEN` | Private worker invocation credential in Supabase Secrets |
+| `mwh_notification_token` | Matching worker credential in Supabase Vault, used by SQL dispatchers |
+| `mwh_notification_url` | Trusted worker endpoint in Supabase Vault; not a Microsoft endpoint or mail destination |
 
 # Delivery verification
 
-After authorisation, request one test through the deployed Supabase function:
+After provider configuration, sign in to the owner administration page and select **Send test email**. This is a permitted operational command, not a configuration operation. Inspect Action history and confirm receipt of **My World Heritage - Supabase delivery test**. The test creates no usage or new-user record. Microsoft Graph acceptance is not proof of inbox receipt [2]. Newly assigned permissions may require propagation before a successful test [1].
 
-```powershell
-npx.cmd --yes supabase db query --linked --file supabase/test_notification_delivery.sql
-```
-
-The command returns a request ID. Inspect its HTTP result in `net._http_response`, then confirm receipt of **My World Heritage - Supabase delivery test**. This route uses the same sender as real alerts but creates no usage or new-profile record. A Graph `202` response confirms acceptance, not inbox delivery [2]. Newly assigned Exchange permissions can take time to propagate [1].
+The destination mailbox is currently hardcoded in the application handlers, including the test. It is not a Postgres setting. Changing the reporting recipient requires a reviewed source release until the proposed central configuration is implemented. The Microsoft application credential remains server-side; the adapter obtains short-lived Graph access tokens in memory.
 
 # Notification behaviour
 
@@ -59,9 +51,8 @@ GitHub is not involved in immediate alert delivery. The monthly and catalogue re
 
 # References
 
-Sources for this configuration are:
-
-1. Role Based Access Control for Applications in Exchange Online (Exchange application RBAC), https://learn.microsoft.com/en-us/exchange/permissions-exo/application-rbac, Microsoft, 2 October 2026.
-2. User sendMail (Graph sendMail), https://learn.microsoft.com/en-us/graph/api/user-sendmail, Microsoft, 2 October 2026.
-3. Get access without a user (Graph application authentication), https://learn.microsoft.com/en-us/graph/auth-v2-service, Microsoft, 2 October 2026.
-4. Send emails with custom SMTP (Supabase Auth email), https://supabase.com/docs/guides/auth/auth-smtp, Supabase, 2 October 2026.
+1. [Role Based Access Control for Applications in Exchange Online](https://learn.microsoft.com/en-us/exchange/permissions-exo/application-rbac), Microsoft, accessed 3 October 2026.
+2. [User: sendMail](https://learn.microsoft.com/en-us/graph/api/user-sendmail), Microsoft, recorded 2 October 2026.
+3. [Get access without a user](https://learn.microsoft.com/en-us/graph/auth-v2-service), Microsoft, recorded 2 October 2026.
+4. [Send emails with custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp), Supabase, recorded 2 October 2026.
+5. [Environment variables](https://supabase.com/docs/guides/functions/secrets), Supabase, accessed 3 October 2026.

@@ -46,3 +46,7 @@ A failed integration deployment keeps the Issue open. Inspect its logs and corre
 # Separation from owner administration
 
 The owner administration interface cannot dispatch or rerun workflows, refresh the catalogue, publish browser code or change the database/schema/configuration. It holds no GitHub credential or Supabase Management API token. Changes originate in the GitHub release process; native Supabase integration and GitHub Pages perform deployment. Operational owner mail, its delivery state and the action ledger remain separate from deployment. [Security policy](../SECURITY.md) records the enforcement and current assurance gaps, including the absence of branch protection observed on 3 October 2026.
+
+# Provider settings and handover
+
+Use [Service dependencies and configuration](../SERVICE_DEPENDENCIES.md) for the setting inventory and component handover sequence. Provider administrators establish integration grants, Secrets, Vault values and Auth policy through their provider systems. Tooling does not administer those settings. GitHub releases application code and schema; it does not synchronise provider configuration. Pages and backend publication are independent and both require verification.
