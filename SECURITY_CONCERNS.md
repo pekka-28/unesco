@@ -11,11 +11,11 @@ The administration HTML and source are public. The `owner-admin` function verifi
 
 Source inspection and ten live negative checks on 3 October 2026 found that missing and invalid bearer tokens were denied for queries, workflow inspection and all three mail commands before effects. Ten automated tests also passed, covering wrong-owner and unconfirmed accounts, bounded queries, command deduplication and denial of release operations. No unauthenticated administration privilege bypass was demonstrated. These checks are not an exhaustive penetration test.
 
-# Confirmed rendering defect
+# Corrected rendering defect
 
-[Issue 54](https://github.com/pekka-28/unesco/issues/54) tracks unescaped visitor detail rendering in `site/src/app.ts`, including visit notes inserted into HTML text and attributes. An isolated browser reproduction using the actual renderer and a synthetic note executed an inert DOM marker. Network access was blocked and no production record or credential was used.
+[Issue 54](https://github.com/pekka-28/unesco/issues/54) records the corrected unescaped visitor detail rendering in `site/src/app.ts`, including visit notes inserted into HTML text and attributes. An isolated browser reproduction using the actual renderer and a synthetic note executed an inert DOM marker. Network access was blocked and no production record or credential was used.
 
-A malicious imported profile can supply note content; the victim must import it and display the affected detail. Script execution can expose or alter visitor data accessible to that page. No administration session compromise was demonstrated. Other catalogue text, link and attribute insertions require review as part of the same correction. Replace unsafe interpolation with text nodes and validated attributes, and add regression tests for the affected input paths. This is a confirmed remedial priority, not merely a hypothetical concern inferred from public source.
+A malicious imported profile can supply note content; the victim must import it and display the affected detail. Script execution can expose or alter visitor data accessible to that page. No administration session compromise was demonstrated. The correction escapes note text, tooltips, identifiers and catalogue/search values at their HTML insertion points, and restricts external catalogue links to HTTP/HTTPS, including exported reports. Original note text remains available for editing. A browser regression exercises imported note fixtures, quoted attributes, edit/save/delete behaviour, related catalogue/search fields and unsafe URL schemes. It fails against the original renderer and passes with the correction.
 
 # Remaining exposures and verification
 
@@ -25,7 +25,7 @@ The *Table Remaining concerns* records conditions and consequences without treat
 
 | Concern | Conditions and impact | Remaining action |
 |---|---|---|
-| Shared visitor and administration origin | Paths do not isolate scripts. Visitor script execution can create additional exposure under browser window and storage rules; session storage is tab-scoped, so access to every owner session is not established. | Fix Issue 54 and assess separate administration hosting under [Issue 33](https://github.com/pekka-28/unesco/issues/33). |
+| Shared visitor and administration origin | Paths do not isolate scripts. Visitor script execution can create additional exposure under browser window and storage rules; session storage is tab-scoped, so access to every owner session is not established. | Retain the Issue 54 regression and assess separate administration hosting under [Issue 33](https://github.com/pekka-28/unesco/issues/33). |
 | Hosted runtime authority | A server-function compromise could use broader provider-injected project credentials than the named application operations require. An API allowlist does not contain arbitrary server execution. | Complete runtime isolation and grant review in Issue 33. |
 | Release authority | Repository writers and deployment integrations can change executable code and migrations. Account MFA is not renewed for every authorised API action. | Verify branch protection, independent review and automation permissions; retain the absence of deployment authority from administration. |
 | Unverified public reports | Reporting profiles do not prove unique people. An attacker could submit invented profiles or counts and potentially amplify owner notifications or resource use. | Assess global quotas and abuse monitoring without interpreting profile counts as verified users. No load attack was performed. |
@@ -39,6 +39,6 @@ The *Table Remaining concerns* records conditions and consequences without treat
 
 # Review outcome
 
-Inspection found an actionable visitor rendering defect. Public knowledge of URLs and operation names did not bypass the checked administration boundary, but it would be incorrect to state that the site has no exploitable paths. Correct Issue 54 before treating security remediation as complete. The broader runtime, release and audit work remains separate from that implementation defect.
+Inspection found a visitor rendering defect, now corrected under Issue 54. The regression demonstrates that the tested payloads remain text; it does not establish the absence of every exploitable path. Public knowledge of URLs and operation names did not bypass the checked administration boundary. The broader runtime, release and audit work remains open independently of this correction.
 
 Credential or mailbox theft prevention remains outside application delivery scope by owner decision. Possession of those credentials, delegated authority and resulting impacts remain within the assessment; exclusion of prevention does not erase their consequences.
