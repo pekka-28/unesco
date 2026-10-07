@@ -274,10 +274,10 @@ flowchart TB
 | Catalogue pipeline | Fetch to staging, convert locally, reconcile identities and statuses, validate and publish | [update-unesco-data.yml](.github/workflows/update-unesco-data.yml), converter, reconciliation and validation scripts |
 | Name maintenance | Maintain curated local-script names, language selectors, coverage and anomaly reports separately from routine catalogue ingestion | `data/mappings/` and name-maintenance scripts/workflow |
 | Git repository and Pages | Preserve provenance and serve the static application and its current catalogue | `data/staging/`, `data/current/`, ingestion tags and GitHub Pages |
-| Supabase Edge Function | Validate public requests, handle CORS, enforce the payload contract and return explicit acknowledgements or aggregate statistics | [handler.mjs](supabase/functions/usage-summary/handler.ts) |
+| Supabase Edge Function | Validate public requests, handle CORS, enforce the payload contract and return explicit acknowledgements or aggregate statistics | [handler.ts](supabase/functions/usage-summary/handler.ts) |
 | Supabase Postgres | Store accepted submissions and enforce atomic duplicate/rate-limit rules; compute read-only aggregates | [SQL migration](supabase/migrations/202610010001_usage_summary.sql) |
-| Database probe | Test the real database read path without writes or administrative credentials in the probe job | [supabase-probe.yml](.github/workflows/supabase-probe.yml), [probe_supabase.mjs](scripts/probe_supabase.mjs) |
-| Owner reporting | Generate combined monthly user-activity and catalogue-change email through Exchange | Supabase monthly Edge Function and refresh artifacts; [monthly_usage_report.mjs](scripts/monthly_usage_report.mjs), [site_register_report.mjs](scripts/site_register_report.mjs) |
+| Database probe | Test the real database read path without writes or administrative credentials in the probe job | [supabase-probe.yml](.github/workflows/supabase-probe.yml), [probe_supabase.ts](scripts/probe_supabase.ts) |
+| Owner reporting | Generate combined monthly user-activity and catalogue-change email through Exchange | Supabase monthly Edge Function and refresh artifacts; [monthly_usage_report.ts](scripts/monthly_usage_report.ts), [site_register_report.ts](scripts/site_register_report.ts) |
 | New-profile notifier | Queue the first accepted profile report and send an immediate owner alert through Exchange Online | Supabase Edge Functions, private notification queue, Vault and retry scheduler |
 
 # Data ownership and contracts

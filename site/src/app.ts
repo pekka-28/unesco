@@ -2070,3 +2070,42 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
     applyScaleUnits();
     bootData();
     scheduleStartupHelp();
+
+// Type-only contract for browser automation; erased from the published script.
+export type BrowserAutomation = {
+  pendingSummaryDialog: {summary: Summary} | null;
+  whsData: Catalogue | null;
+  markersBySiteId: typeof markersBySiteId;
+  ui: typeof ui;
+  setEnrolHome: typeof setEnrolHome;
+  renderEnrolNearby: typeof renderEnrolNearby;
+  profile: Profile | null;
+  defaultProfile: typeof defaultProfile;
+  persistProfile: typeof persistProfile;
+  connectSilently: typeof connectSilently;
+  map: typeof map;
+  renderSiteList: typeof renderSiteList;
+  saveSiteVisit: typeof saveSiteVisit;
+  renderDetail: typeof renderDetail;
+  closeTransientUi: typeof closeTransientUi;
+  openSettings: typeof openSettings;
+  openSubmissionDialog: typeof openSubmissionDialog;
+  buildUsageSummary: typeof buildUsageSummary;
+  submissionInProgress: boolean;
+  openAppDialog: typeof openAppDialog;
+  exportVisitedSummaryReport: typeof exportVisitedSummaryReport;
+  verifyProfile: typeof verifyProfile;
+  runSearch: typeof runSearch;
+  safeExternalUrl: typeof safeExternalUrl;
+  buildWhsSearchResults: typeof buildWhsSearchResults;
+  getUsageSummaryEndpoint: typeof getUsageSummaryEndpoint;
+  isSummaryDue: typeof isSummaryDue;
+  migrateStoredUsageSettings: typeof migrateStoredUsageSettings;
+  refreshMarkers: typeof refreshMarkers;
+  runSubmissionDialogSend: typeof runSubmissionDialogSend;
+  scheduleStartupHelp: typeof scheduleStartupHelp;
+  submitAdoptionSummary: typeof submitAdoptionSummary;
+  submitUsageSummary: typeof submitUsageSummary;
+  updateSummaryReminderUi: typeof updateSummaryReminderUi;
+  zoomToSite: typeof zoomToSite;
+};

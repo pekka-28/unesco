@@ -6,21 +6,31 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "node scripts/build_pages.mjs",
-    "typecheck": "tsc --noEmit && node scripts/check_site_types.mjs && npm run typecheck:server",
-    "test": "node --import tsx --test tests/*.test.mjs",
-    "typecheck:server": "tsc -p tsconfig.supabase.json && node scripts/check_server_types.mjs"
+    "build": "node --import tsx scripts/build_pages.ts",
+    "typecheck": "tsc --noEmit && node --import tsx scripts/check_site_types.ts && npm run typecheck:server && npm run typecheck:tooling",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "typecheck:server": "tsc -p tsconfig.supabase.json && node --import tsx scripts/check_server_types.ts",
+    "typecheck:tooling": "tsc -p tsconfig.tooling.json && node --import tsx scripts/check_tooling_types.ts",
+    "capture:guide": "node --import tsx scripts/capture_user_guide.ts",
+    "check:docs": "node --import tsx scripts/check_documentation.ts",
+    "test:powershell": "node --import tsx scripts/test_powershell.ts",
+    "render:diagrams": "node --import tsx scripts/render_diagrams.ts",
+    "verify": "npm run typecheck && npm test && npm run test:powershell && npm run check:docs"
   },
   "keywords": [],
   "author": "",
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@types/deno": "^2.7.0",
+    "@types/emscripten": "^1.41.6",
     "@types/geojson": "^7946.0.16",
     "@types/leaflet": "^1.9.22",
+    "@types/node": "^22.20.5",
     "html2canvas": "^1.4.1",
     "playwright": "^1.63.0",
     "tsx": "^4.23.15",
     "typescript": "5.9.3"
   },
-  "private": true
+  "private": true,
+  "type": "module"
 }

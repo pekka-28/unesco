@@ -7,14 +7,14 @@ The canonical application uses Supabase for monitoring and Exchange 365 for owne
 
 Run the following checks before publication:
 
-1. `npm ci` installs the locked compiler and library declarations.
-2. `npm run typecheck` checks first-party browser TypeScript in `site/src/**/*.ts` and server TypeScript in `supabase/functions/**/*.ts` with strict types, unused-declaration checks and a prohibition on `any` declarations and type suppressions.
-3. `npm install --prefix .local --no-save --package-lock=false @electric-sql/pglite@0.5.8` installs the isolated database test engine.
-4. `npm test` verifies receipts, profile Name, queue isolation, histogram, country search, reporting periods, settings migration, startup help and the explicit distribution allowlist, including the user guide and its screenshots.
-5. Run `tests/catalogue.tests.ps1` in PowerShell to verify stable component IDs, active/retired retention and source-loss rejection.
-6. `node scripts/build_pages.mjs .local/pages-review` builds a fresh distribution. Existing output directories are rejected.
+1. `npm ci` installs the locked compilers, declarations and PGlite test engine.
+2. `npx playwright install chromium` installs the browser (CI uses `--with-deps`). Local Windows browser regressions can also use installed Chrome or `MWH_CHROME_PATH`.
+3. `npm run verify` runs strict browser, server and tooling typechecks; all Node/browser/database regressions; PowerShell parser and catalogue regressions; and documentation checks. On non-Windows systems, PowerShell (`pwsh`) must be installed for the PowerShell checks.
+4. `npm run build -- .local/pages-review` builds a fresh distribution for review. Existing output directories are rejected; the distribution regression also builds and verifies the complete allowlist.
 
-The server gate uses `tsconfig.supabase.json`, locked Deno declarations and a narrow declaration of `EdgeRuntime.waitUntil`. It includes all four entrypoints and rejects remaining server JavaScript, `any` and type suppressions. `npm test` runs the `.ts` implementations through the `tsx` loader; direct test commands that import server code require `node --import tsx --test`. Invalid request/provider/RPC fixtures in `tests/server-boundaries.test.mjs` verify rejection before mail or database effects. See [coverage](SERVICE_DEPENDENCIES.md#implementation-languages-and-assurance-boundary).
+The individual commands are `npm run typecheck`, `npm test`, `npm run test:powershell` and `npm run check:docs`. `npm run typecheck:tooling` checks every Node script and test, rejects leftover JavaScript, and detects `any` declarations, untyped collections and type suppressions. PowerShell checks are syntax/behaviour checks, not static typechecking.
+
+The server gate uses `tsconfig.supabase.json`, locked Deno declarations and a narrow declaration of `EdgeRuntime.waitUntil`. It includes all four entrypoints and rejects remaining server JavaScript, `any` and type suppressions. `npm test` runs the `.ts` implementations through the `tsx` loader; direct test commands that import server code require `node --import tsx --test`. Invalid request/provider/RPC fixtures in `tests/server-boundaries.test.ts` verify rejection before mail or database effects. See [coverage](SERVICE_DEPENDENCIES.md#implementation-languages-and-assurance-boundary).
 
 # Browser verification
 
@@ -35,10 +35,20 @@ Verify forbidden operations fail even for the owner and even when an obsolete Gi
 
 # Documentation and screenshot verification
 
-[Traceability](TRACEABILITY.md) identifies the requirement/design/source/evidence chains and separates documented coverage from verified security claims. The [capture script](scripts/capture_user_guide.mjs) renders synthetic profiles and mocked monitoring responses; it never uses owner sessions or real reporting data. Install Playwright separately and set `MWH_PLAYWRIGHT_PATH` if necessary, then run `node scripts/capture_user_guide.mjs`. `MWH_CHROME_PATH` selects the Chrome executable. Public map tiles and catalogue content are used; no production mail or submissions are sent.
+[Traceability](TRACEABILITY.md) identifies the requirement/design/source/evidence chains and separates documented coverage from verified security claims. The [capture script](scripts/capture_user_guide.ts) renders synthetic profiles and mocked monitoring responses; it never uses owner sessions or real reporting data. Run `npm ci`, install Chromium with `npx playwright install chromium`, then run `npm run capture:guide`. `MWH_CHROME_PATH` selects the Chrome executable. Public map tiles and catalogue content are used; no production mail or submissions are sent.
 
 Check the screenshot inventory against every application-owned page/dialog and the control tables. Browser/OS-owned prompts are listed separately because their appearance varies. Inspect screenshots, check guide anchors and images, and run the distribution test after changing the explicit image allowlist. The guide excludes its own recursive screenshot. Captures establish displayed behaviour with fixtures, not provider permission enforcement.
 
 # Untrusted visitor rendering
 
-`tests/visitor-rendering.test.mjs` runs the compiled visitor renderers in Chromium with network access blocked. It checks imported profile notes, full tooltips, quoted visit identifiers, Unicode and long notes; edit/save/delete preserve the text and identifier. Catalogue detail/list/search values remain text, and non-HTTP/HTTPS external links are rejected. The regression fails against the original Issue 54 implementation. CI installs Chromium using `npx playwright install --with-deps chromium`; local Windows checks may use installed Chrome or `MWH_CHROME_PATH`.
+`tests/visitor-rendering.test.ts` runs the compiled visitor renderers in Chromium with network access blocked. It checks imported profile notes, full tooltips, quoted visit identifiers, Unicode and long notes; edit/save/delete preserve the text and identifier. Catalogue detail/list/search values remain text, and non-HTTP/HTTPS external links are rejected. The regression fails against the original Issue 54 implementation. CI installs Chromium using `npx playwright install --with-deps chromium`; local Windows regression checks may use installed Chrome or `MWH_CHROME_PATH`. Screenshot capture uses installed Playwright Chromium unless `MWH_CHROME_PATH` is set; `MWH_GUIDE_OUTPUT=.local/guide-review` keeps review captures separate from published images.
+
+# Maintained administration and diagram checks
+
+`tests/admin-browser.test.ts` uses the compiled administration page with all external requests blocked or mocked. It verifies explicit sign-in, fragment removal, safe text rendering, schema column order, display/export timestamp precision, one mail-command request and logout. It replaces the local CommonJS checks tied to old preview builds.
+
+`npm run render:diagrams` renders schema and architecture Mermaid diagrams into `.local/diagrams`; pass Markdown paths after `--` to inspect other documents. It needs Playwright Chromium (or `MWH_CHROME_PATH`) and access to the Mermaid CDN. This optional visual check is separate from the offline regression suite.
+
+# Release completion
+
+After the reviewable changes are committed and CI passes, use the established GitHub Pages and native Supabase GitHub release path. Verify the published visitor page, administration page and compatibility redirect. With the intended `SUPABASE_URL`, run `node --import tsx scripts/verify_monitoring_http.ts` for the public database read, CORS, invalid-input rejection and anonymous-access denial checks. It does not use credentials or submit valid reports. Private provider configuration and the separately documented security/audit work are not certified by local compilation or these public smoke checks.

@@ -51,7 +51,7 @@ Backend release procedure: [Supabase GitHub deployment](supabase/GITHUB_DEPLOYME
 
 # Site development
 
-First-party browser code lives in `site/src/*.ts`. `site/index.html` and the compatibility redirect are templates; build them before serving. Run `npm ci`, `npm run typecheck` and `node scripts/build_pages.mjs .local/pages-review`. Serve that output directory to preview the application. The compiler uses strict checking and rejects unused declarations; Pages publishes only compiled runtime files. See [verification instructions](TEST_PLAN.md).
+First-party browser code lives in `site/src/*.ts`. `site/index.html` and the compatibility redirect are templates; build them before serving. Run `npm ci`, `npm run verify` and `node --import tsx scripts/build_pages.ts .local/pages-review`. Serve that output directory to preview the application. The compiler uses strict checking and rejects unused declarations; Pages publishes only compiled runtime files. See [verification instructions](TEST_PLAN.md).
 
 The owner interface is published at `/admin/`. Its operations, authentication boundaries and server configuration are documented in [Administration](ADMINISTRATION.md). The static sign-in page contains no private data or credentials; the owner API enforces access.
 
@@ -59,4 +59,4 @@ The [security policy](SECURITY.md) inventories credentials, data and trust bound
 
 # Type-check coverage
 
-`npm run typecheck` strictly checks both first-party browser clients in `site/src` and all Supabase entrypoints, handlers and shared modules in `supabase/functions`. Run `npm run typecheck:server` for the server gate alone. Both reject unused declarations; the source gates reject `any` and type suppressions. Runtime JSON validation remains necessary. Maintenance tooling/tests also contain JavaScript, Python and PowerShell; see the [coverage boundary](SERVICE_DEPENDENCIES.md#implementation-languages-and-assurance-boundary).
+`npm run typecheck` strictly checks both first-party browser clients in `site/src` and all Supabase entrypoints, handlers and shared modules in `supabase/functions`. Run `npm run typecheck:server` for the server gate alone. Both reject unused declarations; the source gates reject `any` and type suppressions. Runtime JSON validation remains necessary. All active Node maintenance scripts and tests are now TypeScript and included through `npm run typecheck:tooling`. PowerShell and SQL use their own parser/runtime checks; see the [coverage boundary](SERVICE_DEPENDENCIES.md#implementation-languages-and-assurance-boundary).

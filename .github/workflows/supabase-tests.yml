@@ -7,11 +7,10 @@ on:
       - 'site-supabase/**'
       - 'supabase/**'
       - 'tests/**'
-      - 'tsconfig.supabase.json'
+      - 'tsconfig*.json'
+      - 'scripts/**'
       - 'package.json'
       - 'package-lock.json'
-      - 'scripts/check_server_types.mjs'
-      - 'scripts/monthly_usage_report.mjs'
       - '.github/workflows/supabase-tests.yml'
 permissions:
   contents: read
@@ -27,6 +26,4 @@ jobs:
           node-version: '22'
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run typecheck
-      - run: npm install --prefix .local --no-save --package-lock=false @electric-sql/pglite@0.5.8
-      - run: npm test
+      - run: npm run verify

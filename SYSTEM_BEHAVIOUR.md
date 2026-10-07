@@ -421,7 +421,7 @@ The one-minute startup help timer is independent: interaction cancels that one-t
 
 # Evidence and unresolved behaviour
 
-The sequence charts state intended checks and outcomes; tests and provider readbacks support specific claims. [Security policy](SECURITY.md) records the verified baseline and open isolation/audit work. [Reminder tests](tests/summary-reminder.test.mjs) exercise receipts, reloads, stale tabs and interval boundaries. [Submission tests](tests/usage-summary.test.mjs), [administration tests](tests/owner-admin.test.mjs) and [delivery tests](tests/new-profile-notifications.test.mjs) cover their named contracts. They do not prove complete browser failure recovery, provider configuration or exactly-once external delivery.
+The sequence charts state intended checks and outcomes; tests and provider readbacks support specific claims. [Security policy](SECURITY.md) records the verified baseline and open isolation/audit work. [Reminder tests](tests/summary-reminder.test.ts) exercise receipts, reloads, stale tabs and interval boundaries. [Submission tests](tests/usage-summary.test.ts), [administration tests](tests/owner-admin.test.ts) and [delivery tests](tests/new-profile-notifications.test.ts) cover their named contracts. They do not prove complete browser failure recovery, provider configuration or exactly-once external delivery.
 
 # Documentation traceability
 

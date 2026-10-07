@@ -6,8 +6,12 @@ on:
   pull_request:
     paths:
       - '.github/workflows/supabase-probe.yml'
-      - 'scripts/probe_supabase.mjs'
-      - 'tests/supabase-probe.test.mjs'
+      - 'scripts/probe_supabase.ts'
+      - 'scripts/probe_delay.ts'
+      - 'tests/supabase-probe.test.ts'
+      - 'supabase/functions/_shared/contracts.ts'
+      - 'package.json'
+      - 'package-lock.json'
 permissions:
   contents: read
 concurrency:
@@ -25,17 +29,18 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
+      - run: npm ci
       - name: Validate probe behaviour without network access
-        run: node --test tests/supabase-probe.test.mjs
+        run: node --import tsx --test tests/supabase-probe.test.ts
       - name: Randomize scheduled probe time
         if: github.event_name == 'schedule'
         shell: bash
         run: |
-          delay=$(node -e 'process.stdout.write(String(require("node:crypto").randomInt(0, 91)))')
+          delay=$(node --import tsx scripts/probe_delay.ts)
           echo "Waiting ${delay} seconds before the database read."
           sleep "$delay"
       - name: Run read-only database query
         if: github.event_name != 'pull_request'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-        run: node scripts/probe_supabase.mjs
+        run: node --import tsx scripts/probe_supabase.ts
