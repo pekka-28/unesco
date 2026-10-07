@@ -47,6 +47,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
+      - run: npm ci
 
       - name: Test catalogue retention
         id: catalogue_tests
@@ -170,7 +171,7 @@ jobs:
         id: register_report
         if: steps.gate.outputs.failed == 'false' && steps.commit.outcome == 'success'
         shell: pwsh
-        run: node scripts/site_register_report.mjs "${{ steps.baseline.outputs.commit }}" HEAD
+        run: node --import tsx scripts/site_register_report.ts "${{ steps.baseline.outputs.commit }}" HEAD
 
       - name: Save full site register change report
         if: steps.register_report.outcome == 'success'

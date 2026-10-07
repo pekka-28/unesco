@@ -14,3 +14,7 @@ data/staging/cache/
 .local/
 node_modules/
 .local-typescript-errors.txt
+
+# Generated Python bytecode
+__pycache__/
+*.pyc

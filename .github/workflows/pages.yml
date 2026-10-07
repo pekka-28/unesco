@@ -26,9 +26,10 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci
-      - run: node scripts/check_documentation.mjs
-      - run: node --test tests/pages-distribution.test.mjs
-      - run: mkdir -p .local && node scripts/build_pages.mjs .local/pages-dist
+      - run: npm run typecheck
+      - run: node --import tsx scripts/check_documentation.ts
+      - run: node --import tsx --test tests/pages-distribution.test.ts
+      - run: mkdir -p .local && node --import tsx scripts/build_pages.ts .local/pages-dist
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         if: github.event_name != 'pull_request'
         with:
