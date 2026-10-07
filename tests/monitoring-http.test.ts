@@ -1,3 +1,4 @@
+import {createAdminHandler} from '../supabase/functions/owner-admin/handler.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {verifyMonitoringHttp} from '../scripts/verify_monitoring_http.ts';
@@ -12,7 +13,14 @@ test('deployment smoke check uses no credentials or valid submissions',async()=>
    if(options?.method==='OPTIONS')return new Response(null,{status:204,headers:{'access-control-allow-origin':'https://pekka-28.github.io'}});
    assert.equal(options?.body,'{}');return new Response(null,{status:400});
   }
-  assert.equal(options?.body,undefined);return new Response(null,{status:401});
+  assert.equal(options?.body,'{}');
+  assert.equal(new Headers(options?.headers).get('origin'),'https://pekka-28.github.io');
+  if(url.pathname.endsWith('owner-admin')) {
+   const noEffect=()=>assert.fail('Anonymous check must not access private data or send mail');
+   const handler=createAdminHandler({env:()=> 'configured',rpc:noEffect,send:noEffect,request:noEffect});
+   return handler(new Request(input,options));
+  }
+  return new Response(null,{status:401});
  });
  assert.equal(seen.length,6);
 });

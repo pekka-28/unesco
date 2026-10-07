@@ -5,7 +5,7 @@ import {probeDatabase} from './probe_supabase.ts';
 export async function verifyMonitoringHttp(base: string, request: typeof fetch = fetch) {
  await probeDatabase(base, request);
  for(const worker of ['new-profile-notifications','monthly-report','owner-admin']) {
-  const response=await request(new URL(`/functions/v1/${worker}`,base),{method:'POST',signal:AbortSignal.timeout(30000)});
+  const response=await request(new URL(`/functions/v1/${worker}`,base),{method:'POST',headers:{Origin:'https://pekka-28.github.io','Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(30000)});
   assert.equal(response.status,401,`${worker} must reject unauthenticated callers`);
  }
  const url=new URL('/functions/v1/usage-summary',base);
