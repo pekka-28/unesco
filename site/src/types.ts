@@ -30,12 +30,18 @@ export interface Profile {
   visitedSiteIds?: unknown; siteStatuses?: unknown;
 }
 export interface Place {lat: number; lon: number; label: string}
-export interface LocationMatch {lat: string | number; lon: string | number; display_name: string; boundingbox?: string[]}
+export interface LocationMatch {
+  lat: string | number; lon: string | number; display_name: string; boundingbox?: string[];
+  addresstype?: string; address?: {country?: string}; namedetails?: Record<string, string>;
+}
 export interface ReportRow {siteId: string; name: string; country: string; status: string; latestVisitRaw: string; latestVisitDisplay: string; feature: Site}
 export interface UsageStats {encouragement?: string; active_datasets?: number; unique_datasets?: number; average_visited_sites?: number}
 export interface SubmissionResult {ok: boolean; reason?: string; detail?: string; duplicate?: boolean; stats?: UsageStats | null; unverified?: boolean}
 export interface WhsResult {type: 'whs'; feature: Site; title: string; subtitle: string; score: number; matchedPoint: {lat: number; lon: number} | null}
-export interface GeoResult {type: 'geo'; lat: number; lon: number; bbox: number[] | null; title: string; subtitle: string}
+export interface GeoResult {
+  type: 'geo'; lat: number; lon: number; bbox: number[] | null; title: string; subtitle: string;
+  isCountry?: boolean; countryNames?: string[];
+}
 export interface Receipt {ok?: boolean; submission_id?: string; duplicate?: boolean; error?: string; stats?: UsageStats}
 export interface StatsResponse {ok?: boolean; stats?: UsageStats}
 export interface HistogramResponse {ok?: boolean; histogram?: {buckets: {lower_bound:number; upper_bound:number; height:number}[]}}

@@ -123,12 +123,16 @@ Search must support site and place lookup with explicit user action:
 - Support geographic place search via geocoding.
 - Run search on explicit action (search button or Enter), not on every keystroke.
 - Show selectable search results.
-- Recenter map on single WHS match.
+- Recenter map on a single WHS match and fit multiple matches into the viewport.
+- Fit a resolved geographic region to its bounds, including when selecting a region suggestion.
+- Temporarily reveal eligible search results and sites in the resulting viewport, even under visited-only and component filters. Restore normal marker visibility on the next viewport change; search activation must survive its own map movement and must not alter visit records or saved filters.
 - Support home-location search with selectable canonical place names.
 - Update right-side list on search execution.
 - Update right-side list when list mode changes.
 - Fall back to local WHS metadata text match when geocoding is unavailable.
-- If direct WHS text match is empty but geocoding resolves a region, list sites in resolved bounds.
+- Resolve country queries through geocoder country names/alternative names and exact normalized membership in the register's existing country field. Country searches must not include neighbouring countries inside the bounding rectangle. Preserve component-specific attribution and transnational parents.
+- If direct WHS text match is empty but geocoding resolves a subnational place, list sites in resolved bounds restricted by its country name where supplied. Bounds approximate the subnational area; they are not its exact boundary.
+- If the geocoder's country cannot be matched, explain that no country match was found rather than applying an unrestricted bounding rectangle. Keep the current register format; country-code support is deferred to enhancement #66.
 
 ### Profile and settings lifecycle
 
