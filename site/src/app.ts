@@ -1018,6 +1018,10 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       temporarilyVisibleSiteIds = new Set(revealSiteIds);
       for (const [siteId, marker] of markersBySiteId.entries()) marker.setStyle(markerStyle(siteId));
       applyVisitedOnlyFilter();
+      // Reapply stacking after hidden markers have been added back to the map.
+      for (const [siteId, marker] of markersBySiteId.entries()) {
+        if (isVisited(siteId) && map.hasLayer(marker)) marker.bringToFront();
+      }
     }
     function applyVisitedOnlyFilter() {
       if (!layer) return;

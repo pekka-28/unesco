@@ -11,6 +11,7 @@ test('selection reveals an unvisited marker through zoom, until the next redraw'
     feature: {properties:{site_id:string}};
     constructor(id: string) { this.feature={properties:{site_id:id}}; }
     setStyle() {} addTo() {shown.add(this);} getLatLng() {return {lat:1,lng:2};}
+    bringToFront() {shown.delete(this); shown.add(this);}
   }
   const marker = (id: string) => new CircleMarker(id);
   const markers = new Map(['selected','other','visited'].map(id=>[id,marker(id)]));
@@ -24,6 +25,7 @@ test('selection reveals an unvisited marker through zoom, until the next redraw'
   vm.runInContext(html.slice(html.indexOf('    let temporarilyVisibleSiteId'),html.indexOf('    function canonicalPlaceName')),ctx);
   ctx.refreshMarkers(); assert.equal(shown.size,1);
   ctx.zoomToSite('selected'); assert.equal(shown.size,2);
+  assert.equal([...shown].at(-1), markers.get('visited'), 'visited markers remain above newly revealed sites');
   assert(!shown.has(markers.get('other')!), 'unselected search hits remain filtered');
   ctx.restoreViewportVisibility(); assert.equal(shown.size,1); assert(shown.has(markers.get('visited')!));
 });
