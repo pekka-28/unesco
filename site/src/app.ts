@@ -2218,6 +2218,8 @@ export type BrowserAutomation = {
   buildWhsSearchResults: typeof buildWhsSearchResults;
   buildGeoSearchResults: typeof buildGeoSearchResults;
   geographicSearchSites: typeof geographicSearchSites;
+  sitesInCountries: typeof sitesInCountries;
+  resolveRegisterCountries: typeof resolveRegisterCountries;
   findSitesInBBox: typeof findSitesInBBox;
   restoreViewportVisibility: typeof restoreViewportVisibility;
   getUsageSummaryEndpoint: typeof getUsageSummaryEndpoint;
