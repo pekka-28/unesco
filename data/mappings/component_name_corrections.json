@@ -1,0 +1,19 @@
+{
+  "description": "Manually verified component-name corrections. Match parent, component reference and exact source text; never infer encoding repairs.",
+  "entries": [
+    {
+      "parent_site_id": "WHS 555",
+      "component_ref": "555-002",
+      "source_name": "HovgÃ¥rden",
+      "corrected_name": "Hovgården",
+      "evidence_url": "https://whc.unesco.org/en/list/555/"
+    },
+    {
+      "parent_site_id": "WHS 352",
+      "component_ref": "352-004",
+      "source_name": "KÃ¥fjord",
+      "corrected_name": "Kåfjord",
+      "evidence_url": "https://whc.unesco.org/en/list/352/maps/"
+    }
+  ]
+}
