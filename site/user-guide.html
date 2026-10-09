@@ -30,7 +30,8 @@ figure{margin:1rem 0}figure img{display:block;max-width:100%;height:auto;border:
 
 
 <section id="browse"><h1>Browsing and searching</h1>
-<p>Search finds matching catalogue sites and geographic locations. Selecting a site brings it into view even when a filter would normally hide it; a later map redraw can apply the filter again. Opening a site records local inspection activity but does not create a visit. Startup increases the local usage counter. Searching does not by itself publish a usage report.</p>
+<p>Search finds matching catalogue sites and geographic locations. A region search frames the region; multiple site matches are fitted into view. Eligible sites in the resulting viewport are temporarily revealed even when a filter would normally hide them. Moving or zooming the map restores normal visibility. Selecting an individual site also reveals it until the next viewport change. These actions do not mark sites as visited or change saved filters. Opening a site records local inspection activity but does not create a visit. Startup increases the local usage counter. Searching does not by itself publish a usage report.</p>
+<p>Country searches match country names in the register, including alternative names supplied by the place service. Components use their own country attribution. Searches within a country use the place's rectangular bounds, so a city or region result may include nearby sites in the same country. If a place's country cannot be matched, choose another result or use the country name shown in the register.</p>
 <p>The catalogue comes from the site distribution. Map tiles and geographic searches use external providers, which receive the requested tile coordinates or search text and ordinary request metadata. Local storage does not make those requests private from their providers.</p>
 </section>
 

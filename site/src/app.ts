@@ -444,15 +444,13 @@ function errorMessage(error: unknown): string { return error instanceof Error ? 
       return highVolumeComponentSiteIds.has(asText(siteId));
     }
     function shouldShowSite(siteId: string) {
-      if (siteId === temporarilyVisibleSiteId) return true;
+      if (siteId === temporarilyVisibleSiteId || temporarilyVisibleSiteIds.has(siteId)) return true;
       const onlyVisited = !!(connected && profile && profile.settings && profile.settings.visitedOnly);
       const visited = isVisited(siteId);
       if (onlyVisited && !visited) return false;
       if (!isHighVolumeComponent(siteId)) return true;
       if (visited) return true;
       if (explicitVisibleSiteIds.has(siteId)) return true;
-      if ((lastSearchedSiteIds || []).includes(siteId)) return true;
-      if (selectedSiteId === siteId) return true;
       return false;
     }
     const markerStyle = (siteId: string) => {
@@ -1013,9 +1011,11 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       });
     }
     let temporarilyVisibleSiteId: string | null = null;
-    function refreshMarkers(revealSiteId: string | null = null) {
+    let temporarilyVisibleSiteIds = new Set<string>();
+    function refreshMarkers(revealSiteId: string | null = null, revealSiteIds: string[] = []) {
       // A selection survives its own zoom; the next ordinary redraw restores filters.
       temporarilyVisibleSiteId = revealSiteId;
+      temporarilyVisibleSiteIds = new Set(revealSiteIds);
       for (const [siteId, marker] of markersBySiteId.entries()) marker.setStyle(markerStyle(siteId));
       applyVisitedOnlyFilter();
     }
@@ -1034,15 +1034,20 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
     function zoomToSite(siteId: string) {
       const marker = markersBySiteId.get(siteId);
       if (!marker) return;
+      map.stop();
       explicitVisibleSiteIds.add(asText(siteId));
-      refreshMarkers(asText(siteId));
       const focus = searchFocusBySiteId.get(asText(siteId));
-      if (focus && Number.isFinite(focus.lat) && Number.isFinite(focus.lon)) map.setView([focus.lat, focus.lon], 12);
+      if (focus && Number.isFinite(focus.lat) && Number.isFinite(focus.lon)) map.setView([focus.lat, focus.lon], 12, {animate: false});
       else {
         const ll = marker.getLatLng();
-        map.setView([ll.lat, ll.lng], 12);
+        map.setView([ll.lat, ll.lng], 12, {animate: false});
       }
+      refreshMarkers(asText(siteId));
       if (marker.feature) renderDetail(marker.feature);
+    }
+    function restoreViewportVisibility() {
+      explicitVisibleSiteIds.clear();
+      refreshMarkers();
     }
     function canonicalPlaceName(display: unknown) {
       return asText(display).split(",")[0].trim();
@@ -1709,16 +1714,49 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
     }
     async function buildGeoSearchResults(query: string): Promise<GeoResult[]> {
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&q=${encodeURIComponent(query)}`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&addressdetails=1&namedetails=1&accept-language=en&q=${encodeURIComponent(query)}`);
         if (!res.ok) return [];
         const data: LocationMatch[] = await res.json();
-        return data.map(x => ({ type: "geo", lat: Number(x.lat), lon: Number(x.lon), bbox: Array.isArray(x.boundingbox) ? x.boundingbox.map(Number) : null, title: asText(x.display_name).split(",")[0], subtitle: asText(x.display_name) }));
+        return data.map((x): GeoResult => ({
+          type: "geo", lat: Number(x.lat), lon: Number(x.lon),
+          bbox: validSearchBounds(Array.isArray(x.boundingbox) ? x.boundingbox.map(Number) : null),
+          title: asText(x.display_name).split(",")[0], subtitle: asText(x.display_name),
+          isCountry: x.addresstype === "country",
+          countryNames: [asText(x.address?.country), ...(x.addresstype === "country"
+            ? [asText(x.display_name), ...Object.values(x.namedetails || {}).flatMap(name => asText(name).split(";"))] : [])].filter(Boolean)
+        })).filter(x => Number.isFinite(x.lat) && Number.isFinite(x.lon) && Math.abs(x.lat) <= 90 && Math.abs(x.lon) <= 180);
       } catch {
         return [];
       }
     }
+    function normalizedCountryName(name: string) {
+      return name.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim().replace(/\s+/g, " ");
+    }
+    function countryMemberships(country: string) {
+      return country.split(/[,;]/).map(normalizedCountryName).filter(Boolean);
+    }
+    function resolveRegisterCountries(names: string[]) {
+      const requested = new Set(names.map(normalizedCountryName));
+      const countries = new Set<string>();
+      for (const f of whsData?.features || []) {
+        for (const country of countryMemberships(asText(f.properties.country))) {
+          if (requested.has(country)) countries.add(country);
+        }
+      }
+      return countries;
+    }
+    function sitesInCountries(countries: Set<string>) {
+      return (whsData?.features || []).filter(f => countryMemberships(asText(f.properties.country)).some(c => countries.has(c)));
+    }
+    function validSearchBounds(bbox: number[] | null): number[] | null {
+      if (!bbox || bbox.length !== 4 || !bbox.every(Number.isFinite)) return null;
+      const [south, north, west, east] = bbox;
+      if (south < -90 || north > 90 || south > north || Math.abs(west) > 180 || Math.abs(east) > 180) return null;
+      return bbox;
+    }
     function findSitesInBBox(bbox: number[] | null) {
-      if (!bbox || bbox.length < 4 || !whsData || !Array.isArray(whsData.features)) return [];
+      bbox = validSearchBounds(bbox);
+      if (!bbox || !whsData || !Array.isArray(whsData.features)) return [];
       const south = Number(bbox[0]); const north = Number(bbox[1]); const west = Number(bbox[2]); const east = Number(bbox[3]);
       if (![south, north, west, east].every(Number.isFinite)) return [];
       return whsData.features.filter((f) => {
@@ -1726,49 +1764,117 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         const lon = Number(f.geometry.coordinates[0]);
         const lat = Number(f.geometry.coordinates[1]);
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
-        return lat >= south && lat <= north && lon >= west && lon <= east;
+        return lat >= south && lat <= north && (west <= east ? lon >= west && lon <= east : lon >= west || lon <= east);
       });
     }
+    function geographicSearchSites(geo: GeoResult) {
+      const countries = resolveRegisterCountries(geo.countryNames || []);
+      const countrySites = sitesInCountries(countries);
+      if (geo.isCountry) return countrySites;
+      const withinBounds = findSitesInBBox(geo.bbox);
+      if (!geo.countryNames?.length) return withinBounds;
+      const allowed = new Set(countrySites);
+      return withinBounds.filter(f => allowed.has(f));
+    }
+    function showSearchSites(features: Site[], geo: GeoResult | null = null, restrictActivation = false) {
+      lastSearchedSiteIds = features.map(f => asText(f.properties.site_id)).filter(Boolean);
+      selectedSiteId = null;
+      selectionContext = "search";
+      ui.siteListMode.value = "searched";
+      renderSiteList("searched");
+      const bbox = validSearchBounds(geo?.bbox || null);
+      // Complete our own movement before activating markers. The next viewport
+      // movement restores normal filters through the shared moveend handler.
+      map.stop();
+      if (bbox) {
+        const [south, north, west, east] = bbox;
+        map.fitBounds([[south, west], [north, east < west ? east + 360 : east]], {padding: [20, 20], maxZoom: 14, animate: false});
+      } else if (geo) {
+        map.setView([geo.lat, geo.lon], 10, {animate: false});
+      } else if (features.length) {
+        const points: L.LatLngTuple[] = features.map(f => {
+          const focus = searchFocusBySiteId.get(asText(f.properties.site_id));
+          return focus ? [focus.lat, focus.lon] : [Number(f.geometry.coordinates[1]), Number(f.geometry.coordinates[0])];
+        });
+        map.fitBounds(points, {padding: [20, 20], maxZoom: 10, animate: false});
+      }
+      const bounds = map.getBounds();
+      const eligible = geo || restrictActivation ? features : (whsData?.features || []);
+      const visibleIds = eligible.filter(f => {
+        const [lon, lat] = f.geometry.coordinates;
+        return [lon, lon - 360, lon + 360].some(lng => bounds.contains([lat, lng]));
+      }).map(f => asText(f.properties.site_id));
+      refreshMarkers(null, features.length || geo ? [...lastSearchedSiteIds, ...visibleIds] : []);
+      if (geo && (geo.isCountry || geo.countryNames?.length) && !resolveRegisterCountries(geo.countryNames || []).size) {
+        ui.detailPane.textContent = "The place's country could not be matched to the register. Select another result or search using the register's country name.";
+      }
+    }
+    let searchRequestId = 0;
     async function runSearch() {
-      const q = asText(ui.searchInput.value).trim(); if (!q) { lastSearchedSiteIds = []; searchFocusBySiteId.clear(); explicitVisibleSiteIds = new Set<string>(); ui.searchResults.style.display = "none"; ui.searchResults.innerHTML = ""; refreshMarkers(); renderSiteList(asText(ui.siteListMode.value)); return; }
+      const requestId = ++searchRequestId;
+      const q = asText(ui.searchInput.value).trim(); if (!q) { lastSearchedSiteIds = []; searchFocusBySiteId.clear(); explicitVisibleSiteIds = new Set<string>(); ui.searchResults.style.display = "none"; ui.searchResults.innerHTML = ""; refreshMarkers(); renderSiteList(asText(ui.siteListMode.value)); hideLoading(); return; }
       explicitVisibleSiteIds = new Set<string>();
+      refreshMarkers();
+      ui.searchResults.style.display = "none";
       showLoading("Loading ...");
       try {
-        const whsRows = buildWhsSearchResults(q);
+        let whsRows = buildWhsSearchResults(q);
         const geoRows = await buildGeoSearchResults(q);
+        if (requestId !== searchRequestId) return;
+        const directCountries = resolveRegisterCountries([q]);
+        const countryResult = !parseWhsKeyQuery(q) ? geoRows.find(r => r.isCountry &&
+          (r.countryNames || []).some(name => normalizedCountryName(name) === normalizedCountryName(q))) : undefined;
+        const exactSite = whsRows.some(r => [r.title, asText(r.feature.properties.name_en), asText(r.feature.properties.name)]
+          .some(name => normalizedCountryName(name) === normalizedCountryName(q)));
+        const namedPlace = !parseWhsKeyQuery(q) && !exactSite
+          ? geoRows.find(r => normalizedCountryName(r.title) === normalizedCountryName(q)) : undefined;
+        let selectedGeo: GeoResult | null = null;
+        let features: Site[];
+        if (countryResult) {
+          selectedGeo = countryResult;
+          features = geographicSearchSites(countryResult);
+        } else if (directCountries.size) {
+          features = sitesInCountries(directCountries);
+        } else if (namedPlace || (!whsRows.length && !parseWhsKeyQuery(q) && geoRows.length)) {
+          selectedGeo = namedPlace || geoRows[0];
+          features = geographicSearchSites(selectedGeo);
+        } else {
+          features = whsRows.map(r => r.feature);
+        }
+        if (selectedGeo || directCountries.size) {
+          whsRows = features.map(feature => ({type: "whs", feature, title: displayName(feature.properties),
+            subtitle: asText(feature.properties.site_id), score: 0, matchedPoint: null}));
+        }
         searchFocusBySiteId.clear();
         for (const r of whsRows) {
           const sid = asText(r.feature && r.feature.properties && r.feature.properties.site_id);
           if (!sid || !r.matchedPoint) continue;
           searchFocusBySiteId.set(sid, r.matchedPoint);
         }
-        lastSearchedSiteIds = whsRows.map((r) => asText(r.feature && r.feature.properties && r.feature.properties.site_id)).filter(Boolean);
-        for (const sid of lastSearchedSiteIds) explicitVisibleSiteIds.add(sid);
-        refreshMarkers();
-        if (!lastSearchedSiteIds.length && geoRows.length && geoRows[0].bbox) {
-          const bboxMatches = findSitesInBBox(geoRows[0].bbox);
-          lastSearchedSiteIds = bboxMatches.map((f) => asText(f.properties && f.properties.site_id)).filter(Boolean);
-          for (const sid of lastSearchedSiteIds) explicitVisibleSiteIds.add(sid);
-          refreshMarkers();
-        }
+        // A locally recognised country must also constrain temporary activation
+        // when geocoding is unavailable.
+        showSearchSites(features, selectedGeo, directCountries.size > 0);
         const rows = [...whsRows.slice(0, 20), ...geoRows].slice(0, 24); ui.searchResults.innerHTML = "";
-        ui.siteListMode.value = "searched";
-        renderSiteList("searched");
-        if (whsRows.length === 1) {
-          const one = whsRows[0];
-          if (one.matchedPoint) map.setView([one.matchedPoint.lat, one.matchedPoint.lon], 10);
-          else {
-            const f = one.feature;
-            map.setView([Number(f.geometry.coordinates[1]), Number(f.geometry.coordinates[0])], 10);
-          }
-        } else if (rows.length === 1) {
-          const only = rows[0];
-          if (only.type === "geo") map.setView([only.lat, only.lon], 10);
+        for (const row of rows) {
+          const div = document.createElement("div"); div.className = "result-row";
+          div.innerHTML = `<strong>${escapeHtml(row.title)}</strong><br><span class="result-meta">${escapeHtml(row.subtitle)}</span>`;
+          div.addEventListener("click", () => {
+            if (requestId !== searchRequestId) return;
+            if (row.type === "whs") {
+              const sid = asText(row.feature.properties.site_id);
+              selectionContext = "search";
+              zoomToSite(sid);
+            } else {
+              searchFocusBySiteId.clear();
+              showSearchSites(geographicSearchSites(row), row);
+            }
+            ui.searchResults.style.display = "none";
+          });
+          ui.searchResults.appendChild(div);
         }
-        for (const row of rows) { const div = document.createElement("div"); div.className = "result-row"; div.innerHTML = `<strong>${escapeHtml(row.title)}</strong><br><span class="result-meta">${escapeHtml(row.subtitle)}</span>`; div.addEventListener("click", () => { if (row.type === "whs") { const f = row.feature; const sid = asText(f && f.properties && f.properties.site_id); explicitVisibleSiteIds.add(sid); refreshMarkers(sid); selectionContext = "search"; if (row.matchedPoint) map.setView([row.matchedPoint.lat, row.matchedPoint.lon], 10); else map.setView([Number(f.geometry.coordinates[1]), Number(f.geometry.coordinates[0])], 10); renderDetail(f); } else { map.setView([row.lat, row.lon], 10); clearSelection(); } ui.searchResults.style.display = "none"; }); ui.searchResults.appendChild(div); }
         ui.searchResults.style.display = rows.length ? "block" : "none";
       } finally {
-        hideLoading();
+        if (requestId === searchRequestId) hideLoading();
       }
     }
     function getUsageSummaryEndpoint() {
@@ -1988,6 +2094,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       });
       document.addEventListener("keydown", (ev) => { if (ev.key !== "Escape") return; closeTransientUi(); });
       map.on("moveend", () => {
+        restoreViewportVisibility();
         const c = map.getCenter();
         localStorage.setItem(MAP_VIEW_KEY, JSON.stringify({ lat: c.lat, lon: c.lng, zoom: map.getZoom() }));
       });
@@ -2098,6 +2205,10 @@ export type BrowserAutomation = {
   runSearch: typeof runSearch;
   safeExternalUrl: typeof safeExternalUrl;
   buildWhsSearchResults: typeof buildWhsSearchResults;
+  buildGeoSearchResults: typeof buildGeoSearchResults;
+  geographicSearchSites: typeof geographicSearchSites;
+  findSitesInBBox: typeof findSitesInBBox;
+  restoreViewportVisibility: typeof restoreViewportVisibility;
   getUsageSummaryEndpoint: typeof getUsageSummaryEndpoint;
   isSummaryDue: typeof isSummaryDue;
   migrateStoredUsageSettings: typeof migrateStoredUsageSettings;

@@ -22,7 +22,7 @@ import {chromium} from 'playwright';
 import {siteFunction} from '../scripts/site_source.ts';
 
 // Real compiled renderers in a real browser, with inert fixtures and no network.
-const code = ['escapeHtml','safeExternalUrl','element','verifyProfile','getSiteVisits','normalizeDateOnly','renderDetail','renderSiteList','runSearch'].map(siteFunction).join('\n');
+const code = ['escapeHtml','safeExternalUrl','element','verifyProfile','getSiteVisits','normalizeDateOnly','renderDetail','renderSiteList','parseWhsKeyQuery','normalizedCountryName','countryMemberships','resolveRegisterCountries','sitesInCountries','validSearchBounds','findSitesInBBox','geographicSearchSites','showSearchSites','runSearch'].map(siteFunction).join('\n');
 const payloads = ['<img src=x onerror="document.body.dataset.injected=1">', '" autofocus onfocus="document.body.dataset.injected=1" x="', '<svg onload="document.body.dataset.injected=1"></svg>', 'Text & "quotes" <tags> \'apostrophe\' 日本語\nsecond line', 'Long note '.repeat(30)+'"><img src=x onerror="document.body.dataset.injected=1">'];
 const chrome = process.env.MWH_CHROME_PATH || (process.platform==='win32' && existsSync('C:/Program Files/Google/Chrome/Application/chrome.exe') ? 'C:/Program Files/Google/Chrome/Application/chrome.exe' : undefined);
 
@@ -33,7 +33,7 @@ test('imported notes remain literal text in display, tooltip and editor; edit/de
   await page.route('**/*',route=>route.abort());
   await page.setContent('<body><div id="detail-pane"></div><div id="search-results"></div></body>');
   await page.evaluate(()=>{
-   Object.assign(window, {ui:{detailPane:document.querySelector('#detail-pane'),searchResults:document.querySelector('#search-results'),searchInput:{value:'test'},siteListMode:{value:'all'}},connected:true,selectedSiteId:'',PROFILE_SCHEMA_VERSION:1,componentCountByRootId:new Map(),listSortBy:'name',listSortDir:'asc',searchFocusBySiteId:new Map(),explicitVisibleSiteIds:new Set(),lastSearchedSiteIds:[]});
+   Object.assign(window, {searchRequestId:0,ui:{detailPane:document.querySelector('#detail-pane'),searchResults:document.querySelector('#search-results'),searchInput:{value:'test'},siteListMode:{value:'all'}},connected:true,selectedSiteId:'',PROFILE_SCHEMA_VERSION:1,componentCountByRootId:new Map(),listSortBy:'name',listSortDir:'asc',searchFocusBySiteId:new Map(),explicitVisibleSiteIds:new Set(),lastSearchedSiteIds:[]});
    Object.assign(window, {
     asText(v: unknown){return String(v??'');}, displayName(p: Site['properties']){return p.name;},
     getVisitStatus(){return 'visited';}, detectNativeScriptName(p: Site['properties']){return p.native_display||'';},
@@ -42,7 +42,7 @@ test('imported notes remain literal text in display, tooltip and editor; edit/de
     defaultVisitDateValue(){return '2025-01-01';}, ensureVisitStructures(){}, persistProfile(){},
     assertValidSiteId(id: string){return id;}, errorMessage(e: unknown){return e instanceof Error?e.message:String(e);},
     refreshMarkers(){}, isHighVolumeComponent(){return false;}, latestVisitDate(){return '2025-01-01';},
-    dateSortKey(v: string){return v;}, showLoading(){}, hideLoading(){}, map:{setView(){}},
+    dateSortKey(v: string){return v;}, showLoading(){}, hideLoading(){}, map:{setView(){},stop(){},getBounds(){return {contains(){return true;}};}},
     saveSiteVisit(siteId: string,visit: Partial<Visit>){window.saved=visit;window.profile.siteVisits[siteId]=[{id:'',date:'',status:'',note:'',createdAt:'',updatedAt:'',...visit}];},
     deleteSiteVisit(siteId: string,id: string){window.deleted=id;window.profile.siteVisits[siteId]=[];}
    });

@@ -19,13 +19,11 @@ test('selection reveals an unvisited marker through zoom, until the next redraw'
     explicitVisibleSiteIds:new Set(['other']),lastSearchedSiteIds:['other'],selectedSiteId:null,
     markerStyle:()=>({}),markersBySiteId:markers,searchFocusBySiteId:new Map(),
     layer:{eachLayer:(fn: (marker: CircleMarker)=>void)=>markers.forEach(fn)},
-    map:{hasLayer:(m: CircleMarker)=>shown.has(m),removeLayer:(m: CircleMarker)=>shown.delete(m),setView(){
-      assert(shown.has(markers.get('selected')!), 'selection must be visible before zoom');
-    }},renderDetail(){}});
+    map:{hasLayer:(m: CircleMarker)=>shown.has(m),removeLayer:(m: CircleMarker)=>shown.delete(m),setView(){},stop(){}},renderDetail(){}});
   vm.runInContext(html.slice(html.indexOf('    function shouldShowSite('),html.indexOf('    const markerStyle')),ctx);
   vm.runInContext(html.slice(html.indexOf('    let temporarilyVisibleSiteId'),html.indexOf('    function canonicalPlaceName')),ctx);
   ctx.refreshMarkers(); assert.equal(shown.size,1);
   ctx.zoomToSite('selected'); assert.equal(shown.size,2);
   assert(!shown.has(markers.get('other')!), 'unselected search hits remain filtered');
-  ctx.refreshMarkers(); assert.equal(shown.size,1); assert(shown.has(markers.get('visited')!));
+  ctx.restoreViewportVisibility(); assert.equal(shown.size,1); assert(shown.has(markers.get('visited')!));
 });
