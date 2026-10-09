@@ -30,8 +30,17 @@ test('geographic country filtering uses actual register membership and handles d
   assert(ctx.findSitesInBBox([35.8,42.2,25.6,44.8]).some(f=>f.properties.site_id==='WHS 21'), 'fixture reproduces the old rectangular false match');
   const slovakia = ctx.geographicSearchSites({type:'geo',title:'Slovakia',subtitle:'Slovakia',lat:48,lon:19,
     bbox:null,isCountry:true,countryNames:['Slovakia']});
-  assert(slovakia.some(f=>f.properties.site_id==='WHS 1608'));
+  assert(!slovakia.some(f=>f.properties.site_id==='WHS 1608'), 'local components replace the shared parent in country results');
   assert(!slovakia.some(f=>f.properties.name_en?.includes('Carnuntum')));
+  const sweden = ctx.geographicSearchSites({type:'geo',title:'Sweden',subtitle:'Sweden',lat:62,lon:15,
+    bbox:[55,69,10,25],isCountry:true,countryNames:['Sweden']});
+  assert(!sweden.some(f=>f.properties.site_id==='WHS 1187'), 'the Estonian representative marker must not be a Swedish search result');
+  const struve = sweden.filter(f=>f.properties.parent_site_id==='WHS 1187');
+  assert.equal(struve.length,4);
+  assert(struve.every(f=>f.properties.country==='Sweden'));
+  assert(sweden.some(f=>f.properties.site_id==='WHS 555'), 'single-country parent properties remain searchable');
+  assert.deepEqual(Array.from(ctx.sitesInCountries(ctx.resolveRegisterCountries(['Sweden'])), f=>f.properties.site_id),
+    Array.from(sweden, f=>f.properties.site_id), 'offline country matching follows the same component rule');
   assert.equal(ctx.geographicSearchSites({type:'geo',title:'Unknown',subtitle:'Unknown',lat:0,lon:0,
     bbox:[-90,90,-180,180],isCountry:true,countryNames:['Unknown']}).length,0);
   assert.equal(ctx.findSitesInBBox([90,-90,0,10]).length,0);
