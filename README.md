@@ -49,6 +49,8 @@ Retired implementations and distribution checks are recorded in [Retired code](R
 
 Backend release procedure: [Supabase GitHub deployment](supabase/GITHUB_DEPLOYMENT.md), with deployment verification tracked in Issue #6.
 
+Ingestion applies the manually reviewed [component-name corrections](data/mappings/component_name_corrections.json) after catalogue reconciliation, including retained retired components. Each entry matches a parent identifier, component reference and exact malformed name. Component labels and matching search aliases are corrected; the downloaded source, identifiers, coordinates and other Unicode text remain unchanged. Unexpected names at a mapped component produce a warning for manual review. No automated encoding search or repair is performed.
+
 # Site development
 
 First-party browser code lives in `site/src/*.ts`. `site/index.html` and the compatibility redirect are templates; build them before serving. Run `npm ci`, `npm run verify` and `node --import tsx scripts/build_pages.ts .local/pages-review`. Serve that output directory to preview the application. The compiler uses strict checking and rejects unused declarations; Pages publishes only compiled runtime files. See [verification instructions](TEST_PLAN.md).

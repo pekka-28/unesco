@@ -82,6 +82,57 @@ try {
   $merged = @(Merge-Catalogue -FreshSites $revised -PriorSites $old)
   Assert ($merged[0].site_id -eq 'MWH 1-001') 'Reference revision lost exact matching component identity'
   Assert (-not (Test-Path "$temp/history")) 'Archive unexpectedly created'
+  # Exact reviewed corrections run through ingestion; unrelated Unicode is intact.
+  $corrections = Get-Content -Raw -Encoding utf8 "$repo/data/mappings/component_name_corrections.json" | ConvertFrom-Json
+  $mappedJson = Join-Path $temp 'corrected.json'
+  $mappedGeo = Join-Path $temp 'corrected.geojson'
+  $unicode = 'Untouched ' + [char]0x00c3 + [char]0x00e5 + [char]0x4e2d + [char]0x0628
+  $mappedRows = @($corrections.entries | ForEach-Object {
+    [pscustomobject]@{
+      id_no = $_.parent_site_id -replace '^WHS ', ''
+      name_en = $unicode
+      states_names = @('Sweden')
+      coordinates = @{ lat = 1; lon = 2 }
+      components_list = "name: $($_.source_name), ref: $($_.component_ref), latitude: 1, longitude: 2; name: $unicode, ref: $($_.component_ref)-other, latitude: 3, longitude: 4"
+    }
+  })
+  Write-Rows $mappedRows
+  $rawBefore = [IO.File]::ReadAllText($source)
+  & "$repo/scripts/convert_unesco_source.ps1" -InputFile $source -OutputJsonFile $mappedJson -OutputFile $mappedGeo -LocalNameTableFile "$temp/no-map" -OverwriteExisting
+  $mapped = Get-Content -Raw -Encoding utf8 $mappedJson | ConvertFrom-Json
+  foreach ($entry in $corrections.entries) {
+    $component = $mapped.sites | Where-Object component_ref -eq $entry.component_ref
+    $parent = $mapped.sites | Where-Object site_id -eq $entry.parent_site_id
+    Assert ($component.name_en -ceq "$unicode - $($entry.corrected_name)") 'Mapped component not corrected'
+    Assert ($component.aliases[0] -ceq $entry.corrected_name) 'Component search alias not corrected'
+    Assert ($parent.aliases -ccontains $entry.corrected_name) 'Parent search alias not corrected'
+    Assert ($parent.alias_points[0].name -ceq $entry.corrected_name) 'Parent alias location not corrected'
+    Assert ($parent.name_en -ceq $unicode) 'Valid Unicode changed'
+  }
+  Assert ([IO.File]::ReadAllText($source) -ceq $rawBefore) 'Correction changed raw source'
+  # Reconciliation must retain the corrected ID and retired label when absent later.
+  $retained = $mapped.sites | Where-Object component_ref -eq '352-004'
+  $mappedRows[1].components_list = "name: $unicode, ref: 352-004-other, latitude: 3, longitude: 4"
+  # Simulate a pre-correction retained record to cover historical repairs as well.
+  $retained.name = "$unicode - $($corrections.entries[1].source_name)"
+  $retained.name_en = $retained.name
+  $retained.aliases[0] = $corrections.entries[1].source_name
+  $mapped | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $mappedJson -Encoding utf8
+  Write-Rows $mappedRows
+  & "$repo/scripts/convert_unesco_source.ps1" -InputFile $source -OutputJsonFile $mappedJson -OutputFile $mappedGeo -LocalNameTableFile "$temp/no-map" -OverwriteExisting
+  $retired = (Get-Content -Raw -Encoding utf8 $mappedJson | ConvertFrom-Json).sites | Where-Object site_id -eq $retained.site_id
+  Assert ($retired.status -eq 'retired' -and $retired.aliases[0] -ceq $corrections.entries[1].corrected_name) 'Retired correction or identity lost'
+  . "$repo/scripts/component_name_corrections.ps1"
+  $retired.name = $unicode
+  $retired.name_en = $unicode
+  $warnings = @()
+  $parents = @($mapped.sites | Where-Object site_scope -eq 'whs')
+  Apply-ComponentNameCorrections -Sites ($parents + @($retired)) -Corrections $corrections -WarningVariable warnings -WarningAction SilentlyContinue
+  Assert ($warnings.Count -eq 1 -and $retired.name_en -ceq $unicode) 'Unexpected mapped text should warn without rewriting it'
+  $mapped = Get-Content -Raw -Encoding utf8 $mappedJson | ConvertFrom-Json
+  $stable = $mapped | ConvertTo-Json -Depth 30
+  Apply-ComponentNameCorrections -Sites $mapped.sites -Corrections $corrections
+  Assert (($mapped | ConvertTo-Json -Depth 30) -ceq $stable) 'Corrections are not idempotent'
   Write-Host 'Catalogue tests passed.'
 } finally {
   # Delete only the unique temporary fixture directory created by this test.

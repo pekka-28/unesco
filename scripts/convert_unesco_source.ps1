@@ -3,6 +3,7 @@ param(
   [string]$InputFile = "data/staging/unesco_source_raw.txt",
   [string]$SourceUrl = "https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/exports/json",
   [string]$LocalNameTableFile = "data/mappings/local_name_table.json",
+  [string]$ComponentNameCorrectionsFile = "$PSScriptRoot/../data/mappings/component_name_corrections.json",
   [string]$NativeNameMapFile = "",
   [string]$OutputFile = "data/current/unesco_official_sites.geojson",
   [string]$OutputJsonFile = "data/current/unesco_official_sites.json",
@@ -25,6 +26,8 @@ $outJsonDir = Split-Path -Parent $OutputJsonFile
 if ($outJsonDir -and -not (Test-Path -LiteralPath $outJsonDir)) { New-Item -ItemType Directory -Path $outJsonDir -Force | Out-Null }
 . "$PSScriptRoot/reconcile_catalogue.ps1"
 . "$PSScriptRoot/component_countries.ps1"
+. "$PSScriptRoot/component_name_corrections.ps1"
+$componentNameCorrections = Get-Content -Raw -Encoding utf8 -LiteralPath $ComponentNameCorrectionsFile | ConvertFrom-Json
 $componentCountries = (Get-Content -Raw -Encoding utf8 -LiteralPath "$PSScriptRoot/../data/component_countries.json" | ConvertFrom-Json).countries
 if (-not $PriorCatalogueFile) { $PriorCatalogueFile = $OutputJsonFile }
 $priorSites = @()
@@ -457,6 +460,7 @@ if ($priorRootCount -gt 0 -and $freshRootCount -lt ($priorRootCount * 0.9)) {
   throw 'Source lost more than 10% of active roots. Review the source before publication.'
 }
 $canonical.sites = @(Merge-Catalogue -FreshSites $canonical.sites -PriorSites $priorSites)
+Apply-ComponentNameCorrections -Sites $canonical.sites -Corrections $componentNameCorrections
 foreach ($site in $canonical.sites) {
   if ($site.site_scope -eq 'component') {
     $parent = $canonical.sites | Where-Object { $_.site_id -eq $site.parent_site_id } | Select-Object -First 1
