@@ -1750,7 +1750,14 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
       return countries;
     }
     function sitesInCountries(countries: Set<string>) {
-      return (whsData?.features || []).filter(f => countryMemberships(asText(f.properties.country)).some(c => countries.has(c)));
+      const matches = (whsData?.features || []).filter(f => countryMemberships(asText(f.properties.country)).some(c => countries.has(c)));
+      const representedParents = new Set(matches.filter(f => f.properties.site_scope === "component")
+        .map(f => asText(f.properties.parent_site_id)));
+      // A shared property's representative coordinate may be in another country.
+      // Use its local components when available, retaining unsplit properties.
+      return matches.filter(f => !(f.properties.site_scope === "whs" &&
+        countryMemberships(asText(f.properties.country)).length > 1 &&
+        representedParents.has(asText(f.properties.site_id))));
     }
     function validSearchBounds(bbox: number[] | null): number[] | null {
       if (!bbox || bbox.length !== 4 || !bbox.every(Number.isFinite)) return null;
