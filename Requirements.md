@@ -85,6 +85,26 @@ The site-name dictionary remains in scope because it improves readability and is
 - Keep selector-cap default at 4.
 - Run a separate update exercise for dictionary enrichment from UNESCO/public references, with optional Wikipedia fallback and strict confidence gating before apply.
 
+### Local names and future localisation: recorded decision, 10 October 2026
+
+The application currently provides an English UI. Its primary catalogue title is English. A supplementary local name must be supported by evidence for that specific property or component; it must not be inferred from a country's language population, official-language list, distinctive script, or the availability of a UNESCO translation. This evidence requirement takes precedence over the language-selector and confidence rules above. English, French, Spanish, Arabic, Chinese and Russian are neither automatically local nor prohibited: each can be local where the site-specific evidence supports it. Latin-script and Indigenous names are equally eligible.
+
+Preferred evidence is the site managing authority or relevant Indigenous authority, followed by national heritage registers and nomination documents, then UNESCO records that explicitly establish local usage. Retain the exact name, language tag, source and verification status; allow multiple verified names. Leave the supplementary name empty when evidence is insufficient. A numerical confidence score alone is not verification.
+
+Future localisation must keep UI language, translated titles and verified local names separate. An explicit App language preference, independent of home location, may select UI strings, formatting and an available translated primary title. It must not change local-name classification, country attribution, site identifiers or visits. Search may match translations and verified aliases without presenting them as local names. Local names retain their original spelling and script. Localisation is future work, not a currently available setting.
+
+The current display follows UNESCO's English-title convention: it does not append supplementary names from the legacy native-name fields. UNESCO provides other-language descriptions separately; these do not establish a site's local name. Reference examples: [Murujuga](https://whc.unesco.org/en/list/1709/), [Tallinn](https://whc.unesco.org/en/list/822/), and the [Birka and Hovgården component table](https://whc.unesco.org/en/list/555/maps/). Existing mapping data is retained for review, not displayed as local names.
+
+Longer-term assessment for introducing verified supplementary names (pending):
+
+- Replace the translation-to-local promotion in `scripts/build_local_name_table_from_policy.ps1`, including its UNESCO Arabic/Russian/Chinese field fallback and script-based candidate acceptance. Country selectors may help research but cannot approve a site name. Review the separate active `scripts/update_local_name_table.ps1` path and legacy `scripts/build_native_name_map.ps1` path as well; neither confidence thresholds nor country-based Arabic eligibility establish site-specific local usage.
+- Review existing `data/mappings/local_name_table.json` entries by provenance. The Chinese labels for Murujuga and Budj Bim and the Russian label for Tallinn demonstrate the failure. Preserve unverified translations separately or withhold them from local-name output; do not relabel them as verified or bulk-remove a language. Removing a fallback alone will not remove previously retained entries. Regenerate canonical JSON and GeoJSON after the reviewed migration, including retained records.
+- Change `Load-NativeNameMap` in `scripts/convert_unesco_source.ps1` to require and retain language/provenance/verification information. It currently accepts `local_name` without that check and also copies it into `name_ar` regardless of its actual language. Replace that compatibility shortcut with language-neutral verified-name fields and update catalogue/browser types and validation.
+- Before reintroducing supplementary names in `site/src/app.ts`, select only from verified local-name records. Remove inference from script, generic translated fields or arbitrary aliases. Do not automatically give a component its parent's local name without an explicit component naming relationship. Accept verified Latin-script names and avoid duplicating the primary title.
+- Update the local-name maintenance workflow, coverage reporting and regression checks to use the same evidence gate. Check that unverified Chinese/Russian examples are withheld, genuine local names in those languages remain eligible, Latin-script names display, absent evidence yields no supplementary label, and future App language changes preserve local names and visit identifiers. Existing generic coverage counts must not be treated as verified-name coverage.
+
+The English-title display is implemented. Verified supplementary-name support, mapping review and catalogue migration remain pending.
+
 ### Mapping and interaction
 
 The map experience must stay responsive and predictable while supporting both root WHS and component-level recording:
@@ -99,7 +119,7 @@ The map experience must stay responsive and predictable while supporting both ro
 - Show criteria as linked tokens with tooltips.
 - Show site name on hover tooltip.
 - Use component name as the primary display for synthetic component records.
-- Use curated local-name values as supplementary native-script text in tooltip and detail.
+- Follow UNESCO's English presentation: show the English catalogue title for properties and the source component name for components, retaining Unicode spelling. Do not append inferred native/local-name lines from translations, mappings, aliases or parent records.
 - Keep visit status constrained to `not visited`, `visited`, `pending`, `won't visit`.
 - Render visited sites in a distinct style.
 - Toggle visited and not visited by double-clicking a site marker.

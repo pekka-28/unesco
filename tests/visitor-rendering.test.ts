@@ -36,7 +36,7 @@ test('imported notes remain literal text in display, tooltip and editor; edit/de
    Object.assign(window, {searchRequestId:0,ui:{detailPane:document.querySelector('#detail-pane'),searchResults:document.querySelector('#search-results'),searchInput:{value:'test'},siteListMode:{value:'all'}},connected:true,selectedSiteId:'',PROFILE_SCHEMA_VERSION:1,componentCountByRootId:new Map(),listSortBy:'name',listSortDir:'asc',searchFocusBySiteId:new Map(),explicitVisibleSiteIds:new Set(),lastSearchedSiteIds:[]});
    Object.assign(window, {
     asText(v: unknown){return String(v??'');}, displayName(p: Site['properties']){return p.name;},
-    getVisitStatus(){return 'visited';}, detectNativeScriptName(p: Site['properties']){return p.native_display||'';},
+    getVisitStatus(){return 'visited';},
     siteIdCaption(){return 'WHS 1';}, criteriaHtml(){return '';}, formatVisitDateForDisplay(v: string){return v;},
     formatStatusLabel(v: string){return v;}, truncateText(v: string,n: number){return v.slice(0,n);},
     defaultVisitDateValue(){return '2025-01-01';}, ensureVisitStructures(){}, persistProfile(){},
@@ -81,6 +81,15 @@ test('imported notes remain literal text in display, tooltip and editor; edit/de
   assert.equal(await page.locator('h3').textContent(),text);
   assert.equal(await page.locator('h3 a').count(),0);
   assert.equal(await page.locator('#detail-pane img, #detail-pane [onclick]').count(),0);
+  for (const [name, translation] of [['Murujuga Cultural Landscape', '穆鲁朱加文化景观'], ['Historic Centre (Old Town) of Tallinn', 'Исторический центр Таллинна'], ['Hovgården', 'Unverified supplementary name']]) {
+   await page.evaluate(({name,translation})=>{
+    window.feature.properties={site_id:'WHS 1',name,name_en:name,native_display:translation,native_names:{name_ar:translation},aliases:[translation]};
+    renderDetail(window.feature);
+   },{name,translation});
+   assert.equal(await page.locator('h3').textContent(),name);
+   assert(!(await page.locator('#detail-pane').innerText()).includes(translation));
+  }
+  await page.evaluate(text=>{window.feature.properties={site_id:'WHS 1',name:text};},text);
   await page.evaluate(()=>{window.whsData={features:[window.feature]};renderSiteList('all');});
   assert.equal(await page.locator('.site-pick').getAttribute('title'),text);
   assert.equal(await page.locator('.site-name-clip').textContent(),text);
