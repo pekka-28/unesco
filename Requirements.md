@@ -93,7 +93,7 @@ Preferred evidence is the site managing authority or relevant Indigenous authori
 
 Future localisation must keep UI language, translated titles and verified local names separate. An explicit App language preference, independent of home location, may select UI strings, formatting and an available translated primary title. It must not change local-name classification, country attribution, site identifiers or visits. Search may match translations and verified aliases without presenting them as local names. Local names retain their original spelling and script. Localisation is future work, not a currently available setting.
 
-The current display follows UNESCO's English-title convention: it does not append supplementary names from the legacy native-name fields. UNESCO provides other-language descriptions separately; these do not establish a site's local name. Reference examples: [Murujuga](https://whc.unesco.org/en/list/1709/), [Tallinn](https://whc.unesco.org/en/list/822/), and the [Birka and Hovg?rden component table](https://whc.unesco.org/en/list/555/maps/). Existing mapping data is retained for review, not displayed as local names.
+The current display follows UNESCO's English-title convention: it does not append supplementary names from the legacy native-name fields. UNESCO provides other-language descriptions separately; these do not establish a site's local name. Reference examples: [Murujuga](https://whc.unesco.org/en/list/1709/), [Tallinn](https://whc.unesco.org/en/list/822/), and the [Birka and Hovgården component table](https://whc.unesco.org/en/list/555/maps/). Existing mapping data is retained for review, not displayed as local names.
 
 Longer-term assessment for introducing verified supplementary names (pending):
 
@@ -352,7 +352,7 @@ These numeric limits belong to the prepared implementation; unlike the old Apps 
 The GitHub workflow `.github/workflows/supabase-probe.yml` must:
 
 - Run three scheduled probes daily at 02:17, 10:17 and 19:17 UTC (04:17, 12:17 and 21:17 Africa/Johannesburg), with an independently random 0-90 second delay before each scheduled query. The intervals therefore vary around eight, nine and seven hours; the schedule is not a promise of exact execution times.
-- Query the database-backed `?stats=1` endpoint using `scripts/probe_supabase.ts`. Perform no writes, synthetic submissions or changes to usage counters.
+- Query the database-backed `?stats=1` endpoint using `scripts/probe_supabase.mjs`. Perform no writes, synthetic submissions or changes to usage counters.
 - Supply only the project URL to the probe job. The Edge Function uses its own server credentials; no administrative token, service-role key or database password is passed to the probe.
 - Require a successful HTTP response and a valid aggregate response. Static health responses, malformed content and failed queries must fail the workflow.
 - Avoid logging aggregate values or individual records.
