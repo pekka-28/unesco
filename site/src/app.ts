@@ -87,14 +87,6 @@ function errorMessage(error: unknown): string { return error instanceof Error ? 
     function sanitizeSiteName(value: unknown) {
       return asText(value).replace(/\\/g, "").replace(/\s{2,}/g, " ").trim();
     }
-    function foldTextForCompare(value: unknown) {
-      return asText(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-    }
-    function namesEquivalent(a: unknown, b: unknown) {
-      const aa = foldTextForCompare(a);
-      const bb = foldTextForCompare(b);
-      return !!aa && !!bb && aa === bb;
-    }
     const WHS_ID_RE = /^WHS\s+(\d{1,6})$/;
     const MWH_ID_RE = /^MWH\s+(\d{1,6})-(\d{3})$/;
     function isValidSiteId(id: unknown) {
@@ -120,29 +112,6 @@ function errorMessage(error: unknown): string { return error instanceof Error ? 
       }
       return sanitizeSiteName(raw);
     }
-    function detectNativeScriptName(p: SiteProperties, primaryName = "") {
-      const mapped = asText(p && p.native_display).trim();
-      if (mapped && !namesEquivalent(mapped, primaryName)) return mapped;
-      const strongScript = /[\u0370-\u03FF\u0400-\u052F\u0590-\u08FF\u0900-\u0DFF\u0E00-\u0E7F\u1100-\u11FF\u2D30-\u2D7F\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/;
-      const nativeObj = p && typeof p.native_names === "object" ? p.native_names : null;
-      const mappedFields = nativeObj ? [asText(nativeObj.name_ar), asText(nativeObj.name_ru), asText(nativeObj.name_zh)] : [];
-      const candidates = [...mappedFields, asText(p && p.name), asText(p && p.name_en), ...(Array.isArray(p && p.aliases) ? (p.aliases || []).map(asText) : [])];
-      for (const c of candidates) {
-        const t = asText(c).trim();
-        if (!t) continue;
-        if (!strongScript.test(t)) continue;
-        if (namesEquivalent(t, primaryName)) continue;
-        return t;
-      }
-      const scope = asText(p && p.site_scope);
-      const parentId = asText(p && p.parent_site_id);
-      if (scope === "component" && parentId) {
-        const parent = findFeatureBySiteId(parentId);
-        const parentNative = asText(parent && parent.properties && parent.properties.native_display).trim();
-        if (parentNative && strongScript.test(parentNative) && !namesEquivalent(parentNative, primaryName)) return parentNative;
-      }
-      return "";
-    }
     function escapeHtml(text: unknown) {
       return asText(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
     }
@@ -159,11 +128,9 @@ function errorMessage(error: unknown): string { return error instanceof Error ? 
     function tooltipContent(feature: Site) {
       const p = feature && feature.properties ? feature.properties : {};
       const primary = displayName(p);
-      const native = detectNativeScriptName(p, primary);
       const lines = [
         `<span dir="auto" style="display:block; font-size:13px; line-height:1.2;">${escapeHtml(primary)}</span>`
       ];
-      if (native) lines.push(`<span dir="auto" style="display:block; font-size:13px; line-height:1.2;">${escapeHtml(native)}</span>`);
       return lines.join("");
     }
     function randomCookie() { const arr = new Uint8Array(16); crypto.getRandomValues(arr); return Array.from(arr).map(x => x.toString(16).padStart(2, "0")).join(""); }
@@ -921,7 +888,6 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
     }
     function renderDetail(feature: Site) {
       const p = feature.properties || {}; const siteId = asText(p.site_id); const name = displayName(p); const status = getVisitStatus(siteId); selectedSiteId = siteId;
-      const nativeName = detectNativeScriptName(p, name);
       if (connected && profile && !profile.inspectedSiteIds.includes(siteId)) { profile.inspectedSiteIds.push(siteId); profile.usage.inspectCount = Number(profile.usage.inspectCount || 0) + 1; persistProfile(); }
       const inscription = asText(p.inscription_date);
       const note = asText(p.note || p.description);
@@ -955,7 +921,7 @@ a{color:#0a4f8a;text-decoration:none} a:hover{text-decoration:underline}
         return `<div class="visited-row" data-visit-id="${escapeHtml(v.id)}" style="display:flex; justify-content:space-between; gap:8px;"><div><span>${escapeHtml(d)}</span> <span class="meta">${escapeHtml(s)}</span>${n ? ` <span class="meta visit-note-clip" title="${escapeHtml(nFull)}">${escapeHtml(n)}</span>` : ""}</div><div><a href="#" class="plain-link visit-edit" title="Edit visit" data-visit-id="${escapeHtml(v.id)}">&#9998;</a> <a href="#" class="plain-link visit-delete" title="Delete visit" data-visit-id="${escapeHtml(v.id)}">&#128465;</a></div></div>`;
       }).join("") : '<div class="meta">No recorded visits for this site.</div>';
       ui.detailPane.style.display = "block";
-      ui.detailPane.innerHTML = `<h3 style="margin:0 0 6px 0;">${siteHeading}</h3>${nativeName ? `<div dir="auto" style="margin:0 0 6px 0;">${escapeHtml(nativeName)}</div>` : ""}<div class="muted">${escapeHtml(siteIdCaption(feature))}</div><p><strong>Criteria:</strong> ${criteriaHtml(p.whc_criteria)}</p>${infoLines.length ? `<p>${infoLines.join("<br>")}</p>` : ""}<hr><h4 style="margin:10px 0 6px 0;">Visit log</h4><div id="visit-log-list">${visitRows}</div><div class="row" style="margin-top:8px;"><input id="visit-date" class="field" type="text" placeholder="YYYY-MM-DD, YYYY-MM, or YYYY"></div><div class="row"><select id="visit-entry-status" class="field"><option value="visited">Visited</option><option value="pending">Pending</option><option value="wont_visit">Won't visit</option><option value="not_visited">Not visited</option></select></div><div class="row"><textarea id="visit-note" class="field" rows="3" placeholder="Note"></textarea></div><div class="row" style="display:flex; gap:8px;"><button id="visit-save" class="btn primary" type="button">Save</button><button id="visit-cancel-edit" class="btn" type="button" style="display:none;">Cancel</button></div>`;
+      ui.detailPane.innerHTML = `<h3 style="margin:0 0 6px 0;">${siteHeading}</h3><div class="muted">${escapeHtml(siteIdCaption(feature))}</div><p><strong>Criteria:</strong> ${criteriaHtml(p.whc_criteria)}</p>${infoLines.length ? `<p>${infoLines.join("<br>")}</p>` : ""}<hr><h4 style="margin:10px 0 6px 0;">Visit log</h4><div id="visit-log-list">${visitRows}</div><div class="row" style="margin-top:8px;"><input id="visit-date" class="field" type="text" placeholder="YYYY-MM-DD, YYYY-MM, or YYYY"></div><div class="row"><select id="visit-entry-status" class="field"><option value="visited">Visited</option><option value="pending">Pending</option><option value="wont_visit">Won't visit</option><option value="not_visited">Not visited</option></select></div><div class="row"><textarea id="visit-note" class="field" rows="3" placeholder="Note"></textarea></div><div class="row" style="display:flex; gap:8px;"><button id="visit-save" class="btn primary" type="button">Save</button><button id="visit-cancel-edit" class="btn" type="button" style="display:none;">Cancel</button></div>`;
       const visitDate = element("visit-date", "input");
       const visitEntryStatus = element("visit-entry-status", "select");
       const visitNote = element("visit-note", "textarea");
