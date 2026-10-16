@@ -28,7 +28,7 @@
     "@types/node": "^22.20.5",
     "html2canvas": "^1.4.1",
     "leaflet": "1.9.4",
-    "playwright": "^1.63.0",
+    "playwright": "^1.64.0",
     "tsx": "^4.23.15",
     "typescript": "5.9.3"
   },
