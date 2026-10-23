@@ -20,7 +20,7 @@
   "keywords": [],
   "author": "",
   "devDependencies": {
-    "@electric-sql/pglite": "0.5.8",
+    "@electric-sql/pglite": "0.5.10",
     "@types/deno": "^2.7.0",
     "@types/emscripten": "^1.41.6",
     "@types/geojson": "^7946.0.16",
